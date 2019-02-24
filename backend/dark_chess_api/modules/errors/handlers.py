@@ -15,6 +15,10 @@ def error_response(status_code, message=None):
 	response.status_code = status_code
 	return response
 
+@errors.app_errorhandler(405)
+def not_found_error(error):
+	return error_response(405)
+
 @errors.app_errorhandler(404)
 def not_found_error(error):
 	return error_response(404)
