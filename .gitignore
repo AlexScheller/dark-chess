@@ -1,0 +1,12 @@
+# Shared
+
+*.env
+*.pyc
+venv/
+
+# Backend
+
+migrations/
+app.db
+
+# Frontend
