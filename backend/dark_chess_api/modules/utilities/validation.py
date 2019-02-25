@@ -1,7 +1,7 @@
 import os
 import jsonschema
 from functools import wraps
-from flask import request, json, current_app
+from flask import request, json, current_app, jsonify
 from jsonschema.exceptions import ValidationError
 from dark_chess_api.modules.errors.handlers import error_response
 
@@ -22,7 +22,7 @@ def load_schemas(schema_folder):
 # matching schema in the `<module>_schemas.json` file for
 # this to work. Additionally, the module name is taken from
 # the module that the route is in, so that also needs to
-# match up, e.g. `dark_chess_api.modules.*users*.endpoints`.
+# match up, e.g. `dark_chess_api.modules.users.endpoints`.
 # Were this not a specialized wrapper meant for this project
 # alone, a more explicit method of passing module and schmema
 # names (i.e. in the form of parameters) would certainly be
@@ -33,16 +33,16 @@ def validate_json_payload(func):
 		payload = request.get_json()
 		if payload is None:
 			return error_response(400, 'No JSON payload.')
+		endpoint_schema = current_app.endpoint_schemas[func.__module__.split('.')[-2]][func.__name__]
+		if 'schema' in payload:
+			return jsonify(endpoint_schema)
 		try:
 			# If there is a key error in `endpoint_schemas`,
 			# then the program *should* be allowed to crash,
 			# since if a route cannot be validated, it is
 			# likely to cause a crash itself sooner rather
 			# than later.
-			jsonschema.validate(
-				payload,
-				current_app.endpoint_schemas[func.__module__.split('.')[-2]][func.__name__]
-			)
+			jsonschema.validate(payload, endpoint_schema)
 		except ValidationError as e:
 			return error_response(400, e.message)
 		return func(*args, **kwargs)
