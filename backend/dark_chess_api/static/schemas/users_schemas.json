@@ -1,0 +1,40 @@
+{
+	"register_user" : {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"title" : "Register User",
+		"description" : "Register a new user.",
+		"endpoint" : "/user/auth/register",
+		"request_method" : "POST",
+		"type" : "object",
+		"properties" : {
+			"username" : {
+				"type" : "string",
+				"description" : "The new user's username"
+			},
+			"password" : {
+				"type" : "string",
+				"description" : "The new user's password."
+			}
+		},
+		"required" : ["username", "password"]
+	},
+	"change_password" : {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"title" : "Change Password",
+		"description" : "Change a given user's password.",
+		"endpoint" : "/user/<int:id>/auth/change-password",
+		"request_method" : "PATCH",
+		"type" : "object",
+		"properties" : {
+			"old_password" : {
+				"type" : "string",
+				"description" : "The user's old password, as a security measure."
+			},
+			"new_password" : {
+				"type" : "string",
+				"description" : "The user's new password."
+			}
+		},
+		"required" : ["old_password", "new_password"]
+	}
+}

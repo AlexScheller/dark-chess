@@ -15,6 +15,10 @@ def error_response(status_code, message=None):
 	response.status_code = status_code
 	return response
 
+@errors.app_errorhandler(500)
+def internal_server_error(error):
+	return error_response(500)
+
 @errors.app_errorhandler(405)
 def not_found_error(error):
 	return error_response(405)
@@ -23,6 +27,6 @@ def not_found_error(error):
 def not_found_error(error):
 	return error_response(404)
 
-# @errors.app_errorhandler(401)
-# def unauthorized_error(error):
-# 	return error_response(401)
+@errors.app_errorhandler(401)
+def unauthorized_error(error):
+	return error_response(401)

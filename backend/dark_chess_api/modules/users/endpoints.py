@@ -4,6 +4,7 @@ from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.auth.utils import basic_auth, token_auth
+from dark_chess_api.modules.utilities import validation
 
 @users.route('/auth/token', methods=['GET'])
 @basic_auth.login_required
@@ -16,11 +17,17 @@ def aquire_token():
 	})
 
 @users.route('/auth/register', methods=['POST'])
+@validation.validate_json_payload
 def register_user():
 	registration_json = request.get_json()
+	new_username = registration_json['username']
+	new_password = registration_json['password']
+	u = User.query.filter_by(username=new_username).first()
+	if u is not None:
+		return error_response(409, 'Username taken.')
 	u = User(
-		username=registration_json['username'],
-		password=registration_json['password']
+		username=new_username,
+		password=new_password
 	)
 	db.session.add(u)
 	db.session.commit()
@@ -31,6 +38,7 @@ def register_user():
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])
 @token_auth.login_required
+@validation.validate_json_payload
 def change_password(id):
 	u = User.query.get_or_404(id)
 	change_password_json = request.get_json()
