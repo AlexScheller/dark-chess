@@ -1,4 +1,5 @@
 from dark_chess_api import db
+from sqlalchemy.ext.hybrid import hybrid_property
 
 class MatchState(db.Model):
 
@@ -28,6 +29,16 @@ class Match(db.Model):
 	finished = db.Column(db.Boolean, default=False)
 
 	history = db.relationship('MatchState')
+
+	def join(player):
+		if self.player_white is None:
+			self.player_white = player
+		else:
+			self.player_black = player
+
+	@hybrid_property
+	def open(self):
+		return self.player_white is None or self.player_black is None
 
 	@property
 	def current_fen(self):
