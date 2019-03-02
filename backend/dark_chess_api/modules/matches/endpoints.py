@@ -15,7 +15,7 @@ def get_match(id):
 @matches.route('/open-matches', methods=['GET'])
 def get_open_matches():
 	matches = Match.query.filter_by(open=True).all()
-	return jsonify([m.id, for m in matches])
+	return jsonify([m.id for m in matches])
 
 ### Actions ###
 @matches.route('/create', methods=['POST'])
@@ -25,7 +25,7 @@ def create_match(id):
 	player = Player.query.get(req_json['player_id'])
 	if player is None:
 		return error_response(400,
-			f'No player found for id: {req_json['player_id']}'
+			f'No player found for id: {req_json["player_id"]}'
 		)
 	new_match = Match(player=player)
 	db.session.add(new_match)
@@ -43,7 +43,7 @@ def join_match(id):
 	player = Player.query.get(req_json['player_id'])
 	if player is None:
 		return error_response(400,
-			f'No player found for id: {req_json['player_id']}'
+			f'No player found for id: {req_json["player_id"]}'
 		)
 	if match.open:
 		join(player)

@@ -46,5 +46,5 @@
 		},
 		"required" : ["player_id"],
 		"response_codes" : [200, 400]
-	},
+	}
 }
