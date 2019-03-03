@@ -24,6 +24,9 @@
 		"description" : "Change a given user's password.",
 		"endpoint" : "/user/<int:id>/auth/change-password",
 		"request_method" : "PATCH",
+		"additional_headers" : [
+			"Authorization: Bearer <token>"
+		],
 		"type" : "object",
 		"properties" : {
 			"old_password" : {

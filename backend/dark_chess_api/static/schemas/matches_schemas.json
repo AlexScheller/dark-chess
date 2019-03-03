@@ -4,14 +4,20 @@
 		"title" : "Get Match",
 		"description" : "Get info for a given match.",
 		"endpoint" : "/match/<int:id>",
+		"additional_headers" : [
+			"Authorization: Bearer <token>"
+		],
 		"request_method" : "GET",
 		"response_codes" : [200, 404]
 	},
 	"get_open_matches" : {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"title" : "Get Open Matches",
-		"description" : "Create list of all open matches.",
+		"description" : "Get list of all open matches.",
 		"endpoint" : "/match/open-matches",
+		"additional_headers" : [
+			"Authorization: Bearer <token>"
+		],
 		"request_method" : "GET",
 		"response_codes" : [200]
 	},
@@ -21,6 +27,9 @@
 		"description" : "Create a new match.",
 		"endpoint" : "/match/create",
 		"request_method" : "POST",
+		"additional_headers" : [
+			"Authorization: Bearer <token>"
+		],
 		"type" : "object",
 		"properties" : {
 			"player_id" : {
@@ -37,6 +46,9 @@
 		"description" : "Join a new match.",
 		"endpoint" : "/match/<int:id>/join",
 		"request_method" : "PATCH",
+		"additional_headers" : [
+			"Authorization: Bearer <token>"
+		],
 		"type" : "object",
 		"properties" : {
 			"player_id" : {

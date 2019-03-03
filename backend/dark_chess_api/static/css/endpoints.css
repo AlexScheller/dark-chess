@@ -1,7 +1,7 @@
 /* variables */
 
 :root {
-	--get-green: #70db70;
+	--get-gold: #ffd700;
 	--patch-purple: #cc99ff;
 	--post-prussian-blue: #003153;
 }
@@ -12,8 +12,28 @@
 	font-family: monospace;
 }
 
-.schema {
+.hidden {
+	display: none;
+}
 
+.nav-link {
+	padding: 5px;
+	font-size: 1.25rem;
+}
+
+.nav-link:hover {
+	background-color: #eff0f1;
+}
+
+.nav-link:not(:last-child) {
+	margin-bottom: 5px;
+}
+
+.schema {
+	/* colors shamelessly stolen from MDN and SO */
+	border-left: 4px solid #3d7e9a;
+	background-color: #eff0f1;
+	padding: 5px;
 }
 
 .schema:not(:last-child) {
@@ -23,19 +43,23 @@
 .schema-header {
 	display: flex;
 	align-items: center;
+	background-color: white;
+	border-radius: 2px;
 }
 
 .method {
 	box-sizing: border-box;
-	width: 75px;
+	width: 90px;
 	text-align: center;
 	padding: 5px;
-	border-radius: 2px;
+	border-top-left-radius: 2px;
+	border-bottom-left-radius: 2px;
 	margin-right: 10px;
+	font-size: 1.35rem;
 }
 
 .method-get {
-	background-color: var(--get-green);
+	background-color: var(--get-gold);
 }
 
 .method-patch {
@@ -49,6 +73,55 @@
 
 .endpoint {
 	font-size: 1.25rem;
+}
+
+.schema-body {
+	margin-top: 5px;
+}
+
+.title-and-description {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	background-color: white;
+	padding: 5px;
+	border-radius: 2px;
+}
+
+.schema-title {
+	font-size: 1.5rem;
+}
+
+.schema-description {
+	font-style: italic;
+}
+
+.subtitle {
+	margin: 5px 0px;
+	font-size: 1.25rem;
+}
+
+.list-block {
+	background-color: white;
+	padding: 5px;
+	font-size: 1rem;
+}
+
+.param {
+	display: flex;
+	justify-content: space-between;
+}
+
+.param:not(:last-child) {
+	margin-bottom: 10px;
+}
+
+.required {
+	color: #ff6666;
+}
+
+.param-description {
+	font-style: italic;
 }
 
 /* specific rules */
@@ -67,6 +140,7 @@ header {
 	display: flex;
 	align-items: center;
 	border-bottom: 1px solid black;
+	margin-bottom: 10px;
 }
 
 nav {
@@ -91,8 +165,11 @@ nav a {
 	flex-direction: column;
 }
 
-/* debug rules */
-
-/*header, #page-navigation, #schemas {
-	border: 1px solid black;
-}*/
+@media only screen and (max-width: 300px) {
+	#page-navigation {
+		display: none;
+	}
+	#schemas {
+		grid-column: 1 / -1;
+	}
+}
