@@ -36,7 +36,7 @@
 		"title" : "Join Match",
 		"description" : "Join a new match.",
 		"endpoint" : "/match/<int:id>/join",
-		"request_method" : "POST",
+		"request_method" : "PATCH",
 		"type" : "object",
 		"properties" : {
 			"player_id" : {

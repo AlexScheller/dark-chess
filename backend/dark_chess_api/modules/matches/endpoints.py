@@ -35,7 +35,7 @@ def create_match(id):
 		'match' : new_match.as_dict()
 	})
 
-@matches.route('/<int:id>/join', methods=['POST'])
+@matches.route('/<int:id>/join', methods=['PATCH'])
 @validation.validate_json_payload
 def join_match(id):
 	match = Match.query.get_or_404(id)

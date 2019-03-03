@@ -1,15 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Documentation Page - {{ resource }}</title>
-</head>
-<body>
-	{% for schema in endpoint_schemas %}
-	<div>
-		{{ schema }}
-	</div>
-	{% endfor %}
-</body>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Documentation Page - {{ resource }}</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/endpoints.css') }}">
+	</head>
+	<body>
+		<div id="page-content">
+			<header>
+				<nav>
+					{% for resource in resources %}
+					<a href="{{ url_for('docs.doc_page', resource=resource) }}">/{{ resource }}</a>
+					{% endfor %}
+				</nav>
+			</header>
+			<div id="page-navigation">
+				<ul>
+					{% for schema in endpoint_schemas %}
+					<li><a href="#{{schema}}">{{ schema | replace('_', ' ') }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+			<div id="schemas">
+				{% for schema in endpoint_schemas.values() %}
+				<div class="schema" name={{schema.title}}>
+					<div class="schema-header">
+						<div class="method method-{{schema.request_method | lower}}">
+							<span>{{ schema.request_method }}</span>
+						</div>
+						<!-- <h2>{{ schema.title }}</h2> -->
+						<h3 class="endpoint">{{ schema.endpoint }}</h3>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	</body>
 </html>

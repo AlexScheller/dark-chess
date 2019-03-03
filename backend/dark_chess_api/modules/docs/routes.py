@@ -13,8 +13,10 @@ def index():
 def doc_page(resource):
 	if resource not in current_app.endpoint_schemas:
 		abort(404)
+	resources = current_app.endpoint_schemas.keys()
 	endpoint_schemas = current_app.endpoint_schemas[resource]
 	return render_template('docs/endpoint_doc_page.html',
+		resources=resources,
 		resource=resource,
 		endpoint_schemas=endpoint_schemas
 	)
