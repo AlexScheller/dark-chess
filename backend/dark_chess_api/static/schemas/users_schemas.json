@@ -1,4 +1,20 @@
 {
+	"aquire_token" : {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"title" : "Aquire Token",
+		"description" : "Aquire an api token for a given user.",
+		"endpoint" : "/user/auth/token",
+		"request_method" : "GET",
+		"additional_headers" : [
+			"Authorization: Basic <username>:<password>"
+		],
+		"type" : "None",
+		"responses" : [
+			{
+				"code": 200
+			}
+		]
+	},
 	"register_user" : {
 		"$schema": "http://json-schema.org/draft-07/schema#",
 		"title" : "Register User",
@@ -16,7 +32,29 @@
 				"description" : "The new user's password."
 			}
 		},
-		"required" : ["username", "password"]
+		"required" : ["username", "password"],
+		"responses" : [
+			{
+				"code": 200,
+				"example_json" : {
+					"message": "Successfully registered user.",
+					"user": {
+						"registration_date": {
+							"formatted" : "Wed, 06 Mar 2019 03:47:27 GMT",
+							"timestamp" : 1551844047
+						},
+						"username": "maya"
+					}
+				}
+			},
+			{
+				"code": 409,
+				"example_json" : {
+					"error": "Conflict",
+					"message" : "Username taken."
+				}
+			}
+		]
 	},
 	"change_password" : {
 		"$schema": "http://json-schema.org/draft-07/schema#",

@@ -4,6 +4,7 @@
 	--get-gold: #ffd700;
 	--patch-purple: #cc99ff;
 	--post-prussian-blue: #003153;
+	--json-green: #339966;
 }
 
 /* generic rules */
@@ -122,6 +123,13 @@
 
 .param-description {
 	font-style: italic;
+}
+
+.response {
+	font-size: 1rem;
+	background-color: white;
+	padding: 5px;
+	border-radius: 2px;
 }
 
 /* specific rules */

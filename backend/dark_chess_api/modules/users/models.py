@@ -3,6 +3,7 @@ from dark_chess_api import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import secrets
+import pytz
 
 class User(db.Model):
 
@@ -18,6 +19,8 @@ class User(db.Model):
 	token = db.Column(db.String(64), index=True, unique=True)
 	token_expiration = db.Column(db.DateTime)
 
+
+	# matches = db.relationship('Match', db.ForeignKey('match.id'))
 	# stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
 
 	def __init__(self, username, password):
@@ -28,7 +31,10 @@ class User(db.Model):
 	def as_dict(self):
 		return {
 			'username' : self.username,
-			'registration_date' : self.registration_date
+			'registration_date' : {
+				'formatted' : self.registration_date,
+				'timestamp' : int(self.registration_date.replace(tzinfo=pytz.utc).timestamp())
+			}
 		}
 
 	### auth methods ###

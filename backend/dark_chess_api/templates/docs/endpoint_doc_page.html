@@ -50,7 +50,7 @@
 						{% endif %}
 						{% if schema.type == 'object' %}
 						<div class="parameters">
-							<h4 class="subtitle">Parameters</h4>
+							<h4 class="subtitle">JSON Parameters</h4>
 							<ul class="list-block">
 								{% for param_title, param in schema.properties.items() %}
 								<li class="param code">
@@ -67,6 +67,17 @@
 							</ul>
 						</div>
 						{% endif %}
+						<div class="responses">
+							<h4 class="subtitle">Responses</h4>
+							{% for response in schema.responses %}
+								<div class="response code">
+									<div class="response-code">{{ response.code }}</div>
+									{% if response.example_json %}
+									<div class="response-json"><pre><code>{{ response.example_json | tojson(indent=4) }}</code></pre></div>
+									{% endif %}
+								</div>
+							{% endfor %}
+						</div>
 					</div>
 				</div>
 				{% endfor %}

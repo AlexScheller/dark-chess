@@ -15,13 +15,11 @@ class Match(db.Model):
 
 	_player_white_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	player_white = db.relationship('User',
-		foreign_keys='match._player_white_id',
-		back_populates='matches'
+		foreign_keys='Match._player_white_id'
 	)
 	_player_black_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	player_black = db.relationship('User',
-		foreign_keys='match._player_black_id',
-		back_populates='matches'
+		foreign_keys='Match._player_black_id'
 	)
 
 	_winning_player_id = db.Column(db.Integer, db.ForeignKey('user.id'))
