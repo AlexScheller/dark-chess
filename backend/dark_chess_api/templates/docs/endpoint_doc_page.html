@@ -5,7 +5,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Documentation Page - {{ resource }}</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
-		<link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/endpoints.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/endpoints.css') }}">
 	</head>
 	<body>
 		<div id="page-content">
@@ -73,7 +73,7 @@
 								<div class="response code">
 									<div class="response-code">{{ response.code }}</div>
 									{% if response.example_json %}
-									<div class="response-json"><pre><code>{{ response.example_json | tojson(indent=4) }}</code></pre></div>
+									<div class="response-json"><pre><code class="language-json">{{ response.example_json | tojson(indent=4) }}</code></pre></div>
 									{% endif %}
 								</div>
 							{% endfor %}
@@ -99,4 +99,5 @@
 			});
 		}
 	</script>
+	<script src="{{ url_for('static', filename='javascript/prism.js') }}"></script>
 </html>

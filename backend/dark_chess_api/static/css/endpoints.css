@@ -7,6 +7,16 @@
 	--json-green: #339966;
 }
 
+/* syntax highlighting */
+
+.property {
+	color: #ee6c4d;
+}
+
+.string {
+	color: #3d5a80;
+}
+
 /* generic rules */
 
 .code {
@@ -118,7 +128,7 @@
 }
 
 .required {
-	color: #ff6666;
+	color: #ee6c4d;
 }
 
 .param-description {
