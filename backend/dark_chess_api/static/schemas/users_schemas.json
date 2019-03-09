@@ -11,7 +11,17 @@
 		"type" : "None",
 		"responses" : [
 			{
-				"code": 200
+				"code": 200,
+				"example_json": {
+					"token": "b675e4f3ed1939390a868317fb08ff15ab56df5ba2416caa321a7d6a7bc834fe",
+					"user": {
+						"registration_date": {
+							"formatted" : "Wed, 06 Mar 2019 03:47:27 GMT",
+							"timestamp" : 1551844047
+						},
+						"username": "maya"
+					}
+				}
 			}
 		]
 	},
@@ -67,15 +77,37 @@
 		],
 		"type" : "object",
 		"properties" : {
-			"old_password" : {
+			"current_password" : {
 				"type" : "string",
-				"description" : "The user's old password, as a security measure."
+				"description" : "The user's current password, as a security measure."
 			},
 			"new_password" : {
 				"type" : "string",
 				"description" : "The user's new password."
 			}
 		},
-		"required" : ["old_password", "new_password"]
+		"required" : ["current_password", "new_password"],
+		"responses" : [
+			{
+				"code": 200,
+				"example_json" : {
+					"message": "Successfully changed password.",
+					"user": {
+						"registration_date": {
+							"formatted" : "Wed, 06 Mar 2019 03:47:27 GMT",
+							"timestamp" : 1551844047
+						},
+						"username": "maya"
+					}
+				}
+			},
+			{
+				"code": 403,
+				"example_json" : {
+					"error": "Unauthorized",
+					"message" : "Current password incorrect."
+				}
+			}
+		]
 	}
 }

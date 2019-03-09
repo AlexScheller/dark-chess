@@ -42,8 +42,8 @@ def register_user():
 def change_password(id):
 	u = User.query.get_or_404(id)
 	change_password_json = request.get_json()
-	if not u.check_password(change_password_json['old_password']):
-		return error_response(403)
+	if not u.check_password(change_password_json['current_password']):
+		return error_response(403, 'Current password incorrect.')
 	u.set_password(change_password_json['new_password'])
 	db.session.commit()
 	return jsonify({
