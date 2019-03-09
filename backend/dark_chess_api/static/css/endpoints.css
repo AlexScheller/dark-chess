@@ -58,6 +58,10 @@
 	border-radius: 2px;
 }
 
+.schema-header:hover {
+	cursor: pointer;
+}
+
 .method {
 	box-sizing: border-box;
 	width: 90px;
@@ -116,6 +120,7 @@
 	background-color: white;
 	padding: 5px;
 	font-size: 1rem;
+	border-radius: 2px;
 }
 
 .param {
@@ -135,11 +140,43 @@
 	font-style: italic;
 }
 
+/* response examples */
+
+.tab-headers {
+	display: flex;
+}
+
+.tab-header {
+	font-size: 1.25rem;
+	padding: 5px;
+	background-color: #eff0f1;
+	border-top-right-radius: 2px;
+	border-top-left-radius: 2px;
+}
+
+.tab-header.selected {
+	background-color: white;
+}
+
+.tab-header:hover {
+	cursor: pointer;
+}
+
 .response {
 	font-size: 1rem;
 	background-color: white;
 	padding: 5px;
 	border-radius: 2px;
+}
+
+.tab-content {
+	background-color: white;
+	padding: 5px;
+	border-radius: 2px;
+}
+
+.tab-content.first-tab {
+	border-top-left-radius: 0px;
 }
 
 /* specific rules */

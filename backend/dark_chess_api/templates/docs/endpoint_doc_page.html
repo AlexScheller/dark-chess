@@ -67,15 +67,19 @@
 							</ul>
 						</div>
 						{% endif %}
-						<div class="responses">
+						<div id="{{ schema_title }}-responses" class="responses">
 							<h4 class="subtitle">Responses</h4>
+							<div class="tab-headers">
+								{% for response in schema.responses %}
+								<div class="tab-header {% if loop.first %}selected{% endif %}" onclick="switchTab(this, '{{ schema_title }}-responses', '{{ response.code }}')">{{ response.code }}</div>
+								{% endfor %}
+							</div>
 							{% for response in schema.responses %}
-								<div class="response code">
-									<div class="response-code">{{ response.code }}</div>
-									{% if response.example_json %}
-									<div class="response-json"><pre><code class="language-json">{{ response.example_json | tojson(indent=4) }}</code></pre></div>
-									{% endif %}
-								</div>
+							<div id="{{ schema_title }}-responses-{{ response.code }}-tab" class="tab-content {% if loop.first %}first-tab{% else %}hidden{% endif %}">
+								{% if response.example_json %}
+								<div class="response-json"><pre><code class="language-json">{{ response.example_json | tojson(indent=4) }}</code></pre></div>
+								{% endif %}
+							</div>
 							{% endfor %}
 						</div>
 					</div>
@@ -85,10 +89,10 @@
 		</div>
 	</body>
 	<script>
-		let schemas = document.getElementsByClassName('schema');
-		for (const schema of schemas) {
-			schema.addEventListener('click', event => {
-				schema.childNodes[3].classList.toggle('hidden');
+		let schemaHeaders = document.getElementsByClassName('schema-header');
+		for (const header of schemaHeaders) {
+			header.addEventListener('click', event => {
+				header.nextElementSibling.classList.toggle('hidden');
 			});
 		}
 		let navLinks = document.querySelectorAll('.nav-link a');
@@ -97,6 +101,17 @@
 				let schema = document.getElementById(navLink.dataset.navTarget);
 				schema.childNodes[3].classList.toggle('hidden');
 			});
+		}
+		function switchTab(tabHeader, schemaId, code) {
+			let selected = document.querySelector(
+				'#' + schemaId + ' .tab-headers .tab-header.selected'
+			);
+			selected.classList.remove('selected');
+			tabHeader.classList.add('selected')
+			let oldShown = document.querySelector('#' + schemaId + ' .tab-content:not(.hidden)');
+			oldShown.classList.add('hidden');
+			let newShown = document.getElementById(schemaId + '-' + code + '-tab');
+			newShown.classList.remove('hidden');
 		}
 	</script>
 	<script src="{{ url_for('static', filename='javascript/prism.js') }}"></script>
