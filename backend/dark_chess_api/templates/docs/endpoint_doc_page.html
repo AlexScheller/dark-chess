@@ -1,3 +1,4 @@
+{% from "macros.jinja" import response_tab_content %}
 <!DOCTYPE html>
 <html>
 	<head>
@@ -11,8 +12,11 @@
 		<div id="page-content">
 			<header>
 				<nav>
+					<a href="{{ url_for('docs.index') }}">/index</a>
 					{% for resource in resources %}
+						{% if resource != current_resource %}
 					<a href="{{ url_for('docs.doc_page', resource=resource) }}">/{{ resource }}</a>
+						{% endif %}
 					{% endfor %}
 				</nav>
 			</header>
@@ -75,11 +79,7 @@
 								{% endfor %}
 							</div>
 							{% for response in schema.responses %}
-							<div id="{{ schema_title }}-responses-{{ response.code }}-tab" class="tab-content {% if loop.first %}first-tab{% else %}hidden{% endif %}">
-								{% if response.example_json %}
-								<div class="response-json"><pre><code class="language-json">{{ response.example_json | tojson(indent=4) }}</code></pre></div>
-								{% endif %}
-							</div>
+							{{ response_tab_content(loop.first, schema_title, response.code, response.example_json) }}
 							{% endfor %}
 						</div>
 					</div>
@@ -87,7 +87,6 @@
 				{% endfor %}
 			</div>
 		</div>
-	</body>
 	<script>
 		let schemaHeaders = document.getElementsByClassName('schema-header');
 		for (const header of schemaHeaders) {
@@ -115,4 +114,5 @@
 		}
 	</script>
 	<script src="{{ url_for('static', filename='javascript/prism.js') }}"></script>
+	</body>
 </html>

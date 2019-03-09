@@ -1,0 +1,25 @@
+{% macro response_tab_content(first, schema_title, code, json_content=None) %}
+<div id="{{ schema_title }}-responses-{{ code }}-tab" class="tab-content {% if first %}first-tab{% else %}hidden{% endif %}">
+	<div class="response-json"><pre><code class="language-json">
+{% if json_content %}
+{{ json_content | tojson(indent=8) }}
+{% elif code == 401 %}
+{
+	"error": "Unauthorized"
+}
+{% elif code == 404 %}
+{
+	"error": "Not Found"
+}
+{% elif code == 405 %}
+{
+	"error": "Method Not Allowed"
+}
+{% elif code == 500 %}
+{
+	"error": "Internal Server Error"
+}
+{% endif %}
+	</code></pre></div>
+</div>
+{% endmacro %}

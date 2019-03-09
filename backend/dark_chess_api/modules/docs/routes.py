@@ -17,6 +17,6 @@ def doc_page(resource):
 	endpoint_schemas = current_app.endpoint_schemas[resource]
 	return render_template('docs/endpoint_doc_page.html',
 		resources=resources,
-		resource=resource,
+		current_resource=resource,
 		endpoint_schemas=endpoint_schemas
 	)

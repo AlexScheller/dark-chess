@@ -8,7 +8,7 @@ dark, where your vision only updates on your turn.
 
 ## Attributions/Citations/Etc.
 
-In several places this application makes use of snippets of code from Miguel Grinberg's "microblog" application (MIT License). A copy of the source can be
+In several places this application makes use of snippets of code from Miguel Grinberg's "microblog" application (Copyright (c) 2017 Miguel Grinberg, MIT License). A copy of the source can be
 found [here](https://github.com/miguelgrinberg/microblog).
 
 When usage consists of more than a line or two of code, an inline remark is

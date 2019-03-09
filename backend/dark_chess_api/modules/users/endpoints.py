@@ -24,7 +24,7 @@ def register_user():
 	new_password = registration_json['password']
 	u = User.query.filter_by(username=new_username).first()
 	if u is not None:
-		return error_response(409, 'Username taken.')
+		return error_response(409, 'Username taken')
 	u = User(
 		username=new_username,
 		password=new_password
@@ -32,7 +32,7 @@ def register_user():
 	db.session.add(u)
 	db.session.commit()
 	return jsonify({
-		'message' : 'Successfully registered user.',
+		'message' : 'Successfully registered user',
 		'user' : u.as_dict()
 	})
 
@@ -43,10 +43,10 @@ def change_password(id):
 	u = User.query.get_or_404(id)
 	change_password_json = request.get_json()
 	if not u.check_password(change_password_json['current_password']):
-		return error_response(403, 'Current password incorrect.')
+		return error_response(403, 'Current password incorrect')
 	u.set_password(change_password_json['new_password'])
 	db.session.commit()
 	return jsonify({
-		'message' : 'Successfully changed password.',
+		'message' : 'Successfully changed password',
 		'user' : u.as_dict()
 	})

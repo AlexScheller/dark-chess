@@ -51,3 +51,11 @@ a {
     color: black;
     text-decoration: none;
 }
+
+/* personal modifications */
+.text-mixed-code {
+    font-family: monospace;
+    background-color: #eff0f1;
+    padding: 2px;
+    border-radius: 2px;
+}

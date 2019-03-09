@@ -4,13 +4,43 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<title>Documentation Index</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+		<!--
+			Yes this is really poor practice but I only need a few rules to get through
+			this page...
+		-->
+		<style>
+			body {
+				padding: 10px;
+			}
+			h3 {
+				font-size: 1.5rem;
+				margin: 15px 0px;
+			}
+			h4 {
+				font-size: 1.25rem;
+				margin: 15px 0px;
+			}
+			#resource-links {
+				display: flex;
+			}
+			#resource-links li {
+				margin-right: 20px;
+			}
+			p {
+				margin-bottom: 10px;
+			}
+		</style>
 	</head>
 	<body>
 		<h3>Documentation pages:</h3>
-		<ul>
+		<ul id="resource-links">
 			{% for resource in resources %}
 			<li><a href="{{url_for('docs.doc_page', resource=resource)}}">{{ resource }}</a></li>
 			{% endfor %}
 		</ul>
+		<h4>Notes regarding documentation</h4>
+		<p>Some routes will document certain response codes as return a JSON response, even though they do not. For example, <span class="text-mixed-code">/user/auth/token</span> lists <span class="text-mixed-code">401</span> as returning <span class="text-mixed-code">{ error: "Unauthorized" }</span>, when in reality it returns a simple, unformatted unauthorized. This is because <span class="text-mixed-code">401</span>, as well as other responses are overloaded, and the documentation generator makes use of certain default values for these common responses.</p>
+		<p>Rest assured that any response warranting (of course this is the opinion of the developer) further inspection beyond the status code will have accurate example JSON.</p>
 	</body>
 </html>
