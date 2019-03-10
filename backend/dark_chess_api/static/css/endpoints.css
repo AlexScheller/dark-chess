@@ -2,9 +2,9 @@
 
 :root {
 	--get-gold: #ffd700;
-	--patch-purple: #cc99ff;
+	--patch-dark-teal: #395756;
 	--post-prussian-blue: #003153;
-	--json-green: #339966;
+	--delete-red: #92140c;
 }
 
 /* syntax highlighting */
@@ -83,12 +83,18 @@
 }
 
 .method-patch {
-	background-color: var(--patch-purple);
+	color: white;
+	background-color: var(--patch-dark-teal);
 }
 
 .method-post {
 	color: white;
 	background-color: var(--post-prussian-blue);
+}
+
+.method-delete {
+	color: white;
+	background-color: var(--delete-red);
 }
 
 .endpoint {
