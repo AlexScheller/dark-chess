@@ -21,14 +21,12 @@ class User(db.Model):
 	token = db.Column(db.String(64), index=True, unique=True)
 	token_expiration = db.Column(db.DateTime)
 
-	@property
-	def matches(self):
-		return Match.query.filter(
-			or_(
-				Match.player_white_id==self.id,
-				Match.player_black_id==self.id
-			)
-		).all()
+	matches = db.relationship('Match',
+		primaryjoin='or_('
+			'Match.player_white_id==User.id,'
+			'Match.player_black_id==User.id'
+		')'
+	)
 
 	# stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
 
