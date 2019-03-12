@@ -10,6 +10,7 @@ class MatchState(db.Model):
 
 	match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
 
+
 class Match(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
@@ -26,7 +27,18 @@ class Match(db.Model):
 
 	finished = db.Column(db.Boolean, default=False)
 
+	winning_player_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	winning_player = db.relationship('User',
+		foreign_keys='Match.winning_player_id'
+	)
+
 	history = db.relationship('MatchState')
+
+	def __init__(player_black=None, player_white=None):
+		if player_black:
+			self.player_black = player_black
+		if player_white:
+			self.player_white = player_white
 
 	def join(self, player):
 		if self.player_white is None:
@@ -41,14 +53,6 @@ class Match(db.Model):
 	@property
 	def current_fen(self):
 		return self.history[-1].fen
-
-	@property
-	def winner(self):
-		if self.finished:
-			if self._winning_player_id == self._player_black_id:
-				return self.player_black
-			return self.player_white
-		return None
 
 	def as_dict(self):
 		ret = {
@@ -67,5 +71,6 @@ class Match(db.Model):
 				'username' : self.player_black.username
 			}
 		if self.finished:
-			ret['winning_side'] : 'white' if self._winning_player_id == self._player_white_id else 'black'
+			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
+			ret['winner'] = self.winning_player.as_dict()
 		return ret
