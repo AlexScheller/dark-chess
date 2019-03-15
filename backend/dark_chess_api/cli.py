@@ -26,3 +26,8 @@ def init(app):
 	@app.cli.command()
 	def requirements():
 		os.system('pip install -r requirements.txt --upgrade')
+
+	#runs test suite
+	@app.cli.command()
+	def test():
+		os.system('python -m unittest discover -s tests -p "*_tests.py" -v')

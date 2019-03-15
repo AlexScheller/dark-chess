@@ -1,6 +1,6 @@
 from dark_chess_api import create_app, db, cli, custom_jinja_filters
-from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.users.models import User
+from dark_chess_api.modules.matches.models import Match
 
 app = create_app()
 cli.init(app)

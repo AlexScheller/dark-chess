@@ -3,8 +3,8 @@
 
 from flask import g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
-from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
+from dark_chess_api.modules.users.models import User
 
 basic_auth = HTTPBasicAuth()
 

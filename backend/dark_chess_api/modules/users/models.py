@@ -1,7 +1,6 @@
 from flask import current_app
 from sqlalchemy import or_
 from dark_chess_api import db
-from dark_chess_api.modules.matches.models import Match
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 import secrets
