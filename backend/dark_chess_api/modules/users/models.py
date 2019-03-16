@@ -58,6 +58,7 @@ class User(db.Model):
 			self.token = secrets.token_hex(32)
 			self.token_expiration = now + timedelta(seconds=lifespan_seconds)
 			db.session.add(self)
+			db.session.commit()
 		return self.token
 
 	def revoke_token(self):
