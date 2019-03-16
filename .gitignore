@@ -3,6 +3,8 @@
 *.env
 *.pyc
 venv/
+htmlcov/
+.coverage
 
 # Backend
 

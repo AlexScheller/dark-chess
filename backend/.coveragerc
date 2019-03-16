@@ -1,0 +1,9 @@
+# Configuration for 'coverage'
+
+[run]
+omit =
+	venv/*
+	tests/*
+	dark_chess_api/templates/*
+	dark_chess_api/static/*
+	dark_chess_api/modules/docs/*

@@ -29,5 +29,17 @@ def init(app):
 
 	#runs test suite
 	@app.cli.command()
-	def test():
-		os.system('python -m unittest discover -s tests -p "*_tests.py" -v')
+	@click.option('--coverage', '-c', is_flag=True, default=False)
+	@click.option('--html', '-h', is_flag=True, default=False)
+	@click.option('--purge', '-p', is_flag=True, default=True)
+	def test(coverage, html, purge):
+		if purge:
+			os.system('rm .coverage')
+			os.system('rm -rf htmlcov/')
+		if coverage:
+			os.system('coverage run -m unittest discover -s tests -p "*_tests.py" -v')
+			if html:
+				os.system('coverage html')
+			os.system('coverage report')
+		else:
+			os.system('python -m unittest discover -s tests -p "*_tests.py" -v')
