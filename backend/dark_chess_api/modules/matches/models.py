@@ -34,7 +34,7 @@ class Match(db.Model):
 
 	history = db.relationship('MatchState')
 
-	def __init__(player_black=None, player_white=None):
+	def __init__(self, player_black=None, player_white=None):
 		if player_black:
 			self.player_black = player_black
 		if player_white:

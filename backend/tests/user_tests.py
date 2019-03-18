@@ -2,7 +2,7 @@ from tests.test_prototype import PrototypeModelTestCase, auth_encode
 from dark_chess_api import db
 from dark_chess_api.modules.users.models import User
 
-class UserModelTestCases(PrototypeModelTestCase):
+class UserTestCases(PrototypeModelTestCase):
 
 	def test_registration_route(self):
 		u = User.query.get(1)
@@ -49,6 +49,21 @@ class UserModelTestCases(PrototypeModelTestCase):
 		self.assertIsNotNone(u.token)
 		self.assertIsNotNone(u.get_token())
 		self.assertEqual(token, u.get_token())
+
+	def test_revoke_token(self):
+		u = User('user', 'password')
+		db.session.add(u)
+		db.session.commit()
+		token = u.get_token()
+		user_res = self.client.get('/user/1',
+			headers={'Authorization': f'Bearer {token}'}
+		)
+		self.assertEqual(200, user_res.status_code)
+		u.revoke_token()
+		user_res = self.client.get('/user/1',
+			headers={'Authorization': f'Bearer {token}'}
+		)
+		self.assertEqual(401, user_res.status_code)
 
 	def test_change_password(self):
 		u = User('user', 'password')

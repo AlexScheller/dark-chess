@@ -16,6 +16,12 @@ def aquire_token():
 		'user' : g.current_user.as_dict()
 	})
 
+@users.route('/<int:id>', methods=['GET'])
+@token_auth.login_required
+def user_info(id):
+	u = User.query.get_or_404(id)
+	return jsonify(u.as_dict())
+
 @users.route('/auth/register', methods=['POST'])
 @validation.validate_json_payload
 def register_user():

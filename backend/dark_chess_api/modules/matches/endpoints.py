@@ -1,4 +1,5 @@
-from flask import jsonify
+from flask import jsonify, g
+from dark_chess_api import db
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
@@ -22,14 +23,8 @@ def get_open_matches():
 ### Actions ###
 @matches.route('/create', methods=['POST'])
 @token_auth.login_required
-@validation.validate_json_payload
-def create_match(id):
-	req_json = request.get_json()
-	player = Player.query.get(req_json['player_id'])
-	if player is None:
-		return error_response(400,
-			f'No player found for id: {req_json["player_id"]}'
-		)
+def create_match():
+	player = g.current_user
 	new_match = Match()
 	db.session.add(new_match)
 	new_match.join(player)
