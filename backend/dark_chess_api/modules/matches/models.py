@@ -1,6 +1,7 @@
 from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
+import random
 
 class MatchState(db.Model):
 
@@ -41,10 +42,15 @@ class Match(db.Model):
 			self.player_white = player_white
 
 	def join(self, player):
-		if self.player_white is None:
-			self.player_white = player
-		else:
+		if self.player_white is None and self.player_black is None:
+			if random.randint(0, 1) == 1:
+				self.player_white = player
+			else:
+				self.player_black = player
+		elif self.player_black is None:
 			self.player_black = player
+		else:
+			self.player_white = player
 
 	@hybrid_property
 	def open(self):

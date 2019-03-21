@@ -36,19 +36,13 @@ def create_match():
 
 @matches.route('/<int:id>/join', methods=['PATCH'])
 @token_auth.login_required
-@validation.validate_json_payload
 def join_match(id):
 	match = Match.query.get_or_404(id)
 	if not match.open:
 		return error_response(403,
 			'Match is full'
 		)
-	req_json = request.get_json()
-	player = Player.query.get(req_json['player_id'])
-	if player is None:
-		return error_response(400,
-			f'No player found for id: {req_json["player_id"]}'
-		)
+	player = g.current_user
 	match.join(player)
 	db.session.commit()
 	return jsonify({

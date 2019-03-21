@@ -42,14 +42,7 @@
 		"additional_headers" : [
 			"Authorization: Bearer <token>"
 		],
-		"type" : "object",
-		"properties" : {
-			"player_id" : {
-				"type" : "integer",
-				"description" : "The id of the creating player."
-			}
-		},
-		"required" : ["player_id"],
+		"type" : "None",
 		"response_codes" : [200, 400]
 	}
 }
