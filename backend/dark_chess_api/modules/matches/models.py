@@ -1,6 +1,7 @@
 from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
+import chess
 import random
 
 class MatchState(db.Model):
@@ -59,6 +60,29 @@ class Match(db.Model):
 	@property
 	def current_fen(self):
 		return self.history[-1].fen
+
+	def playing(player_id):
+		if self.finished:
+			return False
+		return self.player_white_id == player_id or self.player_black_id == player_id
+
+	def players_turn(player_id):
+		if not self.playing(player_id):
+			return False
+		board = Board(fen=self.current_fen)
+		player_side = chess.BLACK if player_id == self.player_black_id else chess.WHITE
+		return player_side == board.side
+
+	def attempt_move(player_id, uci_string):
+		move = chess.Move.from_uci(uci_string)
+		if not self.playing(player_id):
+			return False
+		board = Board(fen=self.current_fen)
+		if board.side == side and move in board.legal_moves:
+			board.push(move)
+			self.history.append(MatchState(fen=board.fen()))
+			return True
+		return False
 
 	def as_dict(self):
 		ret = {

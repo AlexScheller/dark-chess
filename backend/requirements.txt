@@ -15,6 +15,7 @@ jsonschema==3.0.0
 Mako==1.0.7
 MarkupSafe==1.1.1
 pyrsistent==0.14.11
+python-chess==0.27.3
 python-dateutil==2.8.0
 python-dotenv==0.10.1
 python-editor==1.0.4
