@@ -27,7 +27,7 @@ class Match(db.Model):
 		foreign_keys='Match.player_black_id'
 	)
 
-	finished = db.Column(db.Boolean, default=False)
+	is_finished = db.Column(db.Boolean, default=False)
 
 	winning_player_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	winning_player = db.relationship('User',
@@ -43,42 +43,56 @@ class Match(db.Model):
 			self.player_white = player_white
 
 	def join(self, player):
-		if self.player_white is None and self.player_black is None:
-			if random.randint(0, 1) == 1:
-				self.player_white = player
-			else:
+		if not self.playing(player.id):
+			if self.player_white is None and self.player_black is None:
+				if random.randint(0, 1) == 1:
+					self.player_white = player
+				else:
+					self.player_black = player
+			elif self.player_black is None:
 				self.player_black = player
-		elif self.player_black is None:
-			self.player_black = player
-		else:
-			self.player_white = player
+			else:
+				self.player_white = player
+			if not self.open: # second player has joined, create initial state
+				self.history.append(MatchState(fen=chess.Board().fen()))
 
 	@hybrid_property
 	def open(self):
 		return self.player_white is None or self.player_black is None
 
+	@hybrid_property
+	def in_progress(self):
+		return not self.is_finished and not self.open
+
 	@property
 	def current_fen(self):
 		return self.history[-1].fen
 
-	def playing(player_id):
-		if self.finished:
+	###########################################################################
+	# NOTE # The following functions are written very defensively. This may   #
+	######## result in redundant code, but for the time being speed is less   #
+	# of a concern than stability. If at a later point more efficiency is     #
+	# required, and proper testing is in place to ensure match states do not  #
+	# become corrupted or allow technically invalid/forbidden inputs, these   #
+	# may be wrewritten to be a bit less gaurded.                             #
+	###########################################################################
+
+	def playing(self, player_id):
+		if self.is_finished:
 			return False
 		return self.player_white_id == player_id or self.player_black_id == player_id
 
-	def players_turn(player_id):
+	def players_turn(self, player_id):
 		if not self.playing(player_id):
 			return False
-		board = Board(fen=self.current_fen)
+		board = chess.Board(fen=self.current_fen)
 		player_side = chess.BLACK if player_id == self.player_black_id else chess.WHITE
-		return player_side == board.side
+		return player_side == board.turn
 
-	def attempt_move(player_id, uci_string):
+	def attempt_move(self, player_id, uci_string):
 		move = chess.Move.from_uci(uci_string)
-		if not self.playing(player_id):
-			return False
-		board = Board(fen=self.current_fen)
-		if board.side == side and move in board.legal_moves:
+		board = chess.Board(fen=self.current_fen)
+		if self.players_turn(player_id) and move in board.legal_moves:
 			board.push(move)
 			self.history.append(MatchState(fen=board.fen()))
 			return True
@@ -88,8 +102,10 @@ class Match(db.Model):
 		ret = {
 			'id' : self.id,
 			'history' : [ms.fen for ms in self.history],
-			'is_finished' : self.finished
+			'is_finished' : self.is_finished
 		}
+		if self.in_progress:
+			ret['current_fen'] = self.current_fen
 		if self.player_white is not None:
 			ret['player_white'] = {
 				'id' : self.player_white.id,
@@ -100,7 +116,7 @@ class Match(db.Model):
 				'id' : self.player_black.id,
 				'username' : self.player_black.username
 			}
-		if self.finished:
+		if self.is_finished:
 			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
 			ret['winner'] = self.winning_player.as_dict()
 		return ret

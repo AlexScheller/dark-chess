@@ -6,6 +6,11 @@ in which you only have vision of what you can attack.
 Technically speaking this is a variant of that variant. This is cliffhanger
 dark, where your vision only updates on your turn.
 
+## Course of the Project
+
+To begin with, this project will reproduce regular chess, switching to
+cliffhanger dark after the normal chess api is stable.
+
 ## Attributions/Citations/Etc.
 
 In several places this application makes use of snippets of code from Miguel Grinberg's "microblog" application (Copyright (c) 2017 Miguel Grinberg, MIT License). A copy of the source can be
