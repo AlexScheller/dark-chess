@@ -97,14 +97,24 @@
 			{
 				"code": 200,
 				"example_json" : {
-					"message": "Move successfully made",
-					"user": {
-						"registration_date": {
-							"formatted" : "Wed, 06 Mar 2019 03:47:27 GMT",
-							"timestamp" : 1551844047
+					"match": {
+						"current_fen": "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1",
+						"history": [
+							"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
+							"rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq - 0 1"
+						],
+						"id": 2,
+						"is_finished": false,
+						"player_black": {
+							"id": 2,
+							"username": "maya"
 						},
-						"username": "maya"
-					}
+						"player_white": {
+							"id": 1,
+							"username": "tony"
+						}
+					},
+					"message": "Move successfully made"
 				}
 			},
 			{
