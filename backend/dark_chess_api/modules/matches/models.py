@@ -89,12 +89,17 @@ class Match(db.Model):
 		player_side = chess.BLACK if player_id == self.player_black_id else chess.WHITE
 		return player_side == board.turn
 
-	def attempt_move(self, player_id, uci_string):
+	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)
 		board = chess.Board(fen=self.current_fen)
-		if self.players_turn(player_id) and move in board.legal_moves:
+		if self.players_turn(player.id) and move in board.legal_moves:
 			board.push(move)
 			self.history.append(MatchState(fen=board.fen()))
+			# Naive game over checking for now. There are other ways the
+			# game could end.
+			if board.is_checkmate():
+				self.is_finished = True
+				self.winning_player = player
 			return True
 		return False
 

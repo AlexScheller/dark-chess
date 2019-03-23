@@ -69,7 +69,7 @@ def make_move(id):
 			'Not your turn'
 		)
 	req_json = request.get_json()
-	if not match.attempt_move(player.id, req_json['uci_string']):
+	if not match.attempt_move(player, req_json['uci_string']):
 		return error_response(422,
 			'Move not possible'
 		)
