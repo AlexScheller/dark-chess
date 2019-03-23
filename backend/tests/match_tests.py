@@ -26,6 +26,46 @@ class MatchTestCases(PrototypeModelTestCase):
 		self.assertTrue(m.open)
 		self.assertFalse(m.finished)
 
+	def test_get_match(self):
+		db.session.add(Match())
+		db.session.commit()
+		u = User.query.get(1)
+		token = u.get_token()
+		match_res = self.client.get('/match/123',
+			headers={'Authorization': f'Bearer {token}'}
+		)
+		self.assertEqual(404, match_res.status_code)
+		match_res = self.client.get('/match/1',
+			headers={'Authorization': f'Bearer {token}'}
+		)
+		self.assertEqual(200, match_res.status_code)
+		match_json = match_res.get_json()
+		self.assertEqual(1, match_json['id'])
+
+	def test_get_open_matches(self):
+		for i in range(5):
+			db.session.add(Match())
+			db.session.flush()
+		db.session.commit()
+		m2, m4 = Match.query.get(2), Match.query.get(4)
+		u1, u2 = User.query.get(1), User.query.get(2)
+		m2.join(u1)
+		m2.join(u2)
+		m4.join(u1)
+		m4.join(u1)
+		db.session.commit()
+		self.assertFalse(m2.open)
+		self.assertFalse(m4.open)
+		token = u1.get_token()
+		open_matches_res = self.client.get('/match/open-matches',
+			headers={'Authorization': f'Bearer {token}'}
+		)
+		self.assertEqual(200, open_matches_res.status_code)
+		open_matches_json = open_matches_res.get_json()
+		for match_id in open_matches_json:
+			m = Match.query.get(match_id)
+			self.assertTrue(m.open)
+
 	def test_join_match(self):
 		db.session.add(Match())
 		db.session.commit()

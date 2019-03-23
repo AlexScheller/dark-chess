@@ -1,4 +1,4 @@
-from flask import jsonify, g
+from flask import jsonify, g, request
 from dark_chess_api import db
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
@@ -43,9 +43,38 @@ def join_match(id):
 			'Match is full'
 		)
 	player = g.current_user
+	if match.playing(player.id):
+		return error_response(409,
+			'Player is already in match'
+		)
 	match.join(player)
 	db.session.commit()
 	return jsonify({
 		'message' : 'Player successfully joined match.',
+		'match' : match.as_dict()
+	})
+
+@matches.route('/<int:id>/make-move', methods=['POST'])
+@token_auth.login_required
+@validation.validate_json_payload
+def make_move(id):
+	match = Match.query.get_or_404(id)
+	player = g.current_user
+	if not match.playing(player.id):
+		return error_response(403,
+			'Player not playing this match'
+		)
+	if not match.players_turn(player.id):
+		return error_response(409,
+			'Not your turn'
+		)
+	req_json = request.get_json()
+	if not match.attempt_move(player.id, req_json['uci_string']):
+		return error_response(422,
+			'Move not possible'
+		)
+	db.session.commit()
+	return jsonify({
+		'message' : 'Move successfully made',
 		'match' : match.as_dict()
 	})

@@ -36,6 +36,7 @@ class User(db.Model):
 	### account information methods ###
 	def as_dict(self):
 		return {
+			'id' : self.id,
 			'username' : self.username,
 			'registration_date' : {
 				'formatted' : self.registration_date,
