@@ -43,7 +43,7 @@ def join_match(id):
 			'Match is full'
 		)
 	player = g.current_user
-	if match.playing(player.id):
+	if match.playing(player):
 		return error_response(409,
 			'Player is already in match'
 		)
@@ -60,11 +60,11 @@ def join_match(id):
 def make_move(id):
 	match = Match.query.get_or_404(id)
 	player = g.current_user
-	if not match.playing(player.id):
+	if not match.playing(player):
 		return error_response(403,
 			'Player not playing this match'
 		)
-	if not match.players_turn(player.id):
+	if not match.players_turn(player):
 		return error_response(409,
 			'Not your turn'
 		)

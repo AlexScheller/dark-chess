@@ -67,6 +67,13 @@
 				}
 			},
 			{
+				"code": 403,
+				"example_json" : {
+					"error": "Forbidden",
+					"message" : "Match is full"
+				}
+			},
+			{
 				"code": 409,
 				"example_json" : {
 					"error": "Conflict",
