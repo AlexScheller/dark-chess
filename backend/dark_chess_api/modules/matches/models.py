@@ -36,14 +36,8 @@ class Match(db.Model):
 
 	history = db.relationship('MatchState')
 
-	def __init__(self, player_black=None, player_white=None):
-		if player_black:
-			self.player_black = player_black
-		if player_white:
-			self.player_white = player_white
-
 	def join(self, player):
-		if not self.playing(player.id):
+		if not self.playing(player):
 			if self.player_white is None and self.player_black is None:
 				if random.randint(0, 1) == 1:
 					self.player_white = player
@@ -77,22 +71,22 @@ class Match(db.Model):
 	# may be wrewritten to be a bit less gaurded.                             #
 	###########################################################################
 
-	def playing(self, player_id):
+	def playing(self, player):
 		if self.is_finished:
 			return False
-		return self.player_white_id == player_id or self.player_black_id == player_id
+		return self.player_white_id == player.id or self.player_black_id == player.id
 
-	def players_turn(self, player_id):
-		if not self.playing(player_id):
+	def players_turn(self, player):
+		if not self.playing(player):
 			return False
 		board = chess.Board(fen=self.current_fen)
-		player_side = chess.BLACK if player_id == self.player_black_id else chess.WHITE
+		player_side = chess.BLACK if player.id == self.player_black_id else chess.WHITE
 		return player_side == board.turn
 
 	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)
 		board = chess.Board(fen=self.current_fen)
-		if self.players_turn(player.id) and move in board.legal_moves:
+		if self.players_turn(player) and move in board.legal_moves:
 			board.push(move)
 			self.history.append(MatchState(fen=board.fen()))
 			# Naive game over checking for now. There are other ways the
