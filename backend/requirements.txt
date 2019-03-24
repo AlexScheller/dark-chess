@@ -14,6 +14,7 @@ Jinja2==2.10
 jsonschema==3.0.0
 Mako==1.0.7
 MarkupSafe==1.1.1
+mysqlclient==1.4.2.post1
 pyrsistent==0.14.11
 python-chess==0.27.3
 python-dateutil==2.8.0
