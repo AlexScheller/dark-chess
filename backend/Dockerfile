@@ -11,7 +11,8 @@ RUN apk add --no-cache --virtual .build-deps \
 			musl-dev
 
 COPY requirements.txt requirements.txt
-COPY .env .env # Possibly bad practice
+# Possibly bad practice
+COPY .env .env
 RUN python -m venv venv
 RUN venv/bin/pip install -U pip
 RUN venv/bin/pip install -r requirements.txt
