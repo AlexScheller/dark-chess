@@ -10,5 +10,6 @@ htmlcov/
 
 migrations/
 app.db
+backend/data/certbot/
 
 # Frontend
