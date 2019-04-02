@@ -11,5 +11,6 @@ htmlcov/
 migrations/
 app.db
 backend/data/certbot/
+backend/data/db-client-ssl/
 
 # Frontend

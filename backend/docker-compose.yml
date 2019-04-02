@@ -20,3 +20,5 @@ services:
         entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     api:
         image: darkchess-api:latest
+        volumes:
+            - ./data/db-client-ssl:/db-client-ssl
