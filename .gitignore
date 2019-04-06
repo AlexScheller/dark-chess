@@ -12,5 +12,6 @@ migrations/
 app.db
 backend/data/certbot/
 backend/data/db-client-ssl/
+backend/init-letsencrypt.sh
 
 # Frontend
