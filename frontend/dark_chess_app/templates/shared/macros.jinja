@@ -24,3 +24,23 @@
 	{%- endif -%}
 </div>
 {%- endmacro -%}
+
+{%- macro boolean_input(input, label=False) -%}
+<div class="form-input-wrapper">
+	{%- if label -%}
+	{{ input.label }}
+	{%- endif -%}
+	{%- set kwargs = {} -%}
+	{%- if input.errors -%}
+		{%- set discard = kwargs.__setitem__('class', 'errored') -%}
+	{%- endif -%}
+	{{ input(**kwargs) }}
+	{%- if input.errors -%}
+		{%- for error in input.errors -%}
+	<ul class="input-error-list">
+		<li>{{ error }}</li>
+	</ul>
+		{%- endfor -%}
+	{%- endif -%}
+</div>
+{%- endmacro -%}

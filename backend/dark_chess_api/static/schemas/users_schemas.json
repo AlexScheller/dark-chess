@@ -46,12 +46,17 @@
 				"type" : "string",
 				"description" : "The new user's username"
 			},
+			"email" : {
+				"type" : "string",
+				"description" : "The new user's email address",
+				"format" : "email"
+			},
 			"password" : {
 				"type" : "string",
 				"description" : "The new user's password"
 			}
 		},
-		"required" : ["username", "password"],
+		"required" : ["username", "email", "password"],
 		"responses" : [
 			{
 				"code": 200,
