@@ -2,15 +2,18 @@
 {#  inputs  #}
 {############}
 
-{%- macro string_input(input, placeholder, label=False) -%}
+{%- macro string_input(input, placeholder=None, label=False) -%}
 <div class="form-input-wrapper">
 	{%- if label -%}
 	{{ input.label }}
 	{%- endif -%}
-	{% set kwargs = {} %}
-	{% if input.errors %}
-		{% set discard = kwargs.__setitem__('class', 'errored')%}
-	{% endif %}
+	{%- set kwargs = {} -%}
+	{%- if input.errors -%}
+		{%- set discard = kwargs.__setitem__('class', 'errored') -%}
+	{%- endif -%}
+	{%- if placeholder -%}
+		{%- set discard = kwargs.__setitem__('placeholder', placeholder) -%}
+	{%- endif -%}
 	{{ input(**kwargs) }}
 	{%- if input.errors -%}
 		{%- for error in input.errors -%}
