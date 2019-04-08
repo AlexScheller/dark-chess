@@ -2,7 +2,7 @@
 {#  inputs  #}
 {############}
 
-{%- macro string_input(input, placeholder=None, label=False) -%}
+{%- macro string_input(input, placeholder=None, label=False, autofocus=False) -%}
 <div class="form-input-wrapper">
 	{%- if label -%}
 	{{ input.label }}
@@ -13,6 +13,9 @@
 	{%- endif -%}
 	{%- if placeholder -%}
 		{%- set discard = kwargs.__setitem__('placeholder', placeholder) -%}
+	{%- endif -%}
+	{%- if autofocus -%}
+		{%- set discard = kwargs.__setitem__('autofocus', 'true') -%}
 	{%- endif -%}
 	{{ input(**kwargs) }}
 	{%- if input.errors -%}
@@ -25,7 +28,7 @@
 </div>
 {%- endmacro -%}
 
-{%- macro boolean_input(input, label=False) -%}
+{%- macro boolean_input(input, label=False, autofocus=False) -%}
 <div class="form-input-wrapper">
 	{%- if label -%}
 	{{ input.label }}
@@ -33,6 +36,9 @@
 	{%- set kwargs = {} -%}
 	{%- if input.errors -%}
 		{%- set discard = kwargs.__setitem__('class', 'errored') -%}
+	{%- endif -%}
+	{%- if autofocus -%}
+		{%- set discard = kwargs.__setitem__('autofocus', 'true') -%}
 	{%- endif -%}
 	{{ input(**kwargs) }}
 	{%- if input.errors -%}
@@ -44,3 +50,15 @@
 	{%- endif -%}
 </div>
 {%- endmacro -%}
+
+{##########}
+{#  Misc  #}
+{##########}
+
+{%- macro navigation_link(url, text) -%}
+{%- if request.path == url -%}
+<a href="{{ url }}" class="current-page">{{ text }}</a>
+{%- else -%}
+<a href="{{ url }}">{{ text }}</a>
+{%- endif -%}
+{% endmacro %}

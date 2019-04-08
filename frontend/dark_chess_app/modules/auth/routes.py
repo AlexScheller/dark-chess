@@ -1,6 +1,6 @@
 import requests
 from flask import render_template, flash, url_for, redirect
-from flask_login import current_user, login_user
+from flask_login import current_user, login_user, logout_user
 from dark_chess_app.modules.auth import auth
 from dark_chess_app.modules.auth.session_model import User
 from dark_chess_app.modules.auth.forms import RegistrationForm, LoginForm
@@ -53,3 +53,9 @@ def login():
 		title='Login',
 		form=form
 	)
+
+@auth.route('/logout')
+def logout():
+	if current_user.is_authenticated:
+		logout_user()
+	return redirect(url_for('main.index'))
