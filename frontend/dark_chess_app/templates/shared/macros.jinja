@@ -2,63 +2,63 @@
 {#  inputs  #}
 {############}
 
-{%- macro string_input(input, placeholder=None, label=False, autofocus=False) -%}
+{% macro string_input(input, placeholder=None, label=False, autofocus=False) %}
 <div class="form-input-wrapper">
-	{%- if label -%}
+	{% if label %}
 	{{ input.label }}
-	{%- endif -%}
-	{%- set kwargs = {} -%}
-	{%- if input.errors -%}
-		{%- set discard = kwargs.__setitem__('class', 'errored') -%}
-	{%- endif -%}
-	{%- if placeholder -%}
-		{%- set discard = kwargs.__setitem__('placeholder', placeholder) -%}
-	{%- endif -%}
-	{%- if autofocus -%}
-		{%- set discard = kwargs.__setitem__('autofocus', 'true') -%}
-	{%- endif -%}
+	{% endif %}
+	{% set kwargs = {} %}
+	{% if input.errors %}
+		{% set discard = kwargs.__setitem__('class', 'errored') %}
+	{% endif %}
+	{% if placeholder %}
+		{% set discard = kwargs.__setitem__('placeholder', placeholder) %}
+	{% endif %}
+	{% if autofocus %}
+		{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+	{% endif %}
 	{{ input(**kwargs) }}
-	{%- if input.errors -%}
-		{%- for error in input.errors -%}
+	{% if input.errors %}
+		{% for error in input.errors %}
 	<ul class="input-error-list">
 		<li>{{ error }}</li>
 	</ul>
-		{%- endfor -%}
-	{%- endif -%}
+		{% endfor %}
+	{% endif %}
 </div>
-{%- endmacro -%}
+{% endmacro %}
 
-{%- macro boolean_input(input, label=False, autofocus=False) -%}
+{% macro boolean_input(input, label=False, autofocus=False) -%}
 <div class="form-input-wrapper">
-	{%- if label -%}
+	{% if label %}
 	{{ input.label }}
-	{%- endif -%}
-	{%- set kwargs = {} -%}
-	{%- if input.errors -%}
-		{%- set discard = kwargs.__setitem__('class', 'errored') -%}
-	{%- endif -%}
-	{%- if autofocus -%}
-		{%- set discard = kwargs.__setitem__('autofocus', 'true') -%}
-	{%- endif -%}
+	{% endif %}
+	{% set kwargs = {} %}
+	{% if input.errors %}
+		{% set discard = kwargs.__setitem__('class', 'errored') %}
+	{% endif %}
+	{% if autofocus -%}
+		{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+	{% endif %}
 	{{ input(**kwargs) }}
-	{%- if input.errors -%}
-		{%- for error in input.errors -%}
+	{% if input.errors %}
+		{% for error in input.errors %}
 	<ul class="input-error-list">
 		<li>{{ error }}</li>
 	</ul>
-		{%- endfor -%}
-	{%- endif -%}
+		{% endfor %}
+	{% endif %}
 </div>
-{%- endmacro -%}
+{% endmacro %}
 
 {##########}
 {#  Misc  #}
 {##########}
 
-{%- macro navigation_link(url, text) -%}
-{%- if request.path == url -%}
+{% macro navigation_link(url, text) %}
+{% if request.path == url %}
 <a href="{{ url }}" class="current-page">{{ text }}</a>
-{%- else -%}
+{%- else %}
 <a href="{{ url }}">{{ text }}</a>
-{%- endif -%}
+{%- endif %}
 {% endmacro %}

@@ -10,8 +10,8 @@ from dark_chess_app.utilities.api_utilities import api_request
 def register():
 	form = RegistrationForm()
 	if form.validate_on_submit():
-		reg_res = api_request(requests.post,
-			'/user/auth/register',
+		reg_res = api_request('/user/auth/register',
+			method=requests.post,
 			json={
 				'username': form.username.data,
 				'email': form.email.data,
@@ -35,8 +35,7 @@ def login():
 		return redirect(url_for('main.index'))
 	form = LoginForm()
 	if form.validate_on_submit():
-		token_res = api_request(requests.get,
-			'/user/auth/token',
+		token_res = api_request('/user/auth/token',
 			auth=(form.username.data, form.password.data)
 		)
 		if token_res.status_code == 200:

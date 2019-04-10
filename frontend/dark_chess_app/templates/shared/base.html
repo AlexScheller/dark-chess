@@ -7,30 +7,31 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/normalize.css') }}">
-		{%- block css -%}{%- endblock -%}
+		{% block css %}{% endblock %}
 	</head>
 	<body>
-		{%- with messages = get_flashed_messages(with_categories=True) -%}
-			{%- if messages -%}
+		{% with messages = get_flashed_messages(with_categories=True) %}
+			{% if messages %}
 		<ul id="flash-messages">
-				{%- for category, message in messages -%}
+				{% for category, message in messages %}
 			<li class="flash-message flash-category-{{category}}">{{ message }}</li>
 				{% endfor %}
 		</ul>
-			{%- endif -%}
+			{% endif %}
 		{% endwith %}
 		<nav>
 			{% if current_user.is_authenticated %}
 			{{ navigation_link(url_for('auth.logout'), 'Log Out') }}
-			{%- else -%}
+			{{ navigation_link(url_for('match.open_matches'), 'Open Matches') }}
+			{% else %}
 			{{ navigation_link(url_for('auth.login'), 'Log In') }}
 			{{ navigation_link(url_for('auth.register'), 'Sign Up') }}
 			{% endif %}
-			{%- block navigation -%}{%- endblock -%}
+			{% block navigation %}{% endblock %}
 		</nav>
 		<div id="page-content">
-			{%- block page_content -%}{% endblock -%}
+			{%+ block page_content %}{% endblock %}
 		</div>
-		{%- block js -%}{% endblock -%}
+		{% block js %}{% endblock %}
 	</body>
 </html>

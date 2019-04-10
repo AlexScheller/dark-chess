@@ -18,4 +18,10 @@ def create_app(config=Config):
 	from dark_chess_app.modules.auth import auth
 	app.register_blueprint(auth, url_prefix='/auth')
 
+	from dark_chess_app.modules.match import match
+	app.register_blueprint(match, url_prefix='/match')
+
+	app.jinja_env.lstrip_blocks = True
+	app.jinja_env.trim_blocks = True
+
 	return app

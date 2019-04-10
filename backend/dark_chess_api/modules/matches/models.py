@@ -1,6 +1,7 @@
 from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import and_, or_
 import chess
 import random
 
@@ -54,9 +55,17 @@ class Match(db.Model):
 	def open(self):
 		return self.player_white is None or self.player_black is None
 
+	@open.expression
+	def open(cls):
+		return or_(cls.player_white != None, cls.player_black != None)
+
 	@hybrid_property
 	def in_progress(self):
 		return not self.is_finished and not self.open
+
+	@in_progress.expression
+	def in_progress(cls):
+		return and_(cls.is_finished == False, cls.open == False)
 
 	@property
 	def current_fen(self):
