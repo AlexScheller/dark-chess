@@ -57,7 +57,7 @@ class Match(db.Model):
 
 	@open.expression
 	def open(cls):
-		return or_(cls.player_white != None, cls.player_black != None)
+		return or_(cls.player_white == None, cls.player_black == None)
 
 	@hybrid_property
 	def in_progress(self):
