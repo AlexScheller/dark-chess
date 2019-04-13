@@ -1,7 +1,21 @@
 {% extends "shared/base.html" %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
+{% endblock %}
 {% block page_content %}
-<h2>Match: {{ match.id }}</h2>
-<pre>
-	{{ match }}
-</pre>
+	<h2>Match: {{ match.id }}</h2>
+	<div id="board">
+		{% for number in range(8, 0, -1) %}
+			{% for letter in 'abcdefgh' %}
+		<div id="{{ letter }}{{ number }}" class="board-square"></div>
+			{% endfor %}
+		{% endfor %}
+	</div>
+{% endblock %}
+{% block js %}
+<script>
+	let matchHistory = {{ match.history | safe }};
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
+<script src="{{ url_for('static', filename='javascript/match/match.js') }}"></script>
 {% endblock %}

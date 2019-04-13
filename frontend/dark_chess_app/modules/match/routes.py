@@ -1,12 +1,13 @@
 import requests
 from flask import render_template, redirect, url_for
-from flask_login import current_user
+from flask_login import current_user, login_required
 from dark_chess_app.modules.match import match
 from dark_chess_app.utilities.api_utilities import (
 	api_request, api_token_request
 )
 
 @match.route('/create')
+@login_required
 def create_match():
 	create_match_res = api_token_request(f'/match/create',
 		method=requests.post
@@ -18,6 +19,7 @@ def create_match():
 	)
 
 @match.route('/<int:id>/join')
+@login_required
 def join_match(id):
 	join_res = api_token_request(f'/match/{id}/join',
 		method=requests.patch
@@ -26,6 +28,7 @@ def join_match(id):
 	return redirect(url_for('match.match_page', id=id))
 
 @match.route('/open-matches')
+@login_required
 def open_matches():
 	open_matches_res = api_token_request(f'/match/open-matches')
 	return render_template('match/open_matches.html',
