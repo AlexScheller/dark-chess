@@ -1,4 +1,5 @@
 from flask import jsonify, g, request
+from sqlalchemy import or_
 from dark_chess_api import db
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
@@ -7,6 +8,8 @@ from dark_chess_api.modules.auth.utils import token_auth
 from dark_chess_api.modules.errors.handlers import error_response
 
 ### Query ###
+
+# Convenience endpoints
 
 @matches.route('/<int:id>', methods=['GET'])
 @token_auth.login_required
@@ -19,6 +22,39 @@ def get_match(id):
 def get_open_matches():
 	matches = Match.query.filter_by(open=True).all()
 	return jsonify([m.id for m in matches])
+
+# Master query endpoint
+
+# Note that this endpoint allows potentially conflicting parameters.
+# For example, if the requestor were to ask for all matches that
+# were both open and in progress, they would get nothing in return.
+# This endpoint leaves it up to the requestor to take that into
+# account.
+@matches.route('/query', methods=['POST'])
+@token_auth.login_required
+def query_matches():
+	params = request.get_json()
+	# maybe this should result in different behavior?
+	if params is None:
+		return jsonify({'matches' : []})
+	matches = db.session.query(Match)
+	if 'user_id' in params:
+		uid = params['user_id']
+		matches = matches.filter(
+			or_(
+				Match.player_black_id==uid,
+				Match.player_white_id==uid
+			)
+		)
+	if 'in_progress' in params:
+		matches = matches.filter(
+			Match.in_progress==params['in_progress']
+		)
+	if 'open' in params:
+		matches = matches.filter(Match.open==True)
+	return jsonify({
+		'matches' : [m.as_dict() for m in matches.all()]
+	})
 
 ### Actions ###
 @matches.route('/create', methods=['POST'])

@@ -10,7 +10,8 @@ class UserTestCases(PrototypeModelTestCase):
 		user_res = self.client.post('/user/auth/register',
 			json={
 				'username' : 'user',
-				'password' : 'password'
+				'password' : 'password',
+				'email': 'user@example.com'
 			}
 		)
 		self.assertEqual(200, user_res.status_code)
@@ -22,7 +23,8 @@ class UserTestCases(PrototypeModelTestCase):
 		user_res = self.client.post('/user/auth/register',
 			json={
 				'username' : 'user',
-				'password' : 'password'
+				'password' : 'password',
+				'email': 'user@example.com'
 			}
 		)
 		self.assertEqual(409, user_res.status_code)
@@ -31,7 +33,7 @@ class UserTestCases(PrototypeModelTestCase):
 
 
 	def test_aquire_token(self):
-		db.session.add(User('user', 'password'))
+		db.session.add(User('user', 'user@example.com', 'password'))
 		db.session.commit()
 		token_res = self.client.get('/user/auth/token',
 			headers={'Authorization': f'Basic {auth_encode("user:wordpass")}'}
@@ -51,7 +53,7 @@ class UserTestCases(PrototypeModelTestCase):
 		self.assertEqual(token, u.get_token())
 
 	def test_revoke_token(self):
-		u = User('user', 'password')
+		u = User('user', 'user@example.com', 'password')
 		db.session.add(u)
 		db.session.commit()
 		token = u.get_token()
@@ -66,7 +68,7 @@ class UserTestCases(PrototypeModelTestCase):
 		self.assertEqual(401, user_res.status_code)
 
 	def test_change_password(self):
-		u = User('user', 'password')
+		u = User('user', 'user@example.com', 'password')
 		db.session.add(u)
 		db.session.commit()
 		token = u.get_token()
