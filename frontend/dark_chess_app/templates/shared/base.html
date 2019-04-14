@@ -33,6 +33,12 @@
 		<div id="page-content">
 			{%+ block page_content %}{% endblock %}
 		</div>
+		<script src="{{ url_for('static', filename='javascript/shared/config.js') }}"></script>
+		<script>
+			const config = new Config({
+				token: '{{ current_user.token }}'
+			});
+		</script>
 		{% block js %}{% endblock %}
 	</body>
 </html>

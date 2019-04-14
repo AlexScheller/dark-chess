@@ -1,10 +1,30 @@
+// This class (for now) simply handles the recieving of move events
+// from the server.
+class WebsocketHandler {
+
+}
+
 // This is just a client cache for the backend's model. Its main
 // intention is to allow client-side move verification.
 class MatchModel {
 
-	constructor(fen) {
+	constructor(matchData) {
 		this._board = new Chess();
-		this._board.load(fen);
+		this._board.load(matchData.history[matchData.history.length - 1]);
+		this._matchId = matchData.id;
+	}
+
+	syncWithRemote() {
+		fetch(`${config.apiRoot}/match/${this._matchId}`, {
+			method: 'GET',
+			headers: {
+				'Authorization': `Bearer ${config.token}`
+			}
+		}).then(response => {
+			return response.json();
+		}).then(json => {
+			this._board.load(json.current_fen),
+		});
 	}
 
 	reload(fen) {
@@ -65,5 +85,5 @@ class BoardViewController {
 
 }
 
-mm = new MatchModel(matchHistory[matchHistory.length - 1]);
+mm = new MatchModel(matchData);
 bvc = new BoardViewController(mm);

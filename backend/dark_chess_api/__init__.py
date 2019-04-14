@@ -1,4 +1,5 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from dark_chess_api.modules.utilities import validation
@@ -17,6 +18,7 @@ def create_app(config=Config):
 		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
 	)
 
+	CORS(app)
 	db.init_app(app)
 	migrate.init_app(app, db)
 
