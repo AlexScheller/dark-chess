@@ -106,11 +106,16 @@ class Match(db.Model):
 			return True
 		return False
 
+	# Some of the initial properties are mutually exclusive, and
+	# could therefore be inferred from eachother, but they are
+	# all left in for convienience of questioning.
 	def as_dict(self):
 		ret = {
 			'id' : self.id,
 			'history' : [ms.fen for ms in self.history],
-			'is_finished' : self.is_finished
+			'is_finished' : self.is_finished,
+			'in_progress' : self.in_progress,
+			'open' : self.open,
 		}
 		if self.in_progress:
 			ret['current_fen'] = self.current_fen
