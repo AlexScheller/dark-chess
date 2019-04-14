@@ -8,9 +8,9 @@ class MatchTestCases(PrototypeModelTestCase):
 	def setUp(self):
 		super().setUp()
 		db.session.add_all([
-			User('user1', 'password'),
-			User('user2', 'password'),
-			User('user3', 'password')
+			User('user1', 'user1@example.com', 'password'),
+			User('user2', 'user2@example.com', 'password'),
+			User('user3', 'user3@example.com', 'password')
 		])
 		db.session.commit()
 
