@@ -21,7 +21,7 @@ def get_match(id):
 @token_auth.login_required
 def get_open_matches():
 	matches = Match.query.filter_by(open=True).all()
-	return jsonify([m.id for m in matches])
+	return jsonify([m.as_dict() for m in matches])
 
 # Master query endpoint
 
@@ -52,9 +52,7 @@ def query_matches():
 		)
 	if 'open' in params:
 		matches = matches.filter(Match.open==True)
-	return jsonify({
-		'matches' : [m.as_dict() for m in matches.all()]
-	})
+	return jsonify([m.as_dict() for m in matches.all()])
 
 ### Actions ###
 @matches.route('/create', methods=['POST'])
