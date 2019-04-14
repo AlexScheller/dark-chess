@@ -23,6 +23,7 @@
 			{% if current_user.is_authenticated %}
 			{{ navigation_link(url_for('auth.logout'), 'Log Out') }}
 			{{ navigation_link(url_for('match.open_matches'), 'Open Matches') }}
+			{{ navigation_link(url_for('match.users_active_matches'), 'My Active Matches') }}
 			{% else %}
 			{{ navigation_link(url_for('auth.login'), 'Log In') }}
 			{{ navigation_link(url_for('auth.register'), 'Sign Up') }}

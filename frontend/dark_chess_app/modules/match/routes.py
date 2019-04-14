@@ -31,9 +31,24 @@ def join_match(id):
 @login_required
 def open_matches():
 	open_matches_res = api_token_request(f'/match/open-matches')
-	return render_template('match/open_matches.html',
+	return render_template('match/match_list.html',
 		title='Match List',
 		matches=open_matches_res.json()
+	)
+
+@match.route('/my-active-matches')
+@login_required
+def users_active_matches():
+	matches_res = api_token_request(f'/match/query',
+		requests.post,
+		json={
+			'user_id': current_user.id,
+			'in_progres': True,
+		}
+	)
+	return render_template('match/match_list.html',
+		title='My Active Matches',
+		matches=matches_res.json()
 	)
 
 @match.route('/<int:id>')
