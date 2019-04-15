@@ -25,3 +25,10 @@ class User(UserMixin):
 
 	def get_id(self):
 		return self.token
+
+	def as_dict(self):
+		return {
+			'id' : self.id,
+			'token' : self.token,
+			'username' : self.username,
+		}

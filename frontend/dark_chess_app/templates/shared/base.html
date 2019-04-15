@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>{% if title %}DC - {{ title }}{% else %}DarkChess{% endif %}</title>
+		<title>{% if title %}DarkChess - {{ title }}{% else %}DarkChess{% endif %}</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
@@ -36,6 +36,7 @@
 		<script src="{{ url_for('static', filename='javascript/shared/config.js') }}"></script>
 		<script>
 			const config = new Config({
+				debug: '{{ config["DEBUG"] }}' == 'True' ? true : false,
 				token: '{{ current_user.token }}'
 			});
 		</script>

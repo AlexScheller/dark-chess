@@ -14,7 +14,8 @@
 {% endblock %}
 {% block js %}
 <script>
-	let matchData = {{ match | tojson }}
+	let matchData = {{ match | tojson }};
+	let playerData = {{ current_user.as_dict() | tojson }}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
 <script src="{{ url_for('static', filename='javascript/match/match.js') }}"></script>

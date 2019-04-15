@@ -6,6 +6,11 @@ class Config {
 		} else {
 			this.token = null;
 		}
+		if ('debug' in options) {
+			this.debug = options.debug;
+		} else {
+			this.debug = false;
+		}
 		// temporary while in development
 		this.apiRoot = 'http://localhost:5000'
 	}

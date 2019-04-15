@@ -12,3 +12,11 @@
 .board-square {
 	border: 1px solid black;
 }
+
+.move-option {
+	background-color: blue;
+}
+
+.selected-square {
+	background-color: green;
+}
