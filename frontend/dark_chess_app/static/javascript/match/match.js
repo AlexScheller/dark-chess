@@ -1,12 +1,41 @@
-// This class (for now) simply handles the recieving of move events
-// from the server.
+// WebsocketHandler listens to events from the backend on behalf of the
+// other classes.
 class WebsocketHandler {
+
+	constructor(config) {
+		if (config.debug) {
+			console.log('Constructing WebsocketHandler.')
+		}
+		this._conn = _setupServerConn(config.apiRoot);
+		this._registerEventListeners();
+	}
+
+	_setupServerConn(url) {
+		if (config.debug) {
+			console.log('Setting up server connection.')
+		}
+		return io(url);
+	}
+
+	_registerEventListeners() {
+		if (config.debug) {
+			console.log('Registering ws event listeners.')
+		}
+		this._conn.on('connect', event => {
+			console.log(event);
+		});
+	}
 
 }
 
+
+// APIHandler makes requests to the api on behalf of the other classes.
 class APIHandler {
 
 	constructor(config) {
+		if (config.debug) {
+			console.log('Constructing APIHandler.')
+		}
 		this.apiUrl = config.apiRoot;
 	}
 
@@ -54,6 +83,9 @@ class APIHandler {
 class MatchModel {
 
 	constructor(matchData, playerData) {
+		if (config.debug) {
+			console.log('Constructing MatchModel.')
+		}
 		this._board = new Chess();
 		this._board.load(matchData.history[matchData.history.length - 1]);
 		this._matchId = matchData.id;
@@ -67,10 +99,6 @@ class MatchModel {
 		} else {
 			this._playerSide = null;
 		}
-	}
-
-	syncWithRemote() {
-		this._api.syncMatchState(this, this._matchId);
 	}
 
 	reload(fen) {
@@ -110,10 +138,14 @@ class MatchModel {
 }
 
 
-// Like the class name implies, this controls the board view
+// Like the class name implies, this controls the board view. It
+// handles all player actions.
 class BoardViewController {
 
 	constructor(model) {
+		if (config.debug) {
+			console.log('Constructing BoardViewController.')
+		}
 		this._pieces = {
 			w: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
 			b: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' },
@@ -122,6 +154,10 @@ class BoardViewController {
 		this._model = model;
 		this._selectedSquare = null;
 		this._render();
+	}
+
+	setListener(listener) {
+		this._listener = listener;
 	}
 
 	_setupClickHandlers() {
@@ -156,7 +192,7 @@ class BoardViewController {
 		if (this._model.playersTurn()) {
 			if (event.target.classList.contains('move-option')) {
 				let move = this._selectedSquare + square;
-				this.api.requestMove(this._model, move);
+				this._listener.moveRequest(move);
 			} else if (this._model.playersPiece(square)) {
 				this._renderMoveOptions(square);
 			}
@@ -177,5 +213,25 @@ class BoardViewController {
 
 }
 
-mm = new MatchModel(matchData, playerData);
-bvc = new BoardViewController(mm);
+// Main class
+class Match {
+	
+	constructor(config, matchData, playerData) {
+		this._mm = new MatchModel(matchData, playerData);
+		this._bvc = new BoardViewController(this._mm);
+		this._bvc.setListener(this);
+		this._api = new APIHandler(config);
+		this._wsh = new WebsocketHandler(config);
+	}
+
+	moveRequest(move) {
+		this._api.requestMove(this._mm, move);
+	}
+
+	syncModelWithRemote() {
+		this._api.syncMatchState(this._model);
+	}
+
+}
+
+m = new Match(config);
