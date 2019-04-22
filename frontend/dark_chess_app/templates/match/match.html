@@ -18,5 +18,6 @@
 	let playerData = {{ current_user.as_dict() | tojson }}
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
 <script src="{{ url_for('static', filename='javascript/match/match.js') }}"></script>
 {% endblock %}

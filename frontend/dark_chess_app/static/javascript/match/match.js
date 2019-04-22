@@ -4,25 +4,35 @@ class WebsocketHandler {
 
 	constructor(config) {
 		if (config.debug) {
-			console.log('Constructing WebsocketHandler.')
+			console.debug('Constructing WebsocketHandler.');
 		}
-		this._conn = _setupServerConn(config.apiRoot);
+		this._conn = this._setupServerConn(config.apiRoot);
 		this._registerEventListeners();
 	}
 
 	_setupServerConn(url) {
 		if (config.debug) {
-			console.log('Setting up server connection.')
+			console.debug('Setting up server connection.')
 		}
-		return io(url);
+		return io(url + '/match-moves');
 	}
 
 	_registerEventListeners() {
 		if (config.debug) {
-			console.log('Registering ws event listeners.')
+			console.debug('Registering ws event listeners.');
 		}
 		this._conn.on('connect', event => {
-			console.log(event);
+			if (config.debug) {
+				console.debug('Connected to server.');
+				console.debug('Authenticating...');
+			}
+			this._conn.emit('authenticate', {token: config.token});
+		});
+		this._conn.on('authenticated', event => {
+			if(config.debug) {
+				console.debug('Authenticated');
+				console.log(event);
+			}
 		});
 	}
 
@@ -34,7 +44,7 @@ class APIHandler {
 
 	constructor(config) {
 		if (config.debug) {
-			console.log('Constructing APIHandler.')
+			console.debug('Constructing APIHandler.');
 		}
 		this.apiUrl = config.apiRoot;
 	}
@@ -54,7 +64,7 @@ class APIHandler {
 
 	requestMove(model, move) {
 		if (config.debug) {
-			console.log('(API Event) requesting move: ' + move);
+			console.debug('(API Event) requesting move: ' + move);
 		}
 		fetch(`${this.apiUrl}/match/${model.matchId}/make-move`, {
 			method: 'POST',
@@ -69,8 +79,8 @@ class APIHandler {
 			return response.json();
 		}).then(json => {
 			if (config.debug) {
-				console.log('(Server Response)')
-				console.log(response)
+				console.debug('(Server Response)');
+				console.log(response);
 			}
 			model.reload(json.current_fen);
 		});
@@ -84,9 +94,10 @@ class MatchModel {
 
 	constructor(matchData, playerData) {
 		if (config.debug) {
-			console.log('Constructing MatchModel.')
+			console.debug('Constructing MatchModel.');
 		}
 		this._board = new Chess();
+		// console.log(matchData.history[matchData.history.length - 1]);
 		this._board.load(matchData.history[matchData.history.length - 1]);
 		this._matchId = matchData.id;
 		this._playerId = playerData.id;
@@ -144,7 +155,7 @@ class BoardViewController {
 
 	constructor(model) {
 		if (config.debug) {
-			console.log('Constructing BoardViewController.')
+			console.debug('Constructing BoardViewController.')
 		}
 		this._pieces = {
 			w: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
@@ -171,13 +182,13 @@ class BoardViewController {
 
 	_renderMoveOptions(fromSquare) {
 		if (config.debug) {
-			console.log('(Render Event) rendering move options');
+			console.debug('(Render Event) rendering move options');
 		}
 		this._selectedSquare = fromSquare;
 		document.getElementById(fromSquare).classList.add('selected-square');
 		for (const move of this._model.movesFrom(fromSquare)) {
 			if (config.debug) {
-				console.log('(Render Event) rendering move option: ' + fromSquare + move.to);
+				console.debug('(Render Event) rendering move option: ' + fromSquare + move.to);
 			}
 			document.getElementById(move.to).classList.add('move-option');
 		}
@@ -187,7 +198,7 @@ class BoardViewController {
 		let square = event.target.id;
 		if (config.debug) {
 			let pieceJSON = JSON.stringify(this._model.pieceAt(square));
-			console.log('(Click Event) Piece at ' + square + ': ' + pieceJSON);
+			console.debug('(Click Event) Piece at ' + square + ': ' + pieceJSON);
 		}
 		if (this._model.playersTurn()) {
 			if (event.target.classList.contains('move-option')) {
@@ -234,4 +245,4 @@ class Match {
 
 }
 
-m = new Match(config);
+m = new Match(config, matchData, playerData);
