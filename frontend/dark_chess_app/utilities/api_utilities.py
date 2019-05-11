@@ -1,7 +1,6 @@
 import requests
-from flask import current_app
-from flask_login import current_user
-
+from flask import current_app, redirect, url_for
+from flask_login import current_user, logout_user
 
 def api_route(endpoint, **kwargs):
 	return f'{current_app.config["API_ROOT"]}{endpoint}'
@@ -18,4 +17,9 @@ def api_token_request(endpoint, method=requests.get, **kwargs):
 		kwargs['headers'] = {
 			'Authorization': f'Bearer {current_user.token}'
 		}
-	return api_request(endpoint, method, **kwargs)
+	req = api_request(endpoint, method, **kwargs)
+	if req.status_code == 401: # token auth failed
+		flash('Your session has expired, please log in again.')
+		logout_user()
+		abort(401) # login redirect is handled by app level error handler.
+	return req

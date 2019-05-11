@@ -20,8 +20,7 @@ def handle_connect():
 @token_auth_required
 def handle_authenticate(json):
 	if current_app.config['DEBUG']:
-		print('Client authentication attempt')
-	# TODO: Add connection to connection handler
+		print('Client successfully authenticated')
 	emit('authenticated', {
 		'msg': f'user ({g.current_user.username}:{g.current_user.id}) authenticated'
 	})

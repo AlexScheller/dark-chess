@@ -157,10 +157,10 @@ class BoardViewController {
 		if (config.debug) {
 			console.debug('Constructing BoardViewController.')
 		}
-		this._pieces = {
-			w: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
-			b: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' },
-		};
+		this._pieceNames = {
+			p: 'pawn', r: 'rook', n: 'knight',
+			b: 'bishop', k: 'king', q: 'queen'
+		}
 		this._setupClickHandlers();
 		this._model = model;
 		this._selectedSquare = null;
@@ -210,13 +210,23 @@ class BoardViewController {
 		}
 	}
 
+	// Probably faster to inline this up top but this is a lot cleaner.
+	_renderPieceIconHTML(side, piece) {
+		let weight = (side == 'b') ? 's' : 'l';
+		return `
+			<i class="fa${weight} fa-chess-${this._pieceNames[piece]} piece"></i>
+		`
+	}
+
 	_render() {
 		for (let row = 1; row <= 8; row++) {
 			for (const col of 'abcdefgh') {
 				let piece = this._model.pieceAt(col + row);
 				if (piece != null) {
-					let pieceText = this._pieces[piece.color][piece.type];
-					document.getElementById(col + row).innerText = pieceText;
+					let pieceHTML = this._renderPieceIconHTML(
+						piece.color, piece.type
+					);
+					document.getElementById(col + row).innerHTML = pieceHTML;
 				}
 			}
 		}
