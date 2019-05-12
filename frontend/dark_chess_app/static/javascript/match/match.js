@@ -10,6 +10,10 @@ class WebsocketHandler {
 		this._registerEventListeners();
 	}
 
+	setListener(listener) {
+		this._listener = listener;
+	}
+
 	_setupServerConn(url) {
 		if (config.debug) {
 			console.debug('Setting up server connection.')
@@ -29,10 +33,17 @@ class WebsocketHandler {
 			this._conn.emit('authenticate', {token: config.token});
 		});
 		this._conn.on('authenticated', event => {
-			if(config.debug) {
+			if (config.debug) {
 				console.debug('Authenticated');
-				console.log(event);
+				console.debug(event);
 			}
+		});
+		this._conn.on('move-made', event => {
+			if (config.debug) {
+				console.debug('Move made');
+				console.debug(event);
+			}
+			this._listener.handleMoveEvent(event);
 		});
 	}
 
@@ -80,9 +91,11 @@ class APIHandler {
 		}).then(json => {
 			if (config.debug) {
 				console.debug('(Server Response)');
-				console.log(response);
+				console.log(json);
 			}
-			model.reload(json.current_fen);
+			// Do nothing with a successful request, as it will trigger
+			// a websocket event from the server. That event is then handled
+			// elsewhere.
 		});
 	}
 
@@ -99,7 +112,7 @@ class MatchModel {
 		this._board = new Chess();
 		// console.log(matchData.history[matchData.history.length - 1]);
 		this._board.load(matchData.history[matchData.history.length - 1]);
-		this._matchId = matchData.id;
+		this.matchId = matchData.id;
 		this._playerId = playerData.id;
 		if (('player_black' in matchData) &&
 			(matchData.player_black.id == this._playerId)) {
@@ -112,8 +125,17 @@ class MatchModel {
 		}
 	}
 
+	setListener(listener) {
+		this._listener = listener;
+	}
+
 	reload(fen) {
-		return this._board.load(fen);
+		let successful = this._board.load(fen);
+		if (successful) {
+			this._listener.handleModelReload();
+		} else {
+			console.error(`Unable to load board from fen: ${fen}`)
+		}
 	}
 
 	playersTurn() {
@@ -157,12 +179,13 @@ class BoardViewController {
 		if (config.debug) {
 			console.debug('Constructing BoardViewController.')
 		}
-		this._pieces = {
-			w: { p: '♙', r: '♖', n: '♘', b: '♗', q: '♕', k: '♔' },
-			b: { p: '♟', r: '♜', n: '♞', b: '♝', q: '♛', k: '♚' },
-		};
+		this._pieceNames = {
+			p: 'pawn', r: 'rook', n: 'knight',
+			b: 'bishop', k: 'king', q: 'queen'
+		}
 		this._setupClickHandlers();
 		this._model = model;
+		this._model.setListener(this);
 		this._selectedSquare = null;
 		this._render();
 	}
@@ -194,8 +217,23 @@ class BoardViewController {
 		}
 	}
 
+	_clearRenderedMoveOptions() {
+		if (config.debug) {
+			console.debug('(Render Event) clearing rendered move options');
+		}
+		document.getElementById(this._selectedSquare).classList.remove('selected-square')
+		this._selectedSquare = null;
+		let options = document.querySelectorAll('.board-square.move-option');
+		for (const option of options) {
+			if (config.debug) {
+				console.debug('(Render Event) clearing \'move-option\' from square: ' + option.id);
+			}
+			option.classList.remove('move-option');
+		}
+	}
+
 	_handleSquareClick(event) {
-		let square = event.target.id;
+		let square = event.currentTarget.id;
 		if (config.debug) {
 			let pieceJSON = JSON.stringify(this._model.pieceAt(square));
 			console.debug('(Click Event) Piece at ' + square + ': ' + pieceJSON);
@@ -210,16 +248,35 @@ class BoardViewController {
 		}
 	}
 
+	// Probably faster to inline this up top but this is a lot cleaner.
+	_renderPieceIconHTML(side, piece) {
+		let weight = (side == 'b') ? 's' : 'l';
+		return `
+			<i class="fa${weight} fa-chess-${this._pieceNames[piece]} piece"></i>
+		`
+	}
+
 	_render() {
 		for (let row = 1; row <= 8; row++) {
 			for (const col of 'abcdefgh') {
 				let piece = this._model.pieceAt(col + row);
+				let square = document.getElementById(col + row);
 				if (piece != null) {
-					let pieceText = this._pieces[piece.color][piece.type];
-					document.getElementById(col + row).innerText = pieceText;
+					let pieceHTML = this._renderPieceIconHTML(
+						piece.color, piece.type
+					);
+					square.innerHTML = pieceHTML;
+				} else {
+					square.innerHTML = '';
 				}
 			}
 		}
+	}
+
+	/* ModelListener methods */
+	handleModelReload() {
+		this._clearRenderedMoveOptions();
+		this._render();
 	}
 
 }
@@ -233,10 +290,17 @@ class Match {
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
 		this._wsh = new WebsocketHandler(config);
+		this._wsh.setListener(this);
 	}
 
-	moveRequest(move) {
+	/* Board View Controller Listener methods */
+	handleMoveRequest(move) {
 		this._api.requestMove(this._mm, move);
+	}
+
+	/* Websocket Event Listener methods */
+	handleMoveEvent(move) {
+		this._mm.moveMade();
 	}
 
 	syncModelWithRemote() {

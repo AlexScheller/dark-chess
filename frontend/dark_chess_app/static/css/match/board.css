@@ -3,14 +3,15 @@
 	display: grid;
 	grid-template-columns: repeat(8 , 1fr);
 	grid-template-rows: repeat(8 , 1fr);
-	/*grid-auto-flow: row;*/
-	width: 300px;
-	height: 300px;
+	--board-length: 500px;
+	width: var(--board-length);
+	height: var(--board-length);
 	border: 1px solid black;
 }
 
 .board-square {
 	border: 1px solid black;
+	text-align: center;
 }
 
 .move-option {
@@ -19,4 +20,10 @@
 
 .selected-square {
 	background-color: green;
+}
+
+.piece {
+	font-size: calc(calc(var(--board-length) / 8) - 10px);
+	/*font-size: calc(calc(var(--board-length) / 8) - 30%);*/
+	line-height: calc(var(--board-length) / 8);
 }

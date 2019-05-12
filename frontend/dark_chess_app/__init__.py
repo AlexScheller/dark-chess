@@ -12,6 +12,9 @@ def create_app(config=Config):
 	login.init_app(app)
 	login.login_view = 'auth.login'
 
+	from dark_chess_app.modules.errors import errors
+	app.register_blueprint(errors)
+
 	from dark_chess_app.modules.main import main
 	app.register_blueprint(main)
 
