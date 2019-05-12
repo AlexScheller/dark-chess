@@ -1,8 +1,10 @@
 from flask import Flask
 from flask_login import LoginManager
+from flask_talisman import Talisman
 from config import Config
 
 login = LoginManager()
+talisman = Talisman()
 
 def create_app(config=Config):
 
@@ -11,6 +13,8 @@ def create_app(config=Config):
 
 	login.init_app(app)
 	login.login_view = 'auth.login'
+
+	talisman.init_app(app)
 
 	from dark_chess_app.modules.errors import errors
 	app.register_blueprint(errors)

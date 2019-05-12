@@ -3,6 +3,7 @@ from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
+from flask_talisman import Talisman
 from dark_chess_api.modules.utilities import validation
 from config import Config
 import os
@@ -10,6 +11,7 @@ import os
 db = SQLAlchemy()
 migrate = Migrate()
 socketio = SocketIO()
+talisman = Talisman()
 
 def create_app(config=Config):
 
@@ -24,6 +26,7 @@ def create_app(config=Config):
 	db.init_app(app)
 	migrate.init_app(app, db)
 	socketio.init_app(app)
+	talisman.init_app(app)
 
 	from dark_chess_api.modules.errors import errors
 	app.register_blueprint(errors)
