@@ -4,6 +4,9 @@
 {% endblock %}
 {% block page_content %}
 	<h2>Match: {{ match.id }}</h2>
+	{% if match.player_black %}
+	<h3 id="player-title player-black-title">{{ match.player_black.username }}</h3>
+	{% endif %}
 	<div id="board">
 		{% for number in range(8, 0, -1) %}
 			{% for letter in 'abcdefgh' %}
@@ -11,6 +14,9 @@
 			{% endfor %}
 		{% endfor %}
 	</div>
+	{% if match.player_white %}
+	<h3 id="player-title player-white-title">{{ match.player_white.username }}</h2>
+	{% endif %}
 {% endblock %}
 {% block js %}
 <script>
