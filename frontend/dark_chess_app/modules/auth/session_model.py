@@ -29,6 +29,5 @@ class User(UserMixin):
 	def as_dict(self):
 		return {
 			'id' : self.id,
-			'token' : self.token,
 			'username' : self.username,
 		}

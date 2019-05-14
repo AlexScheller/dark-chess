@@ -1,9 +1,11 @@
+from flask import current_app
 from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import and_, or_
 import chess
 import random
+import secrets
 
 class MatchState(db.Model):
 
@@ -17,6 +19,19 @@ class MatchState(db.Model):
 class Match(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
+	connection_hash = db.Column(db.String(255), index=True, unique=True)
+
+	def __init__(self):
+		self.connection_hash = secrets.token_hex(
+			current_app.config['MATCH_CONNECTION_HASH_BYTES']
+		)
+		while Match.query.filter_by(
+			connection_hash=self.connection_hash
+		).first() is not None:
+			self.connection_hash = secrets.token_hex(
+				current_app.config['MATCH_CONNECTION_HASH_BYTES']
+			)
+
 
 	player_white_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	player_white = db.relationship('User',
@@ -112,6 +127,7 @@ class Match(db.Model):
 	def as_dict(self):
 		ret = {
 			'id' : self.id,
+			'connection_hash': self.connection_hash,
 			'history' : [ms.fen for ms in self.history],
 			'is_finished' : self.is_finished,
 			'in_progress' : self.in_progress,

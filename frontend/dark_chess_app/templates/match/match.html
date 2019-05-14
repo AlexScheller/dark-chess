@@ -15,14 +15,12 @@
 		{% endfor %}
 	</div>
 	{% if match.player_white %}
-	<h3 id="player-title player-white-title">{{ match.player_white.username }}</h2>
+	<h3 id="player-title player-white-title">{{ match.player_white.username }}</h3>
 	{% endif %}
 {% endblock %}
 {% block js %}
-<script>
-	let matchData = {{ match | tojson }};
-	let playerData = {{ current_user.as_dict() | tojson }}
-</script>
+<div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>
+<div id="player-data" data-player-data='{{ current_user.as_dict() | tojson }}' hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
 <script src="{{ url_for('static', filename='javascript/match/match.js') }}"></script>

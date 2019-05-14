@@ -8,6 +8,8 @@ class Config:
 
 	SECRET_KEY = os.environ.get('SECRET_KEY') or 'f82hy8bqk4qbl0g43gb9uq4fqvdjk904j3'
 
+	MATCH_CONNECTION_HASH_BYTES = 16
+
 	DB_USERNAME = os.environ.get('DB_USERNAME') or 'darkchess'
 	DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'darkchess'
 	DB_HOST = os.environ.get('DB_HOST') or 'localhost'

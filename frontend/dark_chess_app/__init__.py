@@ -14,7 +14,24 @@ def create_app(config=Config):
 	login.init_app(app)
 	login.login_view = 'auth.login'
 
-	talisman.init_app(app)
+	SELF = '\'self\''
+
+	csp = {
+		'default-src': [
+			SELF,
+			'pro.fontawesome.com'
+		],
+		'script-src': [
+			SELF,
+			'cdnjs.cloudflare.com'
+		],
+		'connect-src': [
+			SELF,
+			'http://localhost:5000',
+			'ws://localhost:5000'
+		]
+	}
+	talisman.init_app(app, content_security_policy=csp)
 
 	from dark_chess_app.modules.errors import errors
 	app.register_blueprint(errors)

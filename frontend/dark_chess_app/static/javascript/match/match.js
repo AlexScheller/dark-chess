@@ -2,10 +2,11 @@
 // other classes.
 class WebsocketHandler {
 
-	constructor(config) {
+	constructor(config, connectionHash) {
 		if (config.debug) {
 			console.debug('Constructing WebsocketHandler.');
 		}
+		this._connectionHash = connectionHash;
 		this._conn = this._setupServerConn(config.apiRoot);
 		this._registerEventListeners();
 	}
@@ -30,7 +31,10 @@ class WebsocketHandler {
 				console.debug('Connected to server.');
 				console.debug('Authenticating...');
 			}
-			this._conn.emit('authenticate', {token: config.token});
+			this._conn.emit('authenticate', {
+				token: config.token,
+				connectionHash: this._connectionHash 
+			});
 		});
 		this._conn.on('authenticated', event => {
 			if (config.debug) {
@@ -61,27 +65,33 @@ class APIHandler {
 	}
 
 	syncMatchState(model) {
-		fetch(`${this.apiUrl}/match/${model.matchId}`, {
+		fetch(`${window.location.href}/match/api/${model.matchId}`, {
 			method: 'GET',
-			headers: {
-				'Authorization': `Bearer ${config.token}`
-			}
 		}).then(response => {
 			return response.json();
 		}).then(json => {
 			model.reload(json.current_fen);
 		});
+		// fetch(`${this.apiUrl}/match/${model.matchId}`, {
+		// 	method: 'GET',
+		// 	headers: {
+		// 		'Authorization': `Bearer ${config.token}`
+		// 	}
+		// }).then(response => {
+		// 	return response.json();
+		// }).then(json => {
+		// 	model.reload(json.current_fen);
+		// });
 	}
 
 	requestMove(model, move) {
 		if (config.debug) {
 			console.debug('(API Event) requesting move: ' + move);
 		}
-		fetch(`${this.apiUrl}/match/${model.matchId}/make-move`, {
+		fetch(`${window.location.origin}/match/api/${model.matchId}/make-move`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				'Authorization': `Bearer ${config.token}`
 			},
 			body: JSON.stringify({
 				uci_string: move
@@ -241,7 +251,7 @@ class BoardViewController {
 		if (this._model.playersTurn()) {
 			if (event.target.classList.contains('move-option')) {
 				let move = this._selectedSquare + square;
-				this._listener.moveRequest(move);
+				this._listener.handleMoveRequest(move);
 			} else if (this._model.playersPiece(square)) {
 				this._renderMoveOptions(square);
 			}
@@ -289,8 +299,18 @@ class Match {
 		this._bvc = new BoardViewController(this._mm);
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
-		this._wsh = new WebsocketHandler(config);
+		this._wsh = new WebsocketHandler(config, matchData.connection_hash);
 		this._wsh.setListener(this);
+	}
+
+	static parseDOMMatchData() {
+		let matchDataEl = document.getElementById('match-data');
+		return JSON.parse(matchDataEl.dataset.matchData);
+	}
+
+	static parseDOMPlayerData() {
+		let playerDataEl = document.getElementById('player-data');
+		return JSON.parse(playerDataEl.dataset.playerData);
 	}
 
 	/* Board View Controller Listener methods */
@@ -309,4 +329,17 @@ class Match {
 
 }
 
-m = new Match(config, matchData, playerData);
+// fetch(`${window.location.origin}/match/api/1`, {
+// 	method: 'GET',
+// 	credentials: 'include',
+// }).then(response => {
+// 	return response.json();
+// }).then(json => {
+// 	model.reload(json.current_fen);
+// });
+
+let m = new Match(
+	config,
+	Match.parseDOMMatchData(),
+	Match.parseDOMPlayerData()
+);
