@@ -46,3 +46,8 @@ def init(app):
 			os.system('coverage report')
 		else:
 			os.system('python -m unittest discover -s tests -p "*_tests.py" -v')
+
+	# begins stress/load tester
+	@app.cli.command()
+	def relax():
+		os.system('locust -f load_testing/api_locust --host=http://localhost:5000 --port=5010')
