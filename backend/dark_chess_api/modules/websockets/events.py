@@ -6,6 +6,10 @@ from dark_chess_api import socketio
 # 	token_auth_required
 # )
 
+#####################
+#  Incoming Events  #
+#####################
+
 @socketio.on('connect', namespace='/match-moves')
 def handle_connect():
 	if current_app.config['DEBUG']:
@@ -15,12 +19,28 @@ def handle_connect():
 def handle_authenticate(json):
 	if current_app.config['DEBUG']:
 		print(f'Client successfully authenticated. Connected from match {json["connectionHash"]}')
-	# join_room(json['match'])
-	emit('authenticated', {
-		'msg': f'user ({g.current_user.username}:{g.current_user.id}) authenticated'
-	})
+		print(f'Client joining room: {json["connectionHash"]}')
+	join_room(json['connectionHash'])
+	# emit('authenticated', {
+	# 	'msg': f'user ({g.current_user.username}:{g.current_user.id}) authenticated'
+	# })
 
 @socketio.on('disconnect', namespace='/match-moves')
 def handle_disconnect():
 	if current_app.config['DEBUG']:
 		print('Client disconnection event.')
+
+#####################
+#  Outgoing Events  #
+#####################
+
+def broadcast_move_made(player, move, current_fen, connection_hash):
+	print('emitting')
+	socketio.emit('move-made', {
+			'player': player.as_dict(),
+			'current_fen': current_fen,
+			'uci_string': move
+		},
+		room=connection_hash,
+		namespace='/match-moves'
+	)

@@ -44,7 +44,7 @@ class User(db.Model):
 			'email': self.email,
 			'email_confirmed': self.email_confirmed,
 			'registration_date' : {
-				'formatted' : self.registration_date,
+				'formatted' : str(self.registration_date),
 				'timestamp' : int(self.registration_date.replace(tzinfo=pytz.utc).timestamp())
 			}
 		}

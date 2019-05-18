@@ -47,7 +47,11 @@ class WebsocketHandler {
 				console.debug('Move made');
 				console.debug(event);
 			}
-			this._listener.handleMoveEvent(event);
+			this._listener.handleMoveEvent(
+				event.player,
+				event.uci_string,
+				event.current_fen
+			);
 		});
 	}
 
@@ -140,6 +144,9 @@ class MatchModel {
 	}
 
 	reload(fen) {
+		if (config.debug) {
+			console.debug(`(Reload Event) Match model reloading with fen: '${fen}'`)
+		}
 		let successful = this._board.load(fen);
 		if (successful) {
 			this._listener.handleModelReload();
@@ -176,6 +183,10 @@ class MatchModel {
 		return this._board.moves({
 			verbose: true
 		}).filter(move => move.from == fromSquare);
+	}
+
+	moveMade(player, uciString, currentFen) {
+		this.reload(currentFen);
 	}
 
 }
@@ -231,8 +242,10 @@ class BoardViewController {
 		if (config.debug) {
 			console.debug('(Render Event) clearing rendered move options');
 		}
-		document.getElementById(this._selectedSquare).classList.remove('selected-square')
-		this._selectedSquare = null;
+		if (this._selectedSquare != null) {
+			document.getElementById(this._selectedSquare).classList.remove('selected-square');
+			this._selectedSquare = null;
+		}
 		let options = document.querySelectorAll('.board-square.move-option');
 		for (const option of options) {
 			if (config.debug) {
@@ -319,8 +332,8 @@ class Match {
 	}
 
 	/* Websocket Event Listener methods */
-	handleMoveEvent(move) {
-		this._mm.moveMade();
+	handleMoveEvent(playerJson, uciString, currentFen) {
+		this._mm.moveMade(playerJson, uciString, currentFen);
 	}
 
 	syncModelWithRemote() {
@@ -328,15 +341,6 @@ class Match {
 	}
 
 }
-
-// fetch(`${window.location.origin}/match/api/1`, {
-// 	method: 'GET',
-// 	credentials: 'include',
-// }).then(response => {
-// 	return response.json();
-// }).then(json => {
-// 	model.reload(json.current_fen);
-// });
 
 let m = new Match(
 	config,

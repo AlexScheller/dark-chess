@@ -1,4 +1,4 @@
-from flask import redirect, url_for
+from flask import redirect, url_for, jsonify
 from dark_chess_app.modules.errors import errors
 from werkzeug.http import HTTP_STATUS_CODES
 

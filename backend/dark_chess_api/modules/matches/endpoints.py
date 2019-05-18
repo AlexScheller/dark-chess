@@ -6,6 +6,7 @@ from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
 from dark_chess_api.modules.auth.utils import token_auth
 from dark_chess_api.modules.errors.handlers import error_response
+from dark_chess_api.modules.websockets import events as ws_events
 
 ### Query ###
 
@@ -108,6 +109,12 @@ def make_move(id):
 			'Move not possible'
 		)
 	db.session.commit()
+	ws_events.broadcast_move_made(
+		player=player,
+		move=req_json['uci_string'],
+		current_fen=match.current_fen,
+		connection_hash=match.connection_hash
+	)
 	return jsonify({
 		'message' : 'Move successfully made',
 		'match' : match.as_dict()
