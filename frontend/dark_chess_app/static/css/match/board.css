@@ -9,9 +9,15 @@
 	border: 1px solid black;
 }
 
+#board.game-over {
+	pointer-events: none;
+}
+
 .board-square {
 	border: 1px solid black;
 	text-align: center;
+	font-size: calc(calc(var(--board-length) / 8) - 10px);
+	line-height: calc(var(--board-length) / 8);
 }
 
 .move-option {
@@ -22,8 +28,7 @@
 	background-color: green;
 }
 
-.piece {
+/*.piece {
 	font-size: calc(calc(var(--board-length) / 8) - 10px);
-	/*font-size: calc(calc(var(--board-length) / 8) - 30%);*/
 	line-height: calc(var(--board-length) / 8);
-}
+}*/

@@ -37,7 +37,7 @@ def query_matches():
 	params = request.get_json()
 	# maybe this should result in different behavior?
 	if params is None:
-		return jsonify({'matches' : []})
+		return jsonify([])
 	matches = db.session.query(Match)
 	if 'user_id' in params:
 		uid = params['user_id']
@@ -84,6 +84,11 @@ def join_match(id):
 		)
 	match.join(player)
 	db.session.commit()
+	ws_events.broadcast_match_begun(
+		match.current_fen,
+		match.connection_hash,
+		player.as_dict()
+	)
 	return jsonify({
 		'message' : 'Player successfully joined match.',
 		'match' : match.as_dict()
@@ -115,6 +120,11 @@ def make_move(id):
 		current_fen=match.current_fen,
 		connection_hash=match.connection_hash
 	)
+	if match.is_finished:
+		ws_events.broadcast_match_finish(
+			winning_player=player,
+			connection_hash=match.connection_hash
+		)
 	return jsonify({
 		'message' : 'Move successfully made',
 		'match' : match.as_dict()

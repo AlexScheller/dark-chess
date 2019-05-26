@@ -1,11 +1,16 @@
+function logDebug(msg, eventType) {
+	if (config.debug) {
+		let typeMsg = (eventType != null) ? `(${eventType} Event) ` : '';
+		console.debug(`${typeMsg}${msg}`);
+	}
+}
+
 // WebsocketHandler listens to events from the backend on behalf of the
 // other classes.
 class WebsocketHandler {
 
 	constructor(config, connectionHash) {
-		if (config.debug) {
-			console.debug('Constructing WebsocketHandler.');
-		}
+		logDebug('Constructing WebsocketHandler.');
 		this._connectionHash = connectionHash;
 		this._conn = this._setupServerConn(config.apiRoot);
 		this._registerEventListeners();
@@ -16,41 +21,44 @@ class WebsocketHandler {
 	}
 
 	_setupServerConn(url) {
-		if (config.debug) {
-			console.debug('Setting up server connection.')
-		}
+		logDebug('Setting up server connection.');
 		return io(url + '/match-moves');
 	}
 
 	_registerEventListeners() {
-		if (config.debug) {
-			console.debug('Registering ws event listeners.');
-		}
+		logDebug('Registering ws event listeners.', 'Websocket');
 		this._conn.on('connect', event => {
-			if (config.debug) {
-				console.debug('Connected to server.');
-				console.debug('Authenticating...');
-			}
+			logDebug('Connected to server.', 'Websocket');
+			logDebug('Authenticating...', 'Websocket');
 			this._conn.emit('authenticate', {
 				token: config.token,
 				connectionHash: this._connectionHash 
 			});
 		});
 		this._conn.on('authenticated', event => {
-			if (config.debug) {
-				console.debug('Authenticated');
-				console.debug(event);
-			}
+			logDebug('Authenticated', 'Websocket');
+			logDebug(event);
+		});
+		this._conn.on('match-begun', event => {
+			logDebug('Match begun', 'Websocket');
+			this._listener.handleMatchBegin(
+				event.current_fen,
+				event.joining_player
+			);
 		});
 		this._conn.on('move-made', event => {
-			if (config.debug) {
-				console.debug('Move made');
-				console.debug(event);
-			}
+			logDebug('Move made', 'Websocket');
+			console.debug(event);
 			this._listener.handleMoveEvent(
 				event.player,
 				event.uci_string,
 				event.current_fen
+			);
+		});
+		this._conn.on('match-finish', event => {
+			logDebug('Match Finished', 'Websocket');
+			this._listener.handleMatchFinish(
+				event.winning_player
 			);
 		});
 	}
@@ -62,9 +70,7 @@ class WebsocketHandler {
 class APIHandler {
 
 	constructor(config) {
-		if (config.debug) {
-			console.debug('Constructing APIHandler.');
-		}
+		logDebug('Constructing APIHandler.');
 		this.apiUrl = config.apiRoot;
 	}
 
@@ -89,9 +95,7 @@ class APIHandler {
 	}
 
 	requestMove(model, move) {
-		if (config.debug) {
-			console.debug('(API Event) requesting move: ' + move);
-		}
+		logDebug('(API Event) requesting move: ' + move);
 		fetch(`${window.location.origin}/match/api/${model.matchId}/make-move`, {
 			method: 'POST',
 			headers: {
@@ -103,10 +107,8 @@ class APIHandler {
 		}).then(response => {
 			return response.json();
 		}).then(json => {
-			if (config.debug) {
-				console.debug('(Server Response)');
-				console.log(json);
-			}
+			logDebug('(Server Response)');
+			console.debug(json);
 			// Do nothing with a successful request, as it will trigger
 			// a websocket event from the server. That event is then handled
 			// elsewhere.
@@ -119,13 +121,13 @@ class APIHandler {
 // intention is to allow client-side move verification.
 class MatchModel {
 
-	constructor(matchData, playerData) {
-		if (config.debug) {
-			console.debug('Constructing MatchModel.');
-		}
+	constructor(matchData, playerData, opponentData = null) {
+		logDebug('Constructing MatchModel.');
 		this._board = new Chess();
 		// console.log(matchData.history[matchData.history.length - 1]);
-		this._board.load(matchData.history[matchData.history.length - 1]);
+		// if (matchData.history.length > 0) {
+		// 	this._board.load(matchData.history[matchData.history.length - 1]);
+		// }
 		this.matchId = matchData.id;
 		this._playerId = playerData.id;
 		if (('player_black' in matchData) &&
@@ -137,16 +139,31 @@ class MatchModel {
 		} else {
 			this._playerSide = null;
 		}
+		this._opponentId = null;
+		if (this._playerSide != null) {
+			this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
+		}
+		if (opponentData != null) {
+			this._opponentId = opponentData.id;
+		}
 	}
 
 	setListener(listener) {
 		this._listener = listener;
 	}
 
+	loadOpponent(opponentData) {
+		this._opponentId = opponentData.id;
+		this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
+		this._listener.renderNewOpponent(opponentData, this._opponentSide);
+	}
+
+	begin(fen) {
+		this.reload(fen);
+	}
+
 	reload(fen) {
-		if (config.debug) {
-			console.debug(`(Reload Event) Match model reloading with fen: '${fen}'`)
-		}
+		logDebug(`(Reload Event) Match model reloading with fen: '${fen}'`)
 		let successful = this._board.load(fen);
 		if (successful) {
 			this._listener.handleModelReload();
@@ -155,11 +172,23 @@ class MatchModel {
 		}
 	}
 
-	playersTurn() {
+	playersTurn(id = null) {
+		if (id != null) {
+			if (id == this._playerId) {
+				return this._board.turn() == this._playerSide;
+			} else if (this._opponentId != null && id == this._opponentId) {
+				return this._board.turn() ==  this._opponentSide;
+			}
+			throw new RangeError(`no such player id in match: ${id}`);
+		}
 		if (this._playerSide == null) {
 			return false;
 		}
 		return this._board.turn() == this._playerSide;
+	}
+
+	getPlayerId() {
+		return this._playerId;
 	}
 
 	playersPiece(square) {
@@ -197,9 +226,7 @@ class MatchModel {
 class BoardViewController {
 
 	constructor(model) {
-		if (config.debug) {
-			console.debug('Constructing BoardViewController.')
-		}
+		logDebug('Constructing BoardViewController.');
 		this._pieceNames = {
 			p: 'pawn', r: 'rook', n: 'knight',
 			b: 'bishop', k: 'king', q: 'queen'
@@ -225,48 +252,42 @@ class BoardViewController {
 	}
 
 	_renderMoveOptions(fromSquare) {
-		if (config.debug) {
-			console.debug('(Render Event) rendering move options');
-		}
+		logDebug('Rendering move options', 'Render');
 		this._selectedSquare = fromSquare;
 		document.getElementById(fromSquare).classList.add('selected-square');
 		for (const move of this._model.movesFrom(fromSquare)) {
-			if (config.debug) {
-				console.debug('(Render Event) rendering move option: ' + fromSquare + move.to);
-			}
+			logDebug('(Render Event) rendering move option: ' + fromSquare + move.to);
 			document.getElementById(move.to).classList.add('move-option');
 		}
 	}
 
 	_clearRenderedMoveOptions() {
-		if (config.debug) {
-			console.debug('(Render Event) clearing rendered move options');
-		}
+		logDebug('Clearing rendered move options', 'Render');
 		if (this._selectedSquare != null) {
 			document.getElementById(this._selectedSquare).classList.remove('selected-square');
 			this._selectedSquare = null;
 		}
 		let options = document.querySelectorAll('.board-square.move-option');
 		for (const option of options) {
-			if (config.debug) {
-				console.debug('(Render Event) clearing \'move-option\' from square: ' + option.id);
-			}
+			logDebug(`Clearing 'move-option' from square: ${option.id}`, 'Render');
 			option.classList.remove('move-option');
 		}
 	}
 
 	_handleSquareClick(event) {
-		let square = event.currentTarget.id;
+		let square = event.currentTarget;
 		if (config.debug) {
-			let pieceJSON = JSON.stringify(this._model.pieceAt(square));
-			console.debug('(Click Event) Piece at ' + square + ': ' + pieceJSON);
+			let pieceJSON = JSON.stringify(this._model.pieceAt(square.id));
+			logDebug(`Piece at ${square.id} ${pieceJSON}`, 'Click');
 		}
 		if (this._model.playersTurn()) {
-			if (event.target.classList.contains('move-option')) {
-				let move = this._selectedSquare + square;
+			if (square.classList.contains('move-option')) {
+				let move = this._selectedSquare + square.id;
 				this._listener.handleMoveRequest(move);
-			} else if (this._model.playersPiece(square)) {
-				this._renderMoveOptions(square);
+			} else if (this._selectedSquare != null) {
+				this._clearRenderedMoveOptions();
+			} else if (this._model.playersPiece(square.id)) {
+				this._renderMoveOptions(square.id);
 			}
 		}
 	}
@@ -280,6 +301,7 @@ class BoardViewController {
 	}
 
 	_render() {
+		// render board
 		for (let row = 1; row <= 8; row++) {
 			for (const col of 'abcdefgh') {
 				let piece = this._model.pieceAt(col + row);
@@ -294,6 +316,42 @@ class BoardViewController {
 				}
 			}
 		}
+		// render players
+		// if (this._model.playersTurn()) {
+		// 	let turnIcon = document.getElementById(
+		// 		`player-${this._model.getPlayerId()}`
+		// 	);
+
+		// }
+	}
+
+	_renderPlayerHTML(playerData, playerSide) {
+		let side = (playerSide == 'w') ? 'white' : 'black';
+		let playersTurn = '';
+		if (this._model.playersTurn(playerData.id)) {
+			playersTurn == '<i class="far fa-chevron-double-left"></i>'
+		}
+		return `
+			<h3
+				id="player-${playerData.id}"
+				class="player-title player-${side}-title"
+			>${playerData.username}</h3>${playersTurn}
+		`
+	}
+
+	renderNewOpponent(opponentData, opponentSide) {
+		let side = (opponentSide == 'w') ? 'white' : 'black'; 
+		let container = document.getElementById(`player-${side}`);
+		container.innerHTML = this._renderPlayerHTML(
+			opponentData,
+			opponentSide
+		);
+	}
+
+	handleGameOver(winner) {
+		let winnerEl = document.getElementById(`player-${winner.id}`);
+		winnerEl.innerText = winnerEl.innerText + ' Winner!';
+		document.getElementById('board').classList.add('game-over');
 	}
 
 	/* ModelListener methods */
@@ -332,8 +390,17 @@ class Match {
 	}
 
 	/* Websocket Event Listener methods */
-	handleMoveEvent(playerJson, uciString, currentFen) {
-		this._mm.moveMade(playerJson, uciString, currentFen);
+	handleMatchBegin(currentFen, joiningPlayer) {
+		this._mm.loadOpponent(joiningPlayer)
+		this._mm.begin(currentFen);
+	}
+
+	handleMoveEvent(playerJSON, uciString, currentFen) {
+		this._mm.moveMade(playerJSON, uciString, currentFen);
+	}
+
+	handleMatchFinish(winningPlayerJSON) {
+		this._bvc.handleGameOver(winningPlayerJSON);
 	}
 
 	syncModelWithRemote() {

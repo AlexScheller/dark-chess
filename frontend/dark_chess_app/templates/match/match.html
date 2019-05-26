@@ -4,9 +4,11 @@
 {% endblock %}
 {% block page_content %}
 	<h2>Match: {{ match.id }}</h2>
-	{% if match.player_black %}
-	<h3 id="player-title player-black-title">{{ match.player_black.username }}</h3>
-	{% endif %}
+	<div id="player-black" class="player-container">
+		{% if match.player_black %}
+		<h3 id="player-{{ match.player_black.id }}" class="player-title player-black-title">{{ match.player_black.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{% endif %}
+	</div>
 	<div id="board">
 		{% for number in range(8, 0, -1) %}
 			{% for letter in 'abcdefgh' %}
@@ -14,9 +16,11 @@
 			{% endfor %}
 		{% endfor %}
 	</div>
-	{% if match.player_white %}
-	<h3 id="player-title player-white-title">{{ match.player_white.username }}</h3>
-	{% endif %}
+	<div id="player-white" class="player-container">
+		{% if match.player_white %}
+		<h3 id="player-{{ match.player_white.id }}" class="player-title player-white-title">{{ match.player_white.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{% endif %}
+	</div>
 {% endblock %}
 {% block js %}
 <div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>

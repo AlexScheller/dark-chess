@@ -39,7 +39,7 @@ def users_active_matches():
 	matches_res = api_token_request(f'/match/query', requests.post,
 		json={
 			'user_id': current_user.id,
-			'in_progres': True,
+			'in_progress': True,
 		}
 	)
 	return render_template('match/match_list.html',
