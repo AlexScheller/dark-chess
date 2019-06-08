@@ -132,19 +132,17 @@ class Match(db.Model):
 			'is_finished' : self.is_finished,
 			'in_progress' : self.in_progress,
 			'open' : self.open,
+			'player_black': {
+				'id': self.player_black.id,
+				'username': self.player_black.username
+			} if self.player_black is not None else None,
+			'player_white': {
+				'id': self.player_white.id,
+				'username': self.player_white.username
+			} if self.player_white is not None else None
 		}
 		if self.in_progress:
 			ret['current_fen'] = self.current_fen
-		if self.player_white is not None:
-			ret['player_white'] = {
-				'id' : self.player_white.id,
-				'username' : self.player_white.username
-			}
-		if self.player_black is not None:
-			ret['player_black'] = {
-				'id' : self.player_black.id,
-				'username' : self.player_black.username
-			}
 		if self.is_finished:
 			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
 			ret['winner'] = self.winning_player.as_dict()
