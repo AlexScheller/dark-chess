@@ -125,9 +125,9 @@ class MatchModel {
 		logDebug('Constructing MatchModel.');
 		this._board = new Chess();
 		// console.log(matchData.history[matchData.history.length - 1]);
-		// if (matchData.history.length > 0) {
-		// 	this._board.load(matchData.history[matchData.history.length - 1]);
-		// }
+		if (matchData.history.length > 0) {
+			this._board.load(matchData.history[matchData.history.length - 1]);
+		}
 		this.matchId = matchData.id;
 		this._playerId = playerData.id;
 		if (('player_black' in matchData) &&
@@ -208,6 +208,18 @@ class MatchModel {
 		return this._board.get(square);
 	}
 
+	// Note this assumes that this move is being requested by the player, not
+	// the opponent.
+	promotionAvailable(move) {
+		let from = move.substring(0, 2);
+		let to = move.substring(2, 4);
+		if (this.pieceAt(from).type != 'p') {
+			return false;
+		}
+		let promoRank = (this.playerSide == 'b') ? '1' : '8';
+		return (to[1] === promoRank);
+	}
+
 	movesFrom(fromSquare) {
 		return this._board.moves({
 			verbose: true
@@ -235,6 +247,7 @@ class BoardViewController {
 		this._model = model;
 		this._model.setListener(this);
 		this._selectedSquare = null;
+		this._moveBuffer = null;
 		this._render();
 	}
 
@@ -249,6 +262,22 @@ class BoardViewController {
 				this._handleSquareClick(event)
 			);
 		}
+		let promoButton = document.getElementById('promotion-button');
+		// This should only be visible when promotion is an option, but could
+		// perhaps be made more secure with some kind of status check. Also
+		// This is difficult to program for latency/server failure.
+		promoButton.addEventListener('click', event => {
+			let promos = document.getElementsByName('promo-choices');
+			for (const promo of promos) {
+				if (promo.checked) {
+					logDebug(`promotion selected: ${promo.value}, requesting move.`, 'Render')
+					let move = this._moveBuffer;
+					this._moveBuffer = null;
+					this._listener.handleMoveRequest(move + promo.value);
+					document.getElementById('promotion-choices').classList.add('hidden');
+				}
+			}
+		});
 	}
 
 	_renderMoveOptions(fromSquare) {
@@ -280,10 +309,16 @@ class BoardViewController {
 			let pieceJSON = JSON.stringify(this._model.pieceAt(square.id));
 			logDebug(`Piece at ${square.id} ${pieceJSON}`, 'Click');
 		}
-		if (this._model.playersTurn()) {
+		if (this._model.playersTurn() && this._moveBuffer == null) {
 			if (square.classList.contains('move-option')) {
 				let move = this._selectedSquare + square.id;
-				this._listener.handleMoveRequest(move);
+				if (this._model.promotionAvailable(move)) {
+					logDebug(`Promotion available, buffering move: ${move}`, 'Render')
+					this._moveBuffer = move;
+					this._displayPromotionChoices()
+				} else {
+					this._listener.handleMoveRequest(move);
+				}
 			} else if (this._selectedSquare != null) {
 				this._clearRenderedMoveOptions();
 			} else if (this._model.playersPiece(square.id)) {
@@ -292,12 +327,29 @@ class BoardViewController {
 		}
 	}
 
+	_displayPromotionChoices(side) {
+		if (config.debug) {
+			logDebug('Displaying promotion options', 'Render');
+		}
+		let choicesEl = document.getElementById('promotion-choices');
+		choicesEl.classList.remove('hidden');
+	}
+
 	// Probably faster to inline this up top but this is a lot cleaner.
 	_renderPieceIconHTML(side, piece) {
 		let weight = (side == 'b') ? 's' : 'l';
 		return `
 			<i class="fa${weight} fa-chess-${this._pieceNames[piece]} piece"></i>
 		`
+	}
+
+	_renderPieceIconElement(side, piece) {
+		let weight = (side == 'b') ? 's' : 'l';
+		let ret = document.createElement('<i></i>');
+		ret.classList.add(
+			`fa${weight}`, `fa-chess-${this._pieceNames[piece]}`, 'piece'
+		);
+		return ret;
 	}
 
 	_render() {
@@ -356,6 +408,7 @@ class BoardViewController {
 
 	/* ModelListener methods */
 	handleModelReload() {
+		this._moveBuffer = null;
 		this._clearRenderedMoveOptions();
 		this._render();
 	}

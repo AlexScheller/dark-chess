@@ -1,4 +1,16 @@
 {############}
+{#  pieces  #}
+{############}
+
+{% macro piece(piece, player_color) %}
+{% if player_color == 'white' %}
+<i class="fal fa-chess-{{ piece }} piece"></i>
+{% else %}
+<i class="fas fa-chess-{{ piece }} piece"></i>
+{% endif %}
+{% endmacro %}
+
+{############}
 {#  inputs  #}
 {############}
 

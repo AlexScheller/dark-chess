@@ -1,8 +1,30 @@
 {% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import piece %}
 {% block css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
 {% endblock %}
 {% block page_content %}
+	{% if player_color %}
+	<div id="promotion-choices" class="hidden">
+		<div id='n-option' class="promo-choice">
+			{{ piece('knight', player_color) }}
+			<input type="radio" name="promo-choices" value="n">
+		</div>
+		<div id='r-option' class="promo-choice">
+			{{ piece('rook', player_color) }}
+			<input type="radio" name="promo-choices" value="r">
+		</div>
+		<div id='b-option' class="promo-choice">
+			{{ piece('bishop', player_color) }}
+			<input type="radio" name="promo-choices" value="b">
+		</div>
+		<div id='q-option' class="promo-choice">
+			{{ piece('queen', player_color) }}
+			<input type="radio" name="promo-choices" value="q" checked>
+		</div>
+		<button id="promotion-button">promote</button>
+	</div>
+	{% endif %}
 	<h2>Match: {{ match.id }}</h2>
 	<div id="player-black" class="player-container">
 		{% if match.player_black %}

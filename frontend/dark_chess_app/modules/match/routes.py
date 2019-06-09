@@ -54,9 +54,15 @@ def match_page(id):
 		flash('No such match')
 		return redirect(url_for('match.match_list'))
 	match_json = match_res.json()
+	player_color = None
+	if match_json['player_black'] and match_json['player_black']['id'] == current_user.id:
+		player_color = 'black'
+	elif match_json['player_white'] and match_json['player_white']['id'] == current_user.id:
+		player_color = 'white'
 	return render_template('match/match.html',
 		title=match_json['id'],
-		match=match_json
+		match=match_json,
+		player_color=player_color
 	)
 
 ######################
