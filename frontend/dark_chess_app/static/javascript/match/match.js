@@ -403,7 +403,7 @@ class BoardViewController {
 	handleGameOver(winner) {
 		let winnerEl = document.getElementById(`player-${winner.id}`);
 		winnerEl.innerText = winnerEl.innerText + ' Winner!';
-		document.getElementById('board').classList.add('game-over');
+		document.getElementById('board').classList.add('inactive');
 	}
 
 	/* ModelListener methods */

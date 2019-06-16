@@ -1,5 +1,5 @@
 import requests
-from flask import render_template, redirect, url_for, jsonify, request
+from flask import render_template, redirect, url_for, jsonify, request, flash
 from flask_login import current_user, login_required
 from dark_chess_app.modules.match import match
 from dark_chess_app.utilities.api_utilities import (
@@ -52,7 +52,7 @@ def match_page(id):
 	match_res = api_token_request(f'/match/{id}')
 	if match_res.status_code == 404:
 		flash('No such match')
-		return redirect(url_for('match.match_list'))
+		return redirect(url_for('match.open_matches'))
 	match_json = match_res.json()
 	player_color = None
 	if match_json['player_black'] and match_json['player_black']['id'] == current_user.id:
@@ -63,6 +63,28 @@ def match_page(id):
 		title=match_json['id'],
 		match=match_json,
 		player_color=player_color
+	)
+
+@match.route('/<int:id>/history')
+def match_history(id):
+	match_res = api_token_request(f'/match/{id}')
+	if match_res.status_code == 404:
+		flash('No such match')
+		return redirect(url_for('match.open_matches'))
+	match_json = match_res.json()
+	simple_history = []
+	for fen in match_json['history']:
+		simple_grid_fen = []
+		for row in fen.split(' ')[0].split('/'):
+			simple_fen = []
+			for p in row:
+				simple_fen.append(p) if p.isalpha() else simple_fen.extend('_' * int(p))
+			simple_grid_fen.append(simple_fen)
+		simple_history.append(simple_grid_fen)
+	return render_template('match/history.html',
+		title=f'{match_json["id"]} history',
+		history=simple_history,
+		match=match_json
 	)
 
 ######################

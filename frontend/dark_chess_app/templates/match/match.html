@@ -4,6 +4,7 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
 {% endblock %}
 {% block page_content %}
+	<a href="{{ url_for('match.match_history', id=match.id) }}">history</a>
 	{% if player_color %}
 	<div id="promotion-choices" class="hidden">
 		<div id='n-option' class="promo-choice">
@@ -31,7 +32,7 @@
 		<h3 id="player-{{ match.player_black.id }}" class="player-title player-black-title">{{ match.player_black.username }}</h3><i class="far fa-chevron-double-left"></i>
 		{% endif %}
 	</div>
-	<div id="board">
+	<div id="board" class="chess-board">
 		{% for number in range(8, 0, -1) %}
 			{% for letter in 'abcdefgh' %}
 		<div id="{{ letter }}{{ number }}" class="board-square"></div>

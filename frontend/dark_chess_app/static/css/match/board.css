@@ -1,4 +1,4 @@
-#board {
+.chess-board {
 	box-sizing: border-box;
 	display: grid;
 	grid-template-columns: repeat(8 , 1fr);
@@ -9,7 +9,7 @@
 	border: 1px solid black;
 }
 
-#board.game-over {
+.chess-board.inactive {
 	pointer-events: none;
 }
 

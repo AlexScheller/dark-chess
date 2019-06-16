@@ -1,0 +1,14 @@
+{% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import board %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
+{% endblock %}
+{% block page_content %}
+{% if history %}
+{% for simple_fen in history %}
+{{ board(simple_fen) }}
+{% endfor %}
+{% else %}
+<h2>No moves seem to have been made yet in this match. Come back later.</h2>
+{% endif %}
+{% endblock %}
