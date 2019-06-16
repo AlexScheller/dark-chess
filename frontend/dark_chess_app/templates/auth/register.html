@@ -8,5 +8,7 @@
 	{{ string_input(form.email, 'email') }}
 	{{ string_input(form.password, 'password') }}
 	<button>Sign Up</button>
+	{# honey pot #}
+	{{ string_input(form.first_name, 'first name') }}
 </form>
 {% endblock %}

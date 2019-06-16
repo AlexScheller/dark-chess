@@ -10,6 +10,7 @@ class RegistrationForm(FlaskForm):
 		Email()
 	])
 	password = PasswordField('password', validators=[InputRequired()])
+	first_name = StringField('first name') # honey pot
 
 class LoginForm(FlaskForm):
 

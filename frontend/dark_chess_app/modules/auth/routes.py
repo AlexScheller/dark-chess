@@ -10,6 +10,8 @@ from dark_chess_app.utilities.api_utilities import api_request
 def register():
 	form = RegistrationForm()
 	if form.validate_on_submit():
+		if form.first_name.data != '': # honey pot
+			return redirect(url_for('main.index'))
 		reg_res = api_request('/user/auth/register',
 			method=requests.post,
 			json={

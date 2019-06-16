@@ -1,3 +1,8 @@
 .hidden {
 	display: none;
 }
+
+/* hide the honey pot */
+input[name="first_name"] {
+	display: none;
+}
