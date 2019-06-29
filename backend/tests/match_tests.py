@@ -8,9 +8,9 @@ class MatchTestCases(PrototypeModelTestCase):
 	def setUp(self):
 		super().setUp()
 		db.session.add_all([
-			User('user1', 'password'),
-			User('user2', 'password'),
-			User('user3', 'password')
+			User('user1', 'user1@example.com', 'password'),
+			User('user2', 'user2@example.com', 'password'),
+			User('user3', 'user3@example.com', 'password')
 		])
 		db.session.commit()
 
@@ -62,8 +62,8 @@ class MatchTestCases(PrototypeModelTestCase):
 		)
 		self.assertEqual(200, open_matches_res.status_code)
 		open_matches_json = open_matches_res.get_json()
-		for match_id in open_matches_json:
-			m = Match.query.get(match_id)
+		for match in open_matches_json:
+			m = Match.query.get(match['id'])
 			self.assertTrue(m.open)
 
 	def test_join_match(self):

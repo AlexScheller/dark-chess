@@ -1,0 +1,44 @@
+{% from "shared/macros.jinja" import navigation_link %}
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{% if title %}DarkChess - {{ title }}{% else %}DarkChess{% endif %}</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/normalize.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
+		<link rel="stylesheet" href="https://pro.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-xVVam1KS4+Qt2OrFa+VdRUoXygyKIuNWUUUBZYv+n27STsJ7oDOHJgfF0bNKLMJF" crossorigin="anonymous">
+		{% block css %}{% endblock %}
+	</head>
+	<body>
+		{% with messages = get_flashed_messages(with_categories=True) %}
+			{% if messages %}
+		<ul id="flash-messages">
+				{% for category, message in messages %}
+			<li class="flash-message flash-category-{{category}}">{{ message }}</li>
+				{% endfor %}
+		</ul>
+			{% endif %}
+		{% endwith %}
+		<nav>
+			{% if current_user.is_authenticated %}
+			{{ navigation_link(url_for('auth.logout'), 'Log Out') }}
+			{{ navigation_link(url_for('match.open_matches'), 'Open Matches') }}
+			{{ navigation_link(url_for('match.users_active_matches'), 'My Active Matches') }}
+			{% else %}
+			{{ navigation_link(url_for('auth.login'), 'Log In') }}
+			{{ navigation_link(url_for('auth.register'), 'Sign Up') }}
+			{% endif %}
+			{% block navigation %}{% endblock %}
+		</nav>
+		<div id="page-content">
+			{%+ block page_content %}{% endblock %}
+		</div>
+		<div id="config-params" data-debug="{{config['DEBUG']}}" hidden></div>
+		<script src="{{ url_for('static', filename='javascript/shared/config.js') }}"></script>
+		{# Note that sometimes divs will be placed in the `js` block if they #}
+		{# serve the purpose of containing data for scripts                  #}
+		{% block js %}{% endblock %}
+	</body>
+</html>

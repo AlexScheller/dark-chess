@@ -11,11 +11,13 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 
 	### account information data ###
-	username = db.Column(db.String(256), index=True, unique=True)
+	username = db.Column(db.String(255), index=True, unique=True)
+	email = db.Column(db.String(255), index=True, unique=True)
+	email_confirmed = db.Column(db.Boolean, default=False)
 	registration_date = db.Column(db.DateTime, default=datetime.utcnow)
 
 	### auth data ###
-	password_hash = db.Column(db.String(256))
+	password_hash = db.Column(db.String(255))
 	# token auth model taken from "microblog" (see README.md)
 	token = db.Column(db.String(64), index=True, unique=True)
 	token_expiration = db.Column(db.DateTime)
@@ -29,8 +31,9 @@ class User(db.Model):
 
 	# stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
 
-	def __init__(self, username, password):
+	def __init__(self, username, email, password):
 		self.username = username
+		self.email = email
 		self.set_password(password)
 
 	### account information methods ###
@@ -38,8 +41,10 @@ class User(db.Model):
 		return {
 			'id' : self.id,
 			'username' : self.username,
+			'email': self.email,
+			'email_confirmed': self.email_confirmed,
 			'registration_date' : {
-				'formatted' : self.registration_date,
+				'formatted' : str(self.registration_date),
 				'timestamp' : int(self.registration_date.replace(tzinfo=pytz.utc).timestamp())
 			}
 		}

@@ -10,7 +10,7 @@ def auth_encode(s):
 
 class TestConfig(Config):
 	TESTING = True
-	SQL_ALCHEMY_DATABASE_URI = 'sqlite://'
+	SQLALCHEMY_DATABASE_URI = 'sqlite://'
 
 class PrototypeModelTestCase(unittest.TestCase):
 

@@ -1,8 +1,11 @@
+from flask import current_app
 from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
+from sqlalchemy.sql import and_, or_
 import chess
 import random
+import secrets
 
 class MatchState(db.Model):
 
@@ -16,6 +19,19 @@ class MatchState(db.Model):
 class Match(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
+	connection_hash = db.Column(db.String(255), index=True, unique=True)
+
+	def __init__(self):
+		self.connection_hash = secrets.token_hex(
+			current_app.config['MATCH_CONNECTION_HASH_BYTES']
+		)
+		while Match.query.filter_by(
+			connection_hash=self.connection_hash
+		).first() is not None:
+			self.connection_hash = secrets.token_hex(
+				current_app.config['MATCH_CONNECTION_HASH_BYTES']
+			)
+
 
 	player_white_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	player_white = db.relationship('User',
@@ -54,9 +70,17 @@ class Match(db.Model):
 	def open(self):
 		return self.player_white is None or self.player_black is None
 
+	@open.expression
+	def open(cls):
+		return or_(cls.player_white == None, cls.player_black == None)
+
 	@hybrid_property
 	def in_progress(self):
 		return not self.is_finished and not self.open
+
+	@in_progress.expression
+	def in_progress(cls):
+		return and_(cls.is_finished == False, cls.open == False)
 
 	@property
 	def current_fen(self):
@@ -97,24 +121,28 @@ class Match(db.Model):
 			return True
 		return False
 
+	# Some of the initial properties are mutually exclusive, and
+	# could therefore be inferred from eachother, but they are
+	# all left in for convienience of questioning.
 	def as_dict(self):
 		ret = {
 			'id' : self.id,
+			'connection_hash': self.connection_hash,
 			'history' : [ms.fen for ms in self.history],
-			'is_finished' : self.is_finished
+			'is_finished' : self.is_finished,
+			'in_progress' : self.in_progress,
+			'open' : self.open,
+			'player_black': {
+				'id': self.player_black.id,
+				'username': self.player_black.username
+			} if self.player_black is not None else None,
+			'player_white': {
+				'id': self.player_white.id,
+				'username': self.player_white.username
+			} if self.player_white is not None else None
 		}
 		if self.in_progress:
 			ret['current_fen'] = self.current_fen
-		if self.player_white is not None:
-			ret['player_white'] = {
-				'id' : self.player_white.id,
-				'username' : self.player_white.username
-			}
-		if self.player_black is not None:
-			ret['player_black'] = {
-				'id' : self.player_black.id,
-				'username' : self.player_black.username
-			}
 		if self.is_finished:
 			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
 			ret['winner'] = self.winning_player.as_dict()

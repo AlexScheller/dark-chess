@@ -27,12 +27,19 @@ def user_info(id):
 def register_user():
 	registration_json = request.get_json()
 	new_username = registration_json['username']
+	# Note: emails are blindly accepted, no assumption is even
+	# made that the frontend validated them. Email validation
+	# is a difficult task that I've decided not to bother
+	# attempting on the back end, opting instead for the
+	# confirmation pattern to ensure valid emails.
+	new_email = registration_json['email']
 	new_password = registration_json['password']
 	u = User.query.filter_by(username=new_username).first()
 	if u is not None:
 		return error_response(409, 'Username taken')
 	u = User(
 		username=new_username,
+		email=new_email,
 		password=new_password
 	)
 	db.session.add(u)

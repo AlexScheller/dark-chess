@@ -29,9 +29,12 @@ def init(app):
 
 	#runs test suite
 	@app.cli.command()
-	@click.option('--coverage', '-c', is_flag=True, default=False)
-	@click.option('--html', '-h', is_flag=True, default=False)
-	@click.option('--purge', '-p', is_flag=True, default=True)
+	@click.option('--coverage', '-c', is_flag=True, default=False,
+		help='Report code coverage.')
+	@click.option('--html', '-h', is_flag=True, default=False,
+		help='Generate browser viewable coverage report.')
+	@click.option('--purge', '-p', is_flag=True, default=True,
+		help='Ensure deletion of past coverage data.')
 	def test(coverage, html, purge):
 		if purge:
 			os.system('rm .coverage')

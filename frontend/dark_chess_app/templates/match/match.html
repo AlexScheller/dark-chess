@@ -1,0 +1,54 @@
+{% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import piece %}
+{% block css %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
+{% endblock %}
+{% block page_content %}
+	<a href="{{ url_for('match.match_history', id=match.id) }}">history</a>
+	{% if player_color %}
+	<div id="promotion-choices" class="hidden">
+		<div id='n-option' class="promo-choice">
+			{{ piece('knight', player_color) }}
+			<input type="radio" name="promo-choices" value="n">
+		</div>
+		<div id='r-option' class="promo-choice">
+			{{ piece('rook', player_color) }}
+			<input type="radio" name="promo-choices" value="r">
+		</div>
+		<div id='b-option' class="promo-choice">
+			{{ piece('bishop', player_color) }}
+			<input type="radio" name="promo-choices" value="b">
+		</div>
+		<div id='q-option' class="promo-choice">
+			{{ piece('queen', player_color) }}
+			<input type="radio" name="promo-choices" value="q" checked>
+		</div>
+		<button id="promotion-button">promote</button>
+	</div>
+	{% endif %}
+	<h2>Match: {{ match.id }}</h2>
+	<div id="player-black" class="player-container">
+		{% if match.player_black %}
+		<h3 id="player-{{ match.player_black.id }}" class="player-title player-black-title">{{ match.player_black.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{% endif %}
+	</div>
+	<div id="board" class="chess-board">
+		{% for number in range(8, 0, -1) %}
+			{% for letter in 'abcdefgh' %}
+		<div id="{{ letter }}{{ number }}" class="board-square"></div>
+			{% endfor %}
+		{% endfor %}
+	</div>
+	<div id="player-white" class="player-container">
+		{% if match.player_white %}
+		<h3 id="player-{{ match.player_white.id }}" class="player-title player-white-title">{{ match.player_white.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{% endif %}
+	</div>
+{% endblock %}
+{% block js %}
+<div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>
+<div id="player-data" data-player-data='{{ current_user.as_dict() | tojson }}' hidden></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.2/chess.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<script src="{{ url_for('static', filename='javascript/match/match.js') }}"></script>
+{% endblock %}

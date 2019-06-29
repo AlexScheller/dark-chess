@@ -1,12 +1,17 @@
 from flask import Flask
+from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
+from flask_socketio import SocketIO
+from flask_talisman import Talisman
 from dark_chess_api.modules.utilities import validation
 from config import Config
 import os
 
 db = SQLAlchemy()
 migrate = Migrate()
+socketio = SocketIO()
+talisman = Talisman()
 
 def create_app(config=Config):
 
@@ -17,11 +22,17 @@ def create_app(config=Config):
 		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
 	)
 
+	CORS(app)
 	db.init_app(app)
 	migrate.init_app(app, db)
+	socketio.init_app(app)
+	talisman.init_app(app)
 
 	from dark_chess_api.modules.errors import errors
 	app.register_blueprint(errors)
+
+	from dark_chess_api.modules.websockets import websockets
+	app.register_blueprint(websockets)
 
 	from dark_chess_api.modules.users import users
 	app.register_blueprint(users, url_prefix='/user')

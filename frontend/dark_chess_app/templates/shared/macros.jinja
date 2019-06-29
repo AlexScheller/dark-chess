@@ -1,0 +1,121 @@
+{##############################}
+{#  pieces/board/match stuff  #}
+{##############################}
+
+{% macro piece(piece, player_color) %}
+{% if player_color == 'white' %}
+{% set weight = 'l' %}
+{% else %}
+{% set weight = 's' %}
+{% endif %}
+{% if piece == 'p' %}
+<i class="fa{{ weight }} fa-chess-pawn piece"></i>
+{% elif piece == 'r'%}
+<i class="fa{{ weight }} fa-chess-rook piece"></i>
+{% elif piece == 'n'%}
+<i class="fa{{ weight }} fa-chess-knight piece"></i>
+{% elif piece == 'b'%}
+<i class="fa{{ weight }} fa-chess-bishop piece"></i>
+{% elif piece == 'q'%}
+<i class="fa{{ weight }} fa-chess-queen piece"></i>
+{% elif piece == 'k'%}
+<i class="fa{{ weight }} fa-chess-king piece"></i>
+{% else %}
+<i class="far fa-debug"></i>
+{% endif %}
+{% endmacro %}
+
+{% macro board(simple_fen) %}
+<div class="chess-board">
+	{% for number in range(8, 0, -1) %}
+		{% set outer_loop = loop %}
+		{% for letter in 'abcdefgh' %}
+		{% if simple_fen[outer_loop.index0][loop.index0] == '_' %}
+	<div id="{{ letter }}{{ number }}" class="board-square"></div>
+		{% elif simple_fen[outer_loop.index0][loop.index0] is upper %}
+	<div id="{{ letter }}{{ number }}" class="board-square">{{ piece(simple_fen[outer_loop.index0][loop.index0] | lower, 'white') }}</div>
+		{% else %}
+	<div id="{{ letter }}{{ number }}" class="board-square">{{ piece(simple_fen[outer_loop.index0][loop.index0], 'black') }}</div>
+		{% endif %}
+		{% endfor %}
+	{% endfor %}
+</div>
+{% endmacro %}
+
+{% macro match_card(match_data) %}
+<div class="match-card">
+	<h6>{{ match_data.id }}</h6>
+	<a href="{{ url_for('match.match_page', id=match_data.id) }}">Go to match</a>
+	<a href="{{ url_for('match.match_history', id=match_data.id) }}">history</a>
+	{%- if match_data.open %}
+	{%- if not (('player_white' in match_data and match_data.player_white.id == current_user.id) or ('player_black' in match_data and match_data.player_black.id == current_user.id)) %}
+	<a class="button-link" href="{{ url_for('match.join_match', id=match_data.id) }}">Join Match</a>
+	{%- endif %}
+	{%- endif %}
+</div>
+{% endmacro %}
+
+{############}
+{#  inputs  #}
+{############}
+
+{% macro string_input(input, placeholder=None, label=False, autofocus=False) %}
+<div class="form-input-wrapper">
+	{% if label %}
+	{{ input.label }}
+	{% endif %}
+	{% set kwargs = {} %}
+	{% if input.errors %}
+		{% set discard = kwargs.__setitem__('class', 'errored') %}
+	{% endif %}
+	{% if placeholder %}
+		{% set discard = kwargs.__setitem__('placeholder', placeholder) %}
+	{% endif %}
+	{% if autofocus %}
+		{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+	{% endif %}
+	{{ input(**kwargs) }}
+	{% if input.errors %}
+		{% for error in input.errors %}
+	<ul class="input-error-list">
+		<li>{{ error }}</li>
+	</ul>
+		{% endfor %}
+	{% endif %}
+</div>
+{% endmacro %}
+
+{% macro boolean_input(input, label=False, autofocus=False) -%}
+<div class="form-input-wrapper">
+	{% if label %}
+	{{ input.label }}
+	{% endif %}
+	{% set kwargs = {} %}
+	{% if input.errors %}
+		{% set discard = kwargs.__setitem__('class', 'errored') %}
+	{% endif %}
+	{% if autofocus -%}
+		{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+	{% endif %}
+	{{ input(**kwargs) }}
+	{% if input.errors %}
+		{% for error in input.errors %}
+	<ul class="input-error-list">
+		<li>{{ error }}</li>
+	</ul>
+		{% endfor %}
+	{% endif %}
+</div>
+{% endmacro %}
+
+{##########}
+{#  Misc  #}
+{##########}
+
+{% macro navigation_link(url, text) %}
+{% if request.path == url %}
+<a href="{{ url }}" class="current-page">{{ text }}</a>
+{%- else %}
+<a href="{{ url }}">{{ text }}</a>
+{%- endif %}
+{% endmacro %}

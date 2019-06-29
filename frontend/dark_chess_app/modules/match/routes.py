@@ -1,0 +1,115 @@
+import requests
+from flask import render_template, redirect, url_for, jsonify, request, flash
+from flask_login import current_user, login_required
+from dark_chess_app.modules.match import match
+from dark_chess_app.utilities.api_utilities import (
+	api_request, api_token_request
+)
+from dark_chess_app.modules.errors.handlers import api_error_response
+
+@match.route('/create')
+@login_required
+def create_match():
+	create_match_res = api_token_request('/match/create', requests.post)
+	match_json = create_match_res.json()['match']
+	# TODO handle errors
+	return redirect(
+		url_for('match.match_page', id=match_json['id'])
+	)
+
+@match.route('/<int:id>/join')
+@login_required
+def join_match(id):
+	join_res = api_token_request(f'/match/{id}/join', requests.patch)
+	# TODO handle errors
+	return redirect(url_for('match.match_page', id=id))
+
+@match.route('/open-matches')
+@login_required
+def open_matches():
+	open_matches_res = api_token_request(f'/match/open-matches')
+	return render_template('match/match_list.html',
+		title='Match List',
+		matches=open_matches_res.json()
+	)
+
+@match.route('/my-active-matches')
+@login_required
+def users_active_matches():
+	matches_res = api_token_request(f'/match/query', requests.post,
+		json={
+			'user_id': current_user.id,
+			'in_progress': True,
+		}
+	)
+	return render_template('match/match_list.html',
+		title='My Active Matches',
+		matches=matches_res.json()
+	)
+
+@match.route('/<int:id>')
+def match_page(id):
+	match_res = api_token_request(f'/match/{id}')
+	if match_res.status_code == 404:
+		flash('No such match')
+		return redirect(url_for('match.open_matches'))
+	match_json = match_res.json()
+	player_color = None
+	if match_json['player_black'] and match_json['player_black']['id'] == current_user.id:
+		player_color = 'black'
+	elif match_json['player_white'] and match_json['player_white']['id'] == current_user.id:
+		player_color = 'white'
+	return render_template('match/match.html',
+		title=match_json['id'],
+		match=match_json,
+		player_color=player_color
+	)
+
+@match.route('/<int:id>/history')
+def match_history(id):
+	match_res = api_token_request(f'/match/{id}')
+	if match_res.status_code == 404:
+		flash('No such match')
+		return redirect(url_for('match.open_matches'))
+	match_json = match_res.json()
+	simple_history = []
+	for fen in match_json['history']:
+		simple_grid_fen = []
+		for row in fen.split(' ')[0].split('/'):
+			simple_fen = []
+			for p in row:
+				simple_fen.append(p) if p.isalpha() else simple_fen.extend('_' * int(p))
+			simple_grid_fen.append(simple_fen)
+		simple_history.append(simple_grid_fen)
+	return render_template('match/history.html',
+		title=f'{match_json["id"]} history',
+		history=simple_history,
+		match=match_json
+	)
+
+######################
+#  API Proxy Routes  #
+######################
+
+@match.route('/api/<int:id>')
+@login_required
+def api_get_match(id):
+	match_res = api_token_request(f'/match/{id}')
+	if match_res.status_code != 200:
+		return api_error_response(match_res.status_code)
+	match_json = match_res.json()
+	return jsonify(match_json)
+
+@match.route('/api/<int:id>/make-move', methods=['POST'])
+@login_required
+def api_make_move(id):
+	move_json = request.get_json()
+	move_res = api_token_request(f'/match/{id}/make-move', requests.post,
+		json={
+			'uci_string': move_json['uci_string']
+		}
+	)
+	if move_res.status_code != 200:
+		return api_error_response(move_res.status_code)
+	move_json = move_res.json()
+	return jsonify(move_json)
