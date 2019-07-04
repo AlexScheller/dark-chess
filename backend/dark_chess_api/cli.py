@@ -6,15 +6,22 @@ import click
 
 def init(app):
 
-	# deletes and rebuild the database from scratch
+	# Deletes and rebuild the database from scratch. For now this is about as
+	# naive as things can get, however it's only meant for development.
 	@app.cli.command()
 	def rebuilddb():
+		os.system('rm -rf migrations/')
 		if app.config['CHOSEN_DATABASE'] == 'SQLITE':
 			os.system('rm app.db')
-			os.system('rm -rf migrations/')
-			os.system('flask db init')
-			os.system('flask db migrate')
-			os.system('flask db upgrade')
+		elif app.config['CHOSEN_DATABASE'] in ['POSTGRESQL', 'MYSQL'] :
+			from sqlalchemy import MetaData, create_engine
+			engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+			m = MetaData()
+			m.reflect(engine)
+			m.drop_all(engine)
+		os.system('flask db init')
+		os.system('flask db migrate')
+		os.system('flask db upgrade')
 
 	# removes the 'pkg-resources=0.0.0' bug with ubuntu
 	@app.cli.command()

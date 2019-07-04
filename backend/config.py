@@ -12,6 +12,9 @@ class Config:
 
 	DB_USERNAME = os.environ.get('DB_USERNAME') or 'darkchess'
 	DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'darkchess'
+
+	# Currently both host and port are both rolled up into the `DB_HOST`
+	# variable.
 	DB_HOST = os.environ.get('DB_HOST') or 'localhost'
 	DB_NAME = os.environ.get('DB_NAME') or 'darkchess'
 
@@ -27,7 +30,8 @@ class Config:
 
 	### database ###
 	DATABASE_URIS = {
-		'MYSQL' : f'mysql+mysqldb://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}{DB_SSL_STRING}',
+		'MYSQL' : f'mysql+mysqldb://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}',
+		'POSTGRESQL': f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}',
 		'SQLITE' : 'sqlite:///' + os.path.join(basedir, 'app.db')
 	}
 	CHOSEN_DATABASE = os.environ.get('CHOSEN_DATABASE') or 'SQLITE'
