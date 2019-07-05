@@ -4,11 +4,17 @@ RUN adduser -D u_dark_chess_backend
 
 WORKDIR /home/dark_chess_backend
 
-RUN apk add --no-cache mariadb-dev
 RUN apk add --no-cache --virtual .build-deps \
-			mariadb-dev \
-			gcc \
+			libpq-dev \
+			python3-dev \
 			musl-dev
+
+# Mothballed
+# RUN apk add --no-cache mariadb-dev
+# RUN apk add --no-cache --virtual .build-deps \
+# 			mariadb-dev \
+# 			gcc \
+# 			musl-dev
 
 COPY requirements.txt requirements.txt
 # Possibly bad practice
