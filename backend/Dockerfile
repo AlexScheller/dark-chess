@@ -4,10 +4,13 @@ RUN adduser -D u_dark_chess_backend
 
 WORKDIR /home/dark_chess_backend
 
+RUN apk add --no-cache postgresql-dev
 RUN apk add --no-cache --virtual .build-deps \
-			libpq-dev \
 			python3-dev \
-			musl-dev
+			zeromq-dev \
+			py-gevent \
+			musl-dev \
+			gcc
 
 # Mothballed
 # RUN apk add --no-cache mariadb-dev
