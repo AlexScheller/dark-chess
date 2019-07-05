@@ -26,7 +26,10 @@ def create_app(config=Config):
 	db.init_app(app)
 	migrate.init_app(app, db)
 	socketio.init_app(app)
-	talisman.init_app(app)
+	# we will enforce https upstream with nginx
+	talisman.init_app(app,
+		force_https=False
+	)
 
 	from dark_chess_api.modules.errors import errors
 	app.register_blueprint(errors)

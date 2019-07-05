@@ -31,7 +31,11 @@ def create_app(config=Config):
 			'ws://localhost:5000'
 		]
 	}
-	talisman.init_app(app, content_security_policy=csp)
+	# We will enforce https upstream with nginx
+	talisman.init_app(app,
+		force_https=False,
+		content_security_policy=csp
+	)
 
 	from dark_chess_app.modules.errors import errors
 	app.register_blueprint(errors)
