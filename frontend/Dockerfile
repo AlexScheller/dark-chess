@@ -5,6 +5,7 @@ RUN adduser -D u_dark_chess_frontend
 WORKDIR /home/dark_chess_frontend
 
 RUN apk add --no-cache --virtual .build-deps \
+			python3-dev \
 			gcc
 
 COPY requirements.txt requirements.txt
