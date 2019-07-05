@@ -27,8 +27,8 @@ def create_app(config=Config):
 		],
 		'connect-src': [
 			SELF,
-			'http://localhost:5000',
-			'ws://localhost:5000'
+			app.config['API_ROOT'],
+			f'ws://{app.config["API_DOMAIN_AND_PORT"]}'
 		]
 	}
 	# We will enforce https upstream with nginx
