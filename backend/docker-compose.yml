@@ -20,4 +20,4 @@ services:
         entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
     api:
         image: darkchess-api:latest
-        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 3 --worker-class eventlet -b 0.0.0.0:5000 --access-logfile - --error-logfile - dark_chess_backend:app'"
+        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --worker-class eventlet -b 0.0.0.0:5000 --access-logfile - --error-logfile - dark_chess_backend:app'"
