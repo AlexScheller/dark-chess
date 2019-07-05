@@ -25,7 +25,7 @@ services:
         command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --forwarded-allow-ips='*' --worker-class eventlet -b 0.0.0.0:5005 --access-logfile - --error-logfile - dark_chess_frontend:app'"
     client2:
         image: darkchess-client:latest
-        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --forwarded-allow-ips='*' --worker-class eventlet -b 0.0.0.0:5005 --access-logfile - --error-logfile - dark_chess_frontend:app'"
+        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --forwarded-allow-ips='*' --worker-class eventlet -b 0.0.0.0:5006 --access-logfile - --error-logfile - dark_chess_frontend:app'"
     client3:
         image: darkchess-client:latest
-        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --forwarded-allow-ips='*' --worker-class eventlet -b 0.0.0.0:5005 --access-logfile - --error-logfile - dark_chess_frontend:app'"
+        command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --forwarded-allow-ips='*' --worker-class eventlet -b 0.0.0.0:5007 --access-logfile - --error-logfile - dark_chess_frontend:app'"

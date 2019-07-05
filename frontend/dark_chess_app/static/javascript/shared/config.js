@@ -6,8 +6,11 @@ class Config {
 		} else {
 			this.debug = false;
 		}
-		// temporary while in development
-		this.apiRoot = 'http://localhost:5000';
+		if ('apiRoot' in options) {
+			this.apiRoot = options.apiRoot;
+		} else {
+			this.apiRoot = 'http://localhost:5000';			
+		}
 	}
 
 	static optionsFromHTML() {
@@ -15,6 +18,9 @@ class Config {
 		let options = {
 			debug: configParams.dataset.debug === 'True' ? true : false
 		};
+		if ('apiRoot' in configParams.dataset) {
+			options['apiRoot'] = configParams.dataset.apiRoot
+		}
 		return options;
 	}
 
