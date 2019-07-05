@@ -4,13 +4,8 @@ RUN adduser -D u_dark_chess_frontend
 
 WORKDIR /home/dark_chess_frontend
 
-# RUN apk add --no-cache postgresql-dev
-# RUN apk add --no-cache --virtual .build-deps \
-# 			python3-dev \
-# 			zeromq-dev \
-# 			py-gevent \
-# 			musl-dev \
-# 			gcc
+RUN apk add --no-cache --virtual .build-deps \
+			gcc
 
 COPY requirements.txt requirements.txt
 # Possibly bad practice
@@ -20,7 +15,7 @@ RUN venv/bin/pip install -U pip
 RUN venv/bin/pip install -r requirements.txt
 RUN venv/bin/pip install gunicorn
 
-# RUN apk del .build-deps
+RUN apk del .build-deps
 
 COPY dark_chess_app dark_chess_app
 COPY dark_chess_frontend.py config.py ./
