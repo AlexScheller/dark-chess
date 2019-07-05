@@ -31,8 +31,7 @@ RUN apk del .build-deps
 
 COPY dark_chess_api dark_chess_api
 COPY migrations migrations
-COPY dark_chess_backend.py config.py boot.sh ./
-RUN chmod +x boot.sh
+COPY dark_chess_backend.py config.py ./
 
 ENV FLASK_APP dark_chess_backend.py
 
@@ -40,4 +39,3 @@ RUN chown -R u_dark_chess_backend:u_dark_chess_backend ./
 USER u_dark_chess_backend
 
 EXPOSE 5000
-ENTRYPOINT ["./boot.sh"]
