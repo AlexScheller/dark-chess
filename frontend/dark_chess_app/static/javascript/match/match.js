@@ -48,7 +48,9 @@ class WebsocketHandler {
 		});
 		this._conn.on('move-made', event => {
 			logDebug('Move made', 'Websocket');
-			console.debug(event);
+			if (config.debug) {
+				console.debug(event);
+			}
 			this._listener.handleMoveEvent(
 				event.player,
 				event.uci_string,
@@ -108,7 +110,9 @@ class APIHandler {
 			return response.json();
 		}).then(json => {
 			logDebug('(Server Response)');
-			console.debug(json);
+			if (config.debug) {
+				console.debug(json);
+			}
 			// Do nothing with a successful request, as it will trigger
 			// a websocket event from the server. That event is then handled
 			// elsewhere.
