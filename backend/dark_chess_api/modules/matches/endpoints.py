@@ -16,7 +16,7 @@ from dark_chess_api.modules.websockets import events as ws_events
 @token_auth.login_required
 def get_match(id):
 	match = Match.query.get_or_404(id)
-	return jsonify(match.as_dict())
+	return match.as_dict()
 
 @matches.route('/open-matches', methods=['GET'])
 @token_auth.login_required
@@ -64,10 +64,10 @@ def create_match():
 	db.session.add(new_match)
 	new_match.join(player)
 	db.session.commit()
-	return jsonify({
+	return {
 		'message' : 'Successfully created match',
 		'match' : new_match.as_dict()
-	})
+	}
 
 @matches.route('/<int:id>/join', methods=['PATCH'])
 @token_auth.login_required
@@ -89,10 +89,10 @@ def join_match(id):
 		match.connection_hash,
 		player.as_dict()
 	)
-	return jsonify({
+	return {
 		'message' : 'Player successfully joined match.',
 		'match' : match.as_dict()
-	})
+	}
 
 @matches.route('/<int:id>/make-move', methods=['POST'])
 @token_auth.login_required
@@ -125,7 +125,7 @@ def make_move(id):
 			winning_player=player,
 			connection_hash=match.connection_hash
 		)
-	return jsonify({
+	return {
 		'message' : 'Move successfully made',
 		'match' : match.as_dict()
-	})
+	}

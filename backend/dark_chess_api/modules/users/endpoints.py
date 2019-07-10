@@ -11,16 +11,16 @@ from dark_chess_api.modules.utilities import validation
 def aquire_token():
 	token = g.current_user.get_token()
 	db.session.commit()
-	return jsonify({
+	return {
 		'token' : token,
 		'user' : g.current_user.as_dict()
-	})
+	}
 
 @users.route('/<int:id>', methods=['GET'])
 @token_auth.login_required
 def user_info(id):
 	u = User.query.get_or_404(id)
-	return jsonify(u.as_dict())
+	return u.as_dict()
 
 @users.route('/auth/register', methods=['POST'])
 @validation.validate_json_payload
@@ -44,10 +44,10 @@ def register_user():
 	)
 	db.session.add(u)
 	db.session.commit()
-	return jsonify({
+	return {
 		'message' : 'Successfully registered user',
 		'user' : u.as_dict()
-	})
+	}
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])
 @token_auth.login_required
@@ -59,7 +59,7 @@ def change_password(id):
 		return error_response(403, 'Current password incorrect')
 	u.set_password(change_password_json['new_password'])
 	db.session.commit()
-	return jsonify({
+	return {
 		'message' : 'Successfully changed password',
 		'user' : u.as_dict()
-	})
+	}
