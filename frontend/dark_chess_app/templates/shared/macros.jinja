@@ -85,7 +85,7 @@
 </div>
 {% endmacro %}
 
-{% macro boolean_input(input, label=False, autofocus=False) -%}
+{% macro simple_boolean_input(input, label=False, autofocus=False) -%}
 <div class="form-input-wrapper">
 	{% if label %}
 	{{ input.label }}
@@ -98,6 +98,34 @@
 		{% set discard = kwargs.__setitem__('autofocus', 'true') %}
 	{% endif %}
 	{{ input(**kwargs) }}
+	{% if input.errors %}
+		{% for error in input.errors %}
+	<ul class="input-error-list">
+		<li>{{ error }}</li>
+	</ul>
+		{% endfor %}
+	{% endif %}
+</div>
+{% endmacro %}
+
+{% macro boolean_input(input, label=False, autofocus=False) -%}
+<div class="form-input-wrapper">
+	<div class="slide-toggle-container">
+		{% if label %}
+		{{ input.label(class="slide-toggle-label") }}
+		{% endif %}
+		<label class="toggle">
+			{% set kwargs = {} %}
+			{% if input.errors %}
+				{% set discard = kwargs.__setitem__('class', 'errored') %}
+			{% endif %}
+			{% if autofocus -%}
+				{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+			{% endif %}
+			{{ input(**kwargs) }}
+			<span class="slider"></span>
+		</label>
+	</div>
 	{% if input.errors %}
 		{% for error in input.errors %}
 	<ul class="input-error-list">

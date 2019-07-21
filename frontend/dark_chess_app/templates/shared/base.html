@@ -37,6 +37,7 @@
 		</div>
 		<div id="config-params" data-debug="{{config['DEBUG']}}" data-api-root="{{ config['API_ROOT'] }}" hidden></div>
 		<script src="{{ url_for('static', filename='javascript/shared/config.js') }}"></script>
+		<script src="{{ url_for('static', filename='javascript/shared/base.js') }}"></script>
 		{# Note that sometimes divs will be placed in the `js` block if they #}
 		{# serve the purpose of containing data for scripts                  #}
 		{% block js %}{% endblock %}
