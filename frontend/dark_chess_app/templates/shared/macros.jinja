@@ -114,8 +114,8 @@
 
 {% macro navigation_link(url, text) %}
 {% if request.path == url %}
-<a href="{{ url }}" class="current-page">{{ text }}</a>
+<a href="{{ url }}" class="current-page button button-navigation">{{ text }}</a>
 {%- else %}
-<a href="{{ url }}">{{ text }}</a>
+<a href="{{ url }}" class="button button-navigation">{{ text }}</a>
 {%- endif %}
 {% endmacro %}

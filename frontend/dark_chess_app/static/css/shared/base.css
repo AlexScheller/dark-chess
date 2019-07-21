@@ -1,8 +1,92 @@
+/************************
+ *  Color Declarations  *
+ ************************/
+
+:root {
+	--dark-square: #306082;
+	--selected-square: ;
+	--move-option: ;
+}
+
+/***************
+ *  Overrides  *
+ ***************/
+
+ a:link, a:visited {
+ 	color: inherit;
+ }
+
+ button {
+ 	background-color: white;
+ }
+
+/**************************
+ *  Top Level Containers  *
+ **************************/
+
+ body {
+ 	width: 720px;
+ 	margin: 10px auto;
+ 	padding: 10px;
+ }
+
+ #page-content {
+ 	width: 100%;
+ 	box-sizing: border-box;
+ }
+
+/****************************
+ *  Global Utility Classes  *
+ ****************************/
+
+
 .hidden {
 	display: none;
 }
 
+/******************
+ *  Forms/Inputs  *
+ ******************/
+
 /* hide the honey pot */
 input[name="first_name"] {
 	display: none;
+}
+
+.button {
+	padding: 5px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.button-navigation {
+	border: solid 2px var(--dark-square);
+	text-decoration: none;
+	/* color below is equiv to var(--dark-square) */
+	background: linear-gradient(to right, #306082 50%, white 50%);
+	background-size: 200% 100%;
+	background-position: right bottom;
+	-webkit-transition: all ease 0.6s;
+	-moz-transition: all ease 0.6s;
+	transition: all ease 0.6s;
+}
+
+.button-navigation:hover {
+	background-position: left bottom;
+	color: white;
+}
+
+.button-action {
+	border: 1px solid var(--dark-square);
+}
+
+/****************
+ *  Responsive  *
+ ****************/
+
+@media only screen and (max-width: 700px) {
+	body {
+		width: 100%;
+		padding: 10px;
+	}
 }

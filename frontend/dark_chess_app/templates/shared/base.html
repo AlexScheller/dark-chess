@@ -12,15 +12,6 @@
 		{% block css %}{% endblock %}
 	</head>
 	<body>
-		{% with messages = get_flashed_messages(with_categories=True) %}
-			{% if messages %}
-		<ul id="flash-messages">
-				{% for category, message in messages %}
-			<li class="flash-message flash-category-{{category}}">{{ message }}</li>
-				{% endfor %}
-		</ul>
-			{% endif %}
-		{% endwith %}
 		<nav>
 			{% if current_user.is_authenticated %}
 			{{ navigation_link(url_for('auth.logout'), 'Log Out') }}
@@ -32,6 +23,15 @@
 			{% endif %}
 			{% block navigation %}{% endblock %}
 		</nav>
+		{% with messages = get_flashed_messages(with_categories=True) %}
+			{% if messages %}
+		<ul id="flash-messages">
+				{% for category, message in messages %}
+			<li class="flash-message flash-category-{{category}}">{{ message }}</li>
+				{% endfor %}
+		</ul>
+			{% endif %}
+		{% endwith %}
 		<div id="page-content">
 			{%+ block page_content %}{% endblock %}
 		</div>
