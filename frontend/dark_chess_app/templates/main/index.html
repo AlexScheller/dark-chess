@@ -9,9 +9,9 @@
 	{{ string_input(form.username, 'username', autofocus=True) }}
 	{{ string_input(form.password, 'password') }}
 	{{ boolean_input(form.remember_me, label=True) }}
-	<button>Log In</button>
+	<button class="button button-navigation">Log In</button>
 </form>
-<a href="{{ url_for('main.index') }}">Forgot Password?</a>
-<a href="{{ url_for('auth.register') }}">Sign Up</a>
+<a href="{{ url_for('main.index') }}" class="button button-navigation">Forgot Password?</a>
+<a href="{{ url_for('auth.register') }}" class="button button-navigation">Sign Up</a>
 {% endif %}
 {% endblock %}
