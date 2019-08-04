@@ -24,7 +24,6 @@ Mako==1.0.7
 MarkupSafe==1.1.1
 monotonic==1.5
 msgpack==0.6.1
-mysqlclient==1.4.2.post1
 psycopg2==2.8.3
 pyrsistent==0.14.11
 python-chess==0.27.3
