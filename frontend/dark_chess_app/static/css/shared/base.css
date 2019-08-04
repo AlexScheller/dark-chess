@@ -199,4 +199,18 @@ input[type=text]:focus, input[type=password]:focus {
 	form {
 		width: 100%;
 	}
+	.form-input-wrapper input, .form-input-wrapper .slide-toggle-container, .button {
+		height: 45px;
+		font-size: 1.5rem;
+		border-width: 3px;
+	}
+	.slider:before {
+		height: 30px;
+		width: 30px;
+		left: 2px;
+		bottom: 2px;
+	}
+	.form-input-wrapper label {
+		font-size: 1.5rem;
+	}
 }
