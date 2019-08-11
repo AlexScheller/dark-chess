@@ -14,28 +14,40 @@
  *  Overrides  *
  ***************/
 
- a:link, a:visited {
- 	color: inherit;
- }
+a:link, a:visited {
+	color: inherit;
+}
 
- button {
- 	background-color: white;
- }
+button {
+	background-color: white;
+}
 
 /**************************
  *  Top Level Containers  *
  **************************/
 
- body {
- 	width: 720px;
- 	margin: 10px auto;
- 	padding: 10px;
- }
+body {
+	width: 720px;
+	margin: 10px auto;
+	padding: 10px;
+}
 
- #page-content {
- 	width: 100%;
- 	box-sizing: border-box;
- }
+nav {
+	margin-bottom: 30px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+nav a {
+	margin-right: 10px;
+	margin-bottom: 10px;
+}
+
+#page-content {
+	width: 100%;
+	box-sizing: border-box;
+}
 
 /****************************
  *  Global Utility Classes  *
@@ -44,6 +56,21 @@
 
 .hidden {
 	display: none;
+}
+
+/**********************
+ *  Major Components  *
+ **********************/
+
+#flash-messages {
+	display: flex;
+	flex-direction: column;
+	padding-left: 0;
+}
+
+.flash-message {
+	list-style: none;
+	font-size: 1.25rem;
 }
 
 /******************
