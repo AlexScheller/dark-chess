@@ -11,13 +11,6 @@ dark, where your vision only updates on your turn.
 To begin with, this project will reproduce regular chess, switching to
 cliffhanger dark after the normal chess api is stable.
 
-## A Note about CSS
-
-As a personal experiment I've decided to completely isolate the css
-(with a few necessary exceptions) for the frontend onto its own
-branch (merging with master/deployment) just to see what developing
-like that it like. Maybe it'll be a headache, maybe it'll be fun.
-
 ## Attributions/Citations/Etc.
 
 In several places this application makes use of snippets of code from Miguel Grinberg's "microblog" application (Copyright (c) 2017 Miguel Grinberg, MIT License). A copy of the source can be
