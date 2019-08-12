@@ -86,6 +86,12 @@ class Match(db.Model):
 	def current_fen(self):
 		return self.history[-1].fen
 
+	@property
+	def current_side(self):
+		if self.in_progress:
+			white = chess.Board(fen=self.current_fen).turn
+			return 'white' if white else 'black'
+		return None
 	###########################################################################
 	# NOTE # The following functions are written very defensively. This may   #
 	######## result in redundant code, but for the time being speed is less   #
@@ -143,6 +149,7 @@ class Match(db.Model):
 		}
 		if self.in_progress:
 			ret['current_fen'] = self.current_fen
+			ret['current_side'] = self.current_side
 		if self.is_finished:
 			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
 			ret['winner'] = self.winning_player.as_dict()
