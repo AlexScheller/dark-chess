@@ -44,14 +44,21 @@
 
 {% macro match_card(match_data) %}
 <div class="match-card">
-	<h6>{{ match_data.id }}</h6>
-	<a href="{{ url_for('match.match_page', id=match_data.id) }}">Go to match</a>
-	<a href="{{ url_for('match.match_history', id=match_data.id) }}">history</a>
-	{%- if match_data.open %}
-	{%- if not (('player_white' in match_data and match_data.player_white.id == current_user.id) or ('player_black' in match_data and match_data.player_black.id == current_user.id)) %}
-	<a class="button-link" href="{{ url_for('match.join_match', id=match_data.id) }}">Join Match</a>
-	{%- endif %}
-	{%- endif %}
+	<div class="card-header">
+		<h5>No. {{ match_data.id }}</h5>
+		{%- if not match_data.open %}
+		<h5>Opponent: {% if match_data.player_white.id == current_user.id %}{{ match_data.player_black.username }}{% else %}{{ match_data.player_white.username }}{% endif %}</h5>
+		{%- endif %}
+	</div>
+	<div class="card-actions">
+		<a href="{{ url_for('match.match_page', id=match_data.id) }}">Go to match</a>
+		<a href="{{ url_for('match.match_history', id=match_data.id) }}">history</a>
+		{%- if match_data.open %}
+		{%- if not (('player_white' in match_data and match_data.player_white.id == current_user.id) or ('player_black' in match_data and match_data.player_black.id == current_user.id)) %}
+		<a class="button-link" href="{{ url_for('match.join_match', id=match_data.id) }}">Join Match</a>
+		{%- endif %}
+		{%- endif %}
+	</div>
 </div>
 {% endmacro %}
 
