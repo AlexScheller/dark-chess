@@ -29,12 +29,14 @@ class User(db.Model):
 		')'
 	)
 
-	# stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
+	stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
 
 	def __init__(self, username, email, password):
 		self.username = username
 		self.email = email
 		self.set_password(password)
+		from dark_chess_api.modules.stats.models import UserStatBlock
+		self.stat_block = UserStatBlock()
 
 	### account information methods ###
 	def as_dict(self):
@@ -46,7 +48,8 @@ class User(db.Model):
 			'registration_date' : {
 				'formatted' : str(self.registration_date),
 				'timestamp' : int(self.registration_date.replace(tzinfo=pytz.utc).timestamp())
-			}
+			},
+			'stats': self.stat_block.as_dict()
 		}
 
 	### auth methods ###

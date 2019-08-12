@@ -40,6 +40,9 @@ def create_app(config=Config):
 	from dark_chess_api.modules.users import users
 	app.register_blueprint(users, url_prefix='/user')
 
+	from dark_chess_api.modules.stats import stats
+	app.register_blueprint(stats, url_prefix='/stats')
+
 	from dark_chess_api.modules.matches import matches
 	app.register_blueprint(matches, url_prefix='/match')
 
