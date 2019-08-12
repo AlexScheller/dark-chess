@@ -20,11 +20,22 @@
 	line-height: calc(var(--board-length) / 8);
 }
 
-.move-option {
+.board-square:nth-child(16n+2),
+.board-square:nth-child(16n+4),
+.board-square:nth-child(16n+6),
+.board-square:nth-child(16n+8),
+.board-square:nth-child(16n+9),
+.board-square:nth-child(16n+11),
+.board-square:nth-child(16n+13),
+.board-square:nth-child(16n+15) {
+	background-color: var(--dark-square-lighter);
+}
+
+.board-square.move-option {
 	background-color: blue;
 }
 
-.selected-square {
+.board-square.selected-square {
 	background-color: green;
 }
 

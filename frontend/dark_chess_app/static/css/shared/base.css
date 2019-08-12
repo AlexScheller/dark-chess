@@ -1,8 +1,244 @@
+/************************
+ *  Color Declarations  *
+ ************************/
+
+:root {
+	--dark-square: #306082;
+	--dark-square-lighter: #6aa1c8;
+	--selected-square: ;
+	--move-option: ;
+	--light-grey: #e6e6e6;
+}
+
+/***************
+ *  Overrides  *
+ ***************/
+
+a:link, a:visited {
+	color: inherit;
+}
+
+button {
+	background-color: white;
+}
+
+/**************************
+ *  Top Level Containers  *
+ **************************/
+
+body {
+	width: 720px;
+	margin: 10px auto;
+	padding: 10px;
+}
+
+nav {
+	margin-bottom: 30px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+nav a {
+	margin-right: 10px;
+	margin-bottom: 10px;
+}
+
+#page-content {
+	width: 100%;
+	box-sizing: border-box;
+}
+
+/****************************
+ *  Global Utility Classes  *
+ ****************************/
+
+
 .hidden {
 	display: none;
+}
+
+/**********************
+ *  Major Components  *
+ **********************/
+
+#flash-messages {
+	display: flex;
+	flex-direction: column;
+	padding-left: 0;
+}
+
+.flash-message {
+	list-style: none;
+	font-size: 1.25rem;
+}
+
+/******************
+ *  Forms/Inputs  *
+ ******************/
+
+/* form/form-container */
+
+form {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 250px;
+	margin-bottom: 25px;
+}
+
+form * {
+	width: 100%;
+}
+
+.form-input-wrapper {
+	margin-bottom: 10px;
+}
+
+form .button {
+	align-self: center;
 }
 
 /* hide the honey pot */
 input[name="first_name"] {
 	display: none;
+}
+
+/* toggle slider (checkbox) */
+
+.toggle {
+	position: relative;
+	display: inline-block;
+	width: 80px; /* this should perhaps be calculated instead */
+	height: 34px;
+}
+
+.toggle input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: white;
+	-webkit-transition: .5s;
+	transition: .5s;
+}
+
+.slider:before {
+	position: absolute;
+	content: "";
+	height: 26px;
+	width: 26px;
+	left: 4px;
+	bottom: 4px;
+	background-color: var(--dark-square);
+	transition: .5s;
+}
+
+.toggle input:checked + .slider {
+	background-color: var(--dark-square);
+}
+
+.toggle input:focus + .slider {
+	box-shadow: 0 0 1px var(--dark-square);
+}
+
+.toggle input:checked + .slider:before {
+	background-color: white;
+	-webkit-transform: translateX(26px);
+	-ms-transform: translateX(26px);
+	transform: translateX(26px);
+}
+
+.slide-toggle-container {
+	border: 2px solid var(--dark-square);
+	box-sizing: border-box;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	width: 100%;
+	transition: background-color .5s, color .5s;
+}
+
+.slide-toggle-container.checked {
+	background-color: var(--dark-square);
+}
+
+.slide-toggle-container.checked .slide-toggle-label {
+	color: white;
+}
+
+.slide-toggle-label {
+	margin-left: 5px;
+}
+
+input[type=text], input[type=password] {
+	padding: 5px;
+	border: solid 2px var(--light-grey);
+}
+
+input[type=text]:focus, input[type=password]:focus {
+	border-color: var(--dark-square);
+}
+
+.button {
+	padding: 5px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.button-navigation {
+	border: solid 2px var(--dark-square);
+	text-decoration: none;
+	/* color below is equiv to var(--dark-square) */
+	background: linear-gradient(to right, #306082 50%, white 50%);
+	background-size: 200% 100%;
+	background-position: right bottom;
+	-webkit-transition: all ease 0.6s;
+	-moz-transition: all ease 0.6s;
+	transition: all ease 0.6s;
+}
+
+.button-navigation:hover {
+	background-position: left bottom;
+	color: white;
+}
+
+.button-action {
+	border: 1px solid var(--dark-square);
+}
+
+/****************
+ *  Responsive  *
+ ****************/
+
+@media only screen and (max-width: 700px) {
+	body {
+		width: 100%;
+		padding: 10px;
+	}
+	form {
+		width: 100%;
+	}
+	.form-input-wrapper input, .form-input-wrapper .slide-toggle-container, .button {
+		height: 45px;
+		font-size: 1.5rem;
+		border-width: 3px;
+	}
+	.slider:before {
+		height: 30px;
+		width: 30px;
+		left: 2px;
+		bottom: 2px;
+	}
+	.form-input-wrapper label {
+		font-size: 1.5rem;
+	}
 }

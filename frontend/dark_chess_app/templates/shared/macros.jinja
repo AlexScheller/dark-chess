@@ -85,7 +85,7 @@
 </div>
 {% endmacro %}
 
-{% macro boolean_input(input, label=False, autofocus=False) -%}
+{% macro simple_boolean_input(input, label=False, autofocus=False) -%}
 <div class="form-input-wrapper">
 	{% if label %}
 	{{ input.label }}
@@ -108,14 +108,42 @@
 </div>
 {% endmacro %}
 
+{% macro boolean_input(input, label=False, autofocus=False) -%}
+<div class="form-input-wrapper">
+	<div class="slide-toggle-container">
+		{% if label %}
+		{{ input.label(class="slide-toggle-label") }}
+		{% endif %}
+		<label class="toggle">
+			{% set kwargs = {} %}
+			{% if input.errors %}
+				{% set discard = kwargs.__setitem__('class', 'errored') %}
+			{% endif %}
+			{% if autofocus -%}
+				{% set discard = kwargs.__setitem__('autofocus', 'true') %}
+			{% endif %}
+			{{ input(**kwargs) }}
+			<span class="slider"></span>
+		</label>
+	</div>
+	{% if input.errors %}
+		{% for error in input.errors %}
+	<ul class="input-error-list">
+		<li>{{ error }}</li>
+	</ul>
+		{% endfor %}
+	{% endif %}
+</div>
+{% endmacro %}
+
 {##########}
 {#  Misc  #}
 {##########}
 
 {% macro navigation_link(url, text) %}
 {% if request.path == url %}
-<a href="{{ url }}" class="current-page">{{ text }}</a>
+<a href="{{ url }}" class="current-page button button-navigation">{{ text }}</a>
 {%- else %}
-<a href="{{ url }}">{{ text }}</a>
+<a href="{{ url }}" class="button button-navigation">{{ text }}</a>
 {%- endif %}
 {% endmacro %}
