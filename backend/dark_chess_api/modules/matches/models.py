@@ -83,8 +83,22 @@ class Match(db.Model):
 		return and_(cls.is_finished == False, cls.open == False)
 
 	@property
+	def current_player(self):
+		if not self.in_progress:
+			return None
+		board = chess.Board(fen=self.current_fen)
+		return self.player_white if (board.turn == chess.WHITE) else self.player_black
+
+	@property
 	def current_fen(self):
 		return self.history[-1].fen
+
+	@property
+	def current_side(self):
+		if not self.in_progress:
+			return None
+		white = chess.Board(fen=self.current_fen).turn
+		return 'white' if white else 'black'
 
 	###########################################################################
 	# NOTE # The following functions are written very defensively. This may   #
@@ -142,8 +156,14 @@ class Match(db.Model):
 			} if self.player_white is not None else None
 		}
 		if self.in_progress:
-			ret['current_fen'] = self.current_fen
+			ret.update({
+				'current_fen': self.current_fen,
+				'current_side': self.current_side,
+				'current_player_id': self.current_player.id
+			})
 		if self.is_finished:
-			ret['winning_side'] = 'white' if self.winning_player_id == self.player_white_id else 'black'
-			ret['winner'] = self.winning_player.as_dict()
+			ret.update({
+				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',
+				'winner': self.winning_player.as_dict()
+			})
 		return ret
