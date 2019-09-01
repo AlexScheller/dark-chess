@@ -8,6 +8,8 @@
 	--selected-square: ;
 	--move-option: ;
 	--light-grey: #e6e6e6;
+	--lighter-grey: #eff0f1;
+	--warning-red: #ff5050;
 }
 
 /***************
@@ -53,7 +55,6 @@ nav a {
  *  Global Utility Classes  *
  ****************************/
 
-
 .hidden {
 	display: none;
 }
@@ -71,6 +72,40 @@ nav a {
 .flash-message {
 	list-style: none;
 	font-size: 1.25rem;
+}
+
+.flash-message.flash-category-error {
+	color: var(--warning-red);
+}
+
+.match-list .match-card:not(:last-child) {
+	margin-bottom: 15px;
+}
+
+.match-card {
+	border-left: 5px solid var(--dark-square);
+	padding: 10px;
+	background-color: var(--lighter-grey);
+}
+
+.match-card .card-header {
+	background-color: white;
+	padding-top: 10px;
+	padding-left: 10px;
+}
+
+.match-card .card-actions {
+	background-color: white;
+	padding-top: 10px;
+	padding-left: 10px;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+}
+
+.match-card .card-actions a {
+	margin-right: 10px;
+	margin-bottom: 10px;
 }
 
 /******************
