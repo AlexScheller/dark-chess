@@ -1,7 +1,7 @@
 {% extends "shared/base.html" %}
 {% from "shared/macros.jinja" import string_input, boolean_input %}
 {% block page_content %}
-<h2>Log In</h2>
+<h2 class="title form-title">Log In</h2>
 <form action="" method="post" novalidate="">
 	{{ form.hidden_tag() }}
 	{{ string_input(form.username, 'username', autofocus=True) }}

@@ -1,9 +1,9 @@
 {% extends "shared/base.html" %}
 {% from "shared/macros.jinja" import string_input, boolean_input %}
 {% block page_content %}
-<h1>Darkchess</h1>
+<h1 class="title">Darkchess</h1>
 {% if not current_user.is_authenticated %}
-<h2>Log In</h2>
+<h2 class="title form-title">Log In</h2>
 <form action="{{url_for('auth.login')}}" method="post" novalidate="">
 	{{ form.hidden_tag() }}
 	{{ string_input(form.username, 'username', autofocus=True) }}
