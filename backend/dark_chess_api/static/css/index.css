@@ -1,0 +1,25 @@
+body {
+	padding: 10px;
+}
+
+h3 {
+	font-size: 1.5rem;
+	margin: 15px 0px;
+}
+
+h4 {
+	font-size: 1.25rem;
+	margin: 15px 0px;
+}
+
+#resource-links {
+	display: flex;
+}
+
+#resource-links li {
+	margin-right: 20px;
+}
+
+p {
+	margin-bottom: 10px;
+}
