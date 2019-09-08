@@ -1,7 +1,9 @@
 {% extends "shared/base.html" %}
 {% from "shared/macros.jinja" import match_card with context %}
 {% block page_content %}
-<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>
+<div class="page-action-bar">
+	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>	
+</div>
 <ul class="match-list">
 	{% for match_data in matches -%}
 	{{ match_card(match_data) }}

@@ -35,7 +35,7 @@ body {
 }
 
 nav {
-	margin-bottom: 30px;
+	margin-bottom: 20px;
 	display: flex;
 	flex-direction: row;
 	flex-wrap: wrap;
@@ -49,6 +49,15 @@ nav a {
 #page-content {
 	width: 100%;
 	box-sizing: border-box;
+}
+
+/****************************
+ *  Global Content Classes  *
+ ****************************/
+
+.title {
+	font-size: 2rem;
+	margin-bottom: 10px;
 }
 
 /****************************
@@ -67,11 +76,21 @@ nav a {
 	display: flex;
 	flex-direction: column;
 	padding-left: 0;
+	margin: 10px 0px;
 }
 
 .flash-message {
 	list-style: none;
 	font-size: 1.25rem;
+	margin-bottom: 10px;
+	padding: 5px;
+	display: flex;
+	justify-content: space-between;
+	border: 2px solid var(--dark-square);
+}
+
+.delete-flash-message-button {
+	border: none;
 }
 
 .flash-message.flash-category-error {
@@ -108,11 +127,19 @@ nav a {
 	margin-bottom: 10px;
 }
 
+.page-action-bar {
+	margin-bottom: 20px;
+}
+
 /******************
  *  Forms/Inputs  *
  ******************/
 
 /* form/form-container */
+
+.form-title {
+	font-size: 1.5rem;
+}
 
 form {
 	display: flex;

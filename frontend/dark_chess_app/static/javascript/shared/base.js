@@ -4,3 +4,11 @@ for (const toggle of toggles) {
 		toggle.parentElement.parentElement.classList.toggle('checked');
 	});
 }
+
+let deleteFlashes = document.getElementsByClassName('delete-flash-message-button');
+for (const deleteFlash of deleteFlashes) {
+	deleteFlash.addEventListener('click', event => {
+		let id = event.currentTarget.dataset.flashMessageId;
+		document.getElementById(id).remove();
+	});
+}

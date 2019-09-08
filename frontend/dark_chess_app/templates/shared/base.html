@@ -28,11 +28,18 @@
 			{% if messages %}
 		<ul id="flash-messages">
 				{% for category, message in messages %}
-			<li class="flash-message flash-category-{{category}}">{{ message }}</li>
+			<li id="flash-message-{{ loop.index }}" class="flash-message flash-category-{{category}}"><span class="flash-message-content">{{ message }}</span><button class="delete-flash-message-button" data-flash-message-id="flash-message-{{ loop.index }}"><i class="fas fa-times"></i></button></li>
 				{% endfor %}
 		</ul>
 			{% endif %}
 		{% endwith %}
+		{# temporary for style testing #}
+		{#<ul id="flash-messages">
+			<li id="flash-message-1" class="flash-message flash-category-success"><span class="flash-message-content">Success!</span><button class="delete-flash-message-button" data-flash-message-id="flash-message-1"><i class="fas fa-times"></i></button></li>
+			<li id="flash-message-2" class="flash-message flash-category-error"><span class="flash-message-content">Error!</span><button class="delete-flash-message-button" data-flash-message-id="flash-message-2"><i class="fas fa-times"></i></button></li>
+			<li id="flash-message-3" class="flash-message flash-category-message"><span class="flash-message-content">Message</span><button class="delete-flash-message-button" data-flash-message-id="flash-message-3"><i class="fas fa-times"></i></button></li>
+			<li id="flash-message-4" class="flash-message flash-category-message"><span class="flash-message-content">REALLY LONG MESSAGE THAT WILL SPLIT LINES AND HOPEFULLY EVERYTHING WILL BE CENTERED VERTICALLY OH GOSH I REALLY HOPE SO!!!</span><button class="delete-flash-message-button" data-flash-message-id="flash-message-4"><i class="fas fa-times"></i></button></li>
+		</ul>#}
 		<div id="page-content">
 			{%+ block page_content %}{% endblock %}
 		</div>
