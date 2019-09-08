@@ -16,4 +16,4 @@ backend/init-letsencrypt.sh
 
 # Frontend
 frontend/data/certbot/
-frontend/init-letencrypt.sh
+frontend/init-letsencrypt.sh
