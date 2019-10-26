@@ -55,7 +55,8 @@ def query_matches():
 		matches = matches.filter(Match.open==True)
 	return jsonify([m.as_dict() for m in matches.all()])
 
-### Actions ###
+### Match Actions ###
+
 @matches.route('/create', methods=['POST'])
 @token_auth.login_required
 def create_match():
@@ -93,6 +94,8 @@ def join_match(id):
 		'message' : 'Player successfully joined match.',
 		'match' : match.as_dict()
 	}
+
+### In Game Actions ###
 
 @matches.route('/<int:id>/make-move', methods=['POST'])
 @token_auth.login_required

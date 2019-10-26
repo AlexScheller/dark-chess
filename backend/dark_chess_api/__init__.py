@@ -1,5 +1,5 @@
 from flask import Flask
-from flask_cors import CORS
+# from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
@@ -22,10 +22,10 @@ def create_app(config=Config):
 		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
 	)
 
-	CORS(app)
+	# CORS(app, resources={'/socket.io/': {'origins': app.config['FRONTEND_ROOT']}})
 	db.init_app(app)
 	migrate.init_app(app, db)
-	socketio.init_app(app)
+	socketio.init_app(app, cors_allowed_origins=app.config['FRONTEND_ROOT'])
 	# we will enforce https upstream with nginx
 	talisman.init_app(app,
 		force_https=False
