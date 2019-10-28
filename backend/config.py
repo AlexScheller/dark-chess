@@ -21,19 +21,19 @@ class Config:
 	DB_NAME = os.environ.get('DB_NAME') or 'darkchess'
 
 	# Mothballed for now
-	# DB_SSL = os.environ.get('DB_SSL') or False
-	# DB_SSL_CA_LOC = os.environ.get('DB_SSL_CA_LOC') or None
-	# DB_SSL_CLIENT_CERT_LOC = os.environ.get('DB_SSL_CLIENT_CERT_LOC') or None
-	# DB_SSL_CLIENT_KEY_LOC = os.environ.get('DB_SSL_CLIENT_KEY_LOC') or None
+	DB_SSL = os.environ.get('DB_SSL') or False
+	DB_SSL_CA_LOC = os.environ.get('DB_SSL_CA_LOC') or None
+	DB_SSL_CLIENT_CERT_LOC = os.environ.get('DB_SSL_CLIENT_CERT_LOC') or None
+	DB_SSL_CLIENT_KEY_LOC = os.environ.get('DB_SSL_CLIENT_KEY_LOC') or None
 
-	# if DB_SSL:
-	# 	DB_SSL_STRING = f'?ssl_ca={DB_SSL_CA_LOC}&ssl_key={DB_SSL_CLIENT_KEY_LOC}&ssl_cert={DB_SSL_CLIENT_CERT_LOC}'
-	# else:
-	# 	DB_SSL_STRING=''
+	if DB_SSL:
+		DB_SSL_STRING = f'?ssl_ca={DB_SSL_CA_LOC}&ssl_key={DB_SSL_CLIENT_KEY_LOC}&ssl_cert={DB_SSL_CLIENT_CERT_LOC}'
+	else:
+		DB_SSL_STRING=''
 
-	DB_SSL_REQUIRED = os.environ.get('DB_SSL_REQUIRED') or None
+	# DB_SSL_REQUIRED = os.environ.get('DB_SSL_REQUIRED') or None
 
-	DB_SSL_STRING = '?sslmode=require' if DB_SSL_REQUIRED else ''
+	# DB_SSL_STRING = '?sslmode=require' if DB_SSL_REQUIRED else ''
 
 	### database ###
 	DATABASE_URIS = {

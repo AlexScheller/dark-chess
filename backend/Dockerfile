@@ -4,20 +4,21 @@ RUN adduser -D u_dark_chess_backend
 
 WORKDIR /home/dark_chess_backend
 
-RUN apk add --no-cache postgresql-dev
-RUN apk add --no-cache --virtual .build-deps \
-			python3-dev \
-			zeromq-dev \
-			py-gevent \
-			musl-dev \
-			gcc
-
-# Mothballed
-# RUN apk add --no-cache mariadb-dev
+# Postgres
+# RUN apk add --no-cache postgresql-dev
 # RUN apk add --no-cache --virtual .build-deps \
-# 			mariadb-dev \
-# 			gcc \
-# 			musl-dev
+# 			python3-dev \
+# 			zeromq-dev \
+# 			py-gevent \
+# 			musl-dev \
+# 			gcc
+
+# MySQL
+RUN apk add --no-cache mariadb-dev
+RUN apk add --no-cache --virtual .build-deps \
+			mariadb-dev \
+			gcc \
+			musl-dev
 
 COPY requirements.txt requirements.txt
 # Possibly bad practice
