@@ -35,7 +35,7 @@
 	<div id="board" class="chess-board">
 		{% for number in range(8, 0, -1) %}
 			{% for letter in 'abcdefgh' %}
-		<div id="{{ letter }}{{ number }}" class="board-square"></div>
+		<div id="{{ letter }}{{ number }}" data-rank="{{ number }}" data-file="{{ letter }}" class="board-square"></div>
 			{% endfor %}
 		{% endfor %}
 	</div>

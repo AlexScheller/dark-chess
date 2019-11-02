@@ -134,10 +134,10 @@ class MatchModel {
 		}
 		this.matchId = matchData.id;
 		this._playerId = playerData.id;
-		if (('player_black' in matchData) &&
+		if ((matchData.player_black != null) &&
 			(matchData.player_black.id == this._playerId)) {
 			this._playerSide = 'b';
-		} else if (('player_white' in matchData) &&
+		} else if ((matchData.player_white != null) &&
 			(matchData.player_white.id == this._playerId)) {
 			this._playerSide = 'w';
 		} else {
@@ -174,6 +174,10 @@ class MatchModel {
 		} else {
 			console.error(`Unable to load board from fen: ${fen}`)
 		}
+	}
+
+	get playerSide() {
+		return this._playerSide;
 	}
 
 	playersTurn(id = null) {
@@ -252,8 +256,14 @@ class BoardViewController {
 		this._model.setListener(this);
 		this._selectedSquare = null;
 		this._moveBuffer = null;
+		this._boardEl = document.getElementById('board');
+		if (this._model.playerSide == 'b') {
+			this._flipBoard();
+		}
 		this._render();
 	}
+
+	/* Setup */
 
 	setListener(listener) {
 		this._listener = listener;
@@ -284,29 +294,7 @@ class BoardViewController {
 		});
 	}
 
-	_renderMoveOptions(fromSquare) {
-		logDebug('Rendering move options', 'Render');
-		this._selectedSquare = fromSquare;
-		document.getElementById(fromSquare).classList.add('selected-square');
-		for (const move of this._model.movesFrom(fromSquare)) {
-			logDebug('(Render Event) rendering move option: ' + fromSquare + move.to);
-			document.getElementById(move.to).classList.add('move-option');
-		}
-	}
-
-	_clearRenderedMoveOptions() {
-		logDebug('Clearing rendered move options', 'Render');
-		if (this._selectedSquare != null) {
-			document.getElementById(this._selectedSquare).classList.remove('selected-square');
-			this._selectedSquare = null;
-		}
-		let options = document.querySelectorAll('.board-square.move-option');
-		for (const option of options) {
-			logDebug(`Clearing 'move-option' from square: ${option.id}`, 'Render');
-			option.classList.remove('move-option');
-		}
-	}
-
+	/* Input Handlers */
 	_handleSquareClick(event) {
 		let square = event.currentTarget;
 		if (config.debug) {
@@ -328,6 +316,31 @@ class BoardViewController {
 			} else if (this._model.playersPiece(square.id)) {
 				this._renderMoveOptions(square.id);
 			}
+		}
+	}
+
+	/* Core Rendering */
+
+	_renderMoveOptions(fromSquare) {
+		logDebug('Rendering move options', 'Render');
+		this._selectedSquare = fromSquare;
+		document.getElementById(fromSquare).classList.add('selected-square');
+		for (const move of this._model.movesFrom(fromSquare)) {
+			logDebug('(Render Event) rendering move option: ' + fromSquare + move.to);
+			document.getElementById(move.to).classList.add('move-option');
+		}
+	}
+
+	_clearRenderedMoveOptions() {
+		logDebug('Clearing rendered move options', 'Render');
+		if (this._selectedSquare != null) {
+			document.getElementById(this._selectedSquare).classList.remove('selected-square');
+			this._selectedSquare = null;
+		}
+		let options = document.querySelectorAll('.board-square.move-option');
+		for (const option of options) {
+			logDebug(`Clearing 'move-option' from square: ${option.id}`, 'Render');
+			option.classList.remove('move-option');
 		}
 	}
 
@@ -354,6 +367,25 @@ class BoardViewController {
 			`fa${weight}`, `fa-chess-${this._pieceNames[piece]}`, 'piece'
 		);
 		return ret;
+	}
+
+	// When playing as black
+	_flipBoard() {
+		function swapEl(el1, el2) {
+			let tempLoc = document.createElement('div');
+			el1.parentNode.insertBefore(tempLoc, el1);
+			el2.parentNode.insertBefore(el1, el2);
+			tempLoc.parentNode.insertBefore(el2, tempLoc)
+			tempLoc.parentNode.removeChild(tempLoc);
+		}
+		for (const col of 'abcdefgh') {
+			for (let row = 1; row <= 4; row++) {
+				swapEl(
+					document.getElementById(col + row),
+					document.getElementById(col + (8 - (row - 1)))
+				)
+			}
+		}
 	}
 
 	_render() {
