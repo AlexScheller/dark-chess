@@ -56,3 +56,28 @@ def init(app):
 		os.system('flask db init')
 		os.system('flask db migrate')
 		os.system('flask db upgrade')
+
+	@app.cli.command()
+	def emptydb():
+		# Note that SQLite doesn't really support a lot of migration commands
+		# anyway (like `alter column`) so this will probably less relevant for
+		# it.
+		if app.config['CHOSEN_DATABASE'] == 'SQLITE':
+			os.system('rm app.db')
+		else: # for now we assume MySQL or PostgreSQL
+			from sqlalchemy import MetaData, create_engine
+			engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
+			m = MetaData()
+			m.reflect(engine)
+			m.drop_all(engine)
+			# Alembic Version isn't a part of the metadata
+		os.system('flask db upgrade')
+
+	# Becuase migrations are tracked with version control, a subset of the cli
+	# db commands are created that are garaunteed not to mess with the
+	# migrations folder.
+	@app.cli.group()
+	def migrationsafe():
+		pass
+
+	migrationsafe.add_command(emptydb)
