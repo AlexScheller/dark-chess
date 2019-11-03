@@ -2,6 +2,7 @@ import requests
 from flask import request
 from flask_login import login_required
 from dark_chess_app.modules.match import match
+from dark_chess_app.modules.auth.utils import proxy_login_required
 from dark_chess_app.utilities.api_utilities import api_token_request
 from dark_chess_app.modules.errors.handlers import api_error_response
 
@@ -10,7 +11,7 @@ from dark_chess_app.modules.errors.handlers import api_error_response
 ######################
 
 @match.route('/api/<int:id>')
-@login_required
+@proxy_login_required
 def api_get_match(id):
 	match_res = api_token_request(f'/match/{id}')
 	if match_res.status_code != 200:
@@ -19,7 +20,7 @@ def api_get_match(id):
 	return match_json
 
 @match.route('/api/<int:id>/make-move', methods=['POST'])
-@login_required
+@proxy_login_required
 def api_make_move(id):
 	move_json = request.get_json()
 	move_res = api_token_request(f'/match/{id}/make-move', requests.post,

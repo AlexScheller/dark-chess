@@ -27,6 +27,7 @@
 	</div>
 	{% endif %}
 	<h2>Match: {{ match.id }}</h2>
+	<button id="flip-board-button">⇅</button>
 	<div id="player-black" class="player-container">
 		{% if match.player_black %}
 		<h3 id="player-{{ match.player_black.id }}" class="player-title player-black-title">{{ match.player_black.username }}</h3><i class="far fa-chevron-double-left"></i>

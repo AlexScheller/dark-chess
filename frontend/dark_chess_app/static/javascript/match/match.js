@@ -80,7 +80,15 @@ class APIHandler {
 		fetch(`${window.location.href}/match/api/${model.matchId}`, {
 			method: 'GET',
 		}).then(response => {
-			return response.json();
+			if (!response.ok) {
+				if (response.status == 401) {
+					utilities.handleProxyUnauthorized();
+				} else {
+					throw Error (response.statusText);
+				}
+			} else {
+				return response.json();
+			}
 		}).then(json => {
 			model.reload(json.current_fen);
 		});
@@ -107,7 +115,15 @@ class APIHandler {
 				uci_string: move
 			})
 		}).then(response => {
-			return response.json();
+			if (!response.ok) {
+				if (response.status == 401) {
+					utilities.handleProxyUnauthorized();
+				} else {
+					throw Error (response.statusText);
+				}
+			} else {
+				return response.json();
+			}
 		}).then(json => {
 			logDebug('(Server Response)');
 			if (config.debug) {
@@ -292,9 +308,14 @@ class BoardViewController {
 				}
 			}
 		});
+		let flipBoardButton = document.getElementById('flip-board-button');
+		flipBoardButton.addEventListener('click', event => {
+			this._handleFlipBoardClick();
+		});
 	}
 
 	/* Input Handlers */
+
 	_handleSquareClick(event) {
 		let square = event.currentTarget;
 		if (config.debug) {
@@ -317,6 +338,10 @@ class BoardViewController {
 				this._renderMoveOptions(square.id);
 			}
 		}
+	}
+
+	_handleFlipBoardClick(event) {
+		this._flipBoard();
 	}
 
 	/* Core Rendering */
