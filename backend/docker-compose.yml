@@ -21,3 +21,5 @@ services:
     api:
         image: darkchess-api:latest
         command: "/bin/sh -c 'source venv/bin/activate && gunicorn -w 1 --worker-class eventlet -b 0.0.0.0:5000 --access-logfile - --error-logfile - dark_chess_backend:app'"
+        volumes:
+            - ./data/db-client-ssl:/db-cient-ssl
