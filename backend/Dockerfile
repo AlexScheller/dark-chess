@@ -26,7 +26,9 @@ COPY .env .env
 RUN python -m venv venv
 RUN venv/bin/pip install -U pip
 RUN venv/bin/pip install -r requirements.txt
-RUN venv/bin/pip install gunicorn
+# Temporarily (As of 2019-11-10) install a specific version, as v20 has broken
+# alpine-linux
+RUN venv/bin/pip install 'gunicorn==19.9.0'
 
 RUN apk del .build-deps
 

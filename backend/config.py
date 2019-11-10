@@ -20,7 +20,6 @@ class Config:
 	DB_HOST = os.environ.get('DB_HOST') or 'localhost'
 	DB_NAME = os.environ.get('DB_NAME') or 'darkchess'
 
-	# Mothballed for now
 	DB_SSL = os.environ.get('DB_SSL') or False
 	DB_SSL_CA_LOC = os.environ.get('DB_SSL_CA_LOC') or None
 	DB_SSL_CLIENT_CERT_LOC = os.environ.get('DB_SSL_CLIENT_CERT_LOC') or None
