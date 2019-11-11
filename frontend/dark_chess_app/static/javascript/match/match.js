@@ -256,13 +256,101 @@ class MatchModel {
 
 }
 
+// Like the class name implies, this controls the board view. It
+// handles all player actions. This implementation relies on maniuplating
+// HTML Elements for displaying the board and handling input.
+class CanvasBoardViewController {
+
+	constructor(model, squareWidth = 60) {
+		logDebug('Constructing CanvasBoardViewController.');
+		this._canvas = document.getElementById('board-canvas');
+		if (this._canvas.getContext) {
+			
+			this._model = model;
+			this._model.setListener(this);
+
+			this._squareWidth = squareWidth;
+			
+			this._canvas.height = this._height;
+			this._canvas.width = this._height;
+
+			this._ctx = this._canvas.getContext('2d');
+
+			this._render();
+		} else {
+			this._canvas.classList.add('disabled');
+			throw new Error('Canvas API not supported.')
+		}
+	}
+
+	/* Setup */
+
+	setListener(listener) {
+		this._listener = listener;
+	}
+
+	/* internals */
+
+	get _height() {
+		return this._squareWidth * 8;
+	}
+
+	get _width() {
+		return this._squareWidth * 8;
+	}
+
+	/* helper methods */
+	_helperDrawLine(p1, p2) {
+		this._ctx.beginPath();
+		this._ctx.moveTo(p1.x, p1.y);
+		this._ctx.lineTo(p2.x, p2.y);
+		this._ctx.closePath();
+		this._ctx.stroke();
+	}
+
+	_render() {
+		// render grid
+		for (let row = 0; row < 10; row++) {
+			this._helperDrawLine(
+				{x: 0, y: this._squareWidth * row},
+				{x: this._width, y: this._squareWidth * row}
+			);
+		}
+		for (let col = 0; col < 10; col++) {
+			this._helperDrawLine(
+				{x: this._squareWidth * col, y: 0},
+				{x: this._squareWidth * col, y: this._width}
+			);
+		}
+		// render squares
+		this._ctx.fillStyle = '#6aa1c8';
+		for (let row = 0; row < 9; row++) {
+			let offset = row % 2 == 0 ? 0: 1;
+			for (let col = 0; col < 4; col++) {
+				let unspacedX = col * this._squareWidth + 1;
+				let spacedX = unspacedX + ((col + offset) * this._squareWidth);
+				let xOrigin = spacedX;
+				this._ctx.fillRect(
+					xOrigin,
+					(row * this._squareWidth) + 1,
+					this._squareWidth - 2,
+					this._squareWidth - 2
+				);
+			}
+		}
+		// render pieces
+	}
+
+}
+
 
 // Like the class name implies, this controls the board view. It
-// handles all player actions.
-class BoardViewController {
+// handles all player actions. This implementation relies on maniuplating
+// HTML Elements for displaying the board and handling input.
+class HTMLElementBoardViewController {
 
 	constructor(model) {
-		logDebug('Constructing BoardViewController.');
+		logDebug('Constructing HTMLElementBoardViewController.');
 		this._pieceNames = {
 			p: 'pawn', r: 'rook', n: 'knight',
 			b: 'bishop', k: 'king', q: 'queen'
@@ -273,6 +361,7 @@ class BoardViewController {
 		this._selectedSquare = null;
 		this._moveBuffer = null;
 		this._boardEl = document.getElementById('board');
+		this._boardEl.classList.remove('disabled');
 		if (this._model.playerSide == 'b') {
 			this._flipBoard();
 		}
@@ -481,7 +570,12 @@ class Match {
 	
 	constructor(config, matchData, playerData) {
 		this._mm = new MatchModel(matchData, playerData);
-		this._bvc = new BoardViewController(this._mm);
+		try {
+			this._bvc = new CanvasBoardViewController(this._mm);		
+		} catch(error) {
+			logDebug(error);
+			this._bvc = new HTMLElementBoardViewController(this._mm);		
+		}
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
 		this._wsh = new WebsocketHandler(config, matchData.connection_hash);

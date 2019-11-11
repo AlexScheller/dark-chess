@@ -64,8 +64,8 @@ nav a {
  *  Global Utility Classes  *
  ****************************/
 
-.hidden {
-	display: none;
+.hidden, .disabled {
+	display: none !important;
 }
 
 /**********************
