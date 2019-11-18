@@ -274,7 +274,15 @@ class CanvasBoardViewController {
 			this._canvas.height = this._height;
 			this._canvas.width = this._height;
 
+			this._boardFlipped = this._model.playerSide === 'b' ? true : false;
+
 			this._ctx = this._canvas.getContext('2d');
+
+			this._setupClickHandlers();
+
+			this._pieceRenderers = {
+				p: this._drawPawn
+			}
 
 			this._render();
 		} else {
@@ -289,6 +297,27 @@ class CanvasBoardViewController {
 		this._listener = listener;
 	}
 
+	/* event handlers */
+
+	_setupClickHandlers() {
+		this._canvas.addEventListener('click', event => {
+			console.log(
+				this._pointToSquare(
+					{x: event.offsetX, y: event.offsetY}
+				)
+			);
+		});
+		let flipBoardButton = document.getElementById('flip-board-button');
+		flipBoardButton.addEventListener('click', event => {
+			this._handleFlipBoardClick();
+		});
+	}
+
+	_handleFlipBoardClick() {
+		this._boardFlipped = !this._boardFlipped;
+		this._render();
+	}
+
 	/* internals */
 
 	get _height() {
@@ -299,13 +328,59 @@ class CanvasBoardViewController {
 		return this._squareWidth * 8;
 	}
 
+	_pointToSquare(point) {
+		let ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+		}
+		let rank = ranks[Math.floor(point.y / this._squareWidth)];
+		let file = files[Math.floor(point.x / this._squareWidth)];
+		let origin = this._squareToOrigin(file + rank);
+		return file + rank;
+	}
+
+	_squareToOrigin(square) {
+		let ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+		}
+		let x = files.indexOf(square[0]) * this._squareWidth;
+		let y = ranks.indexOf(square[1]) * this._squareWidth;
+		return {x, y};
+	}
+
 	/* helper methods */
+	
 	_helperDrawLine(p1, p2) {
 		this._ctx.beginPath();
 		this._ctx.moveTo(p1.x, p1.y);
 		this._ctx.lineTo(p2.x, p2.y);
 		this._ctx.closePath();
 		this._ctx.stroke();
+	}
+
+	/* Piece rendering */
+
+	_drawPawn(origin, color) {
+		console.log(origin);
+		console.log(color);
+		console.log(this._ctx);
+		let center = {
+			x: origin.x + Math.floor(this._squareWidth / 2),
+			y: origin.y + Math.floor(this._squareWidth / 2)
+		}
+		let rad = Math.floor(this._squareWidth / 3);
+		this._ctx.beginPath();
+		this._ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
+		this._ctx.fillStyle = 'black';
+		if (color === 'b') {
+			this._ctx.fill();
+		} else {
+			this._ctx.lineWidth = 3;
+			this._ctx.stroke();
+		}
 	}
 
 	_render() {
@@ -338,7 +413,18 @@ class CanvasBoardViewController {
 				);
 			}
 		}
-		// render pieces
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let piece = this._model.pieceAt(file + rank);
+				if (piece != null) {
+					// TODO: Handle other piece types
+					let origin = this._squareToOrigin(file + rank);
+					if (piece.type === 'p') {
+						this._drawPawn(origin, piece.color);
+					}
+				}
+			}
+		}
 	}
 
 }
@@ -574,6 +660,9 @@ class Match {
 			this._bvc = new CanvasBoardViewController(this._mm);		
 		} catch(error) {
 			logDebug(error);
+			let canvas = document.getElementById('board-canvas');
+			canvas.classList.add('disabled');
+			// fallback
 			this._bvc = new HTMLElementBoardViewController(this._mm);		
 		}
 		this._bvc.setListener(this);

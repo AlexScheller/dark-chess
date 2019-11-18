@@ -9,6 +9,10 @@
 	border: 1px solid black;
 }
 
+#board-canvas {
+	border: 2px solid black;
+}
+
 .chess-board.inactive {
 	pointer-events: none;
 }
