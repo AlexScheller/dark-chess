@@ -328,6 +328,11 @@ class CanvasBoardViewController {
 		return this._squareWidth * 8;
 	}
 
+	get _lineWidth() {
+		let ret = Math.floor(this._squareWidth / 30);
+		return ret > 0 ? ret : 1;
+	}
+
 	_pointToSquare(point) {
 		let ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -363,24 +368,199 @@ class CanvasBoardViewController {
 
 	/* Piece rendering */
 
-	_drawPawn(origin, color) {
-		console.log(origin);
-		console.log(color);
-		console.log(this._ctx);
+	_drawPiece(piece, origin) {
 		let center = {
 			x: origin.x + Math.floor(this._squareWidth / 2),
 			y: origin.y + Math.floor(this._squareWidth / 2)
 		}
-		let rad = Math.floor(this._squareWidth / 3);
-		this._ctx.beginPath();
-		this._ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
 		this._ctx.fillStyle = 'black';
-		if (color === 'b') {
-			this._ctx.fill();
+		if (piece.type === 'p') { // pawns
+			let rad = Math.floor(this._squareWidth / 4);
+			this._ctx.beginPath();
+			this._ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.stroke();
+			}
+		} else if (piece.type === 'n') { // knights
+			this._ctx.beginPath();
+			// left ear
+			this._ctx.moveTo(
+				center.x - (this._squareWidth / 4),
+				center.y - (this._squareWidth / 3)
+			);
+			// central crevice
+			this._ctx.lineTo(
+				center.x, center.y - (this._squareWidth / 6)
+			)
+			// right ear
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 4),
+				center.y - (this._squareWidth / 3)
+			);
+			// right eye
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 4),
+				center.y,
+			);
+			// right mouth
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 8),
+				center.y + (this._squareWidth / 3)
+			);
+			// left mouth
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 8),
+				center.y + (this._squareWidth / 3)
+			);
+			// left eye
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 4),
+				center.y,
+			);
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.closePath();
+				this._ctx.stroke();
+			}
+		} else if (piece.type === 'r') { // rooks
+			let length = this._squareWidth / 3;
+			let height = length * 2;
+			if (piece.color === 'b') {
+				this._ctx.fillRect(
+					center.x - (length / 2),
+					center.y - (height / 2),
+					length,
+					height
+				);
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.strokeRect(
+					center.x - (length / 2),
+					center.y - (height / 2),
+					length,
+					height
+				);
+			}
+		} else if (piece.type === 'b') { // bishops
+			this._ctx.beginPath();
+			this._ctx.moveTo(
+				center.x,
+				center.y - (this._squareWidth / 3)
+			);
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 4),
+				center.y + (this._squareWidth / 3)
+			);
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 4),
+				center.y + (this._squareWidth / 3)
+			);
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.closePath();
+				this._ctx.stroke();
+			}
+		} else if (piece.type === 'k') { // kings
+			this._ctx.beginPath();
+			// left spike
+			this._ctx.moveTo(
+				center.x - (this._squareWidth / 3),
+				center.y - (this._squareWidth / 3),
+			);
+			// central crevice
+			this._ctx.lineTo(center.x, center.y);
+			// right spike
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 3),
+				center.y - (this._squareWidth / 3),
+			);
+			// right base
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 3),
+				center.y + (this._squareWidth / 3)
+			);
+			// left base
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 3),
+				center.y + (this._squareWidth / 3)
+			);
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.closePath();
+				this._ctx.stroke();
+			}
+			// jewel
+			this._ctx.beginPath();
+			this._ctx.arc(
+				center.x,
+				center.y - (this._squareWidth / 4),
+				Math.floor(this._squareWidth / 8),
+				0,
+				Math.PI * 2
+			);
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.stroke();
+			}
+		} else if (piece.type === 'q') { // queens
+			this._ctx.beginPath();
+			// left spike
+			this._ctx.moveTo(
+				center.x - (this._squareWidth / 3),
+				center.y - (this._squareWidth / 8),
+			);
+			// left crevice
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 6),
+				center.y
+			);
+			// central spike
+			this._ctx.lineTo(
+				center.x,
+				center.y - (this._squareWidth / 3),
+			);
+			// right crevice
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 6),
+				center.y
+			);
+			// right spike
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 3),
+				center.y - (this._squareWidth / 8)
+			);
+			// right base
+			this._ctx.lineTo(
+				center.x + (this._squareWidth / 4),
+				center.y + (this._squareWidth / 3)
+			);
+			// left base
+			this._ctx.lineTo(
+				center.x - (this._squareWidth / 4),
+				center.y + (this._squareWidth / 3)
+			)
+			if (piece.color === 'b') {
+				this._ctx.fill();
+			} else {
+				this._ctx.lineWidth = this._lineWidth;
+				this._ctx.closePath();
+				this._ctx.stroke();
+			}
 		} else {
-			this._ctx.lineWidth = 3;
-			this._ctx.stroke();
+			throw Error(`No drawing handler for piece of type: ${piece.type}`)
 		}
+
 	}
 
 	_render() {
@@ -413,15 +593,13 @@ class CanvasBoardViewController {
 				);
 			}
 		}
+		// render pieces
 		for (let rank = 1; rank <= 8; rank++) {
 			for (let file of 'abcdefgh') {
 				let piece = this._model.pieceAt(file + rank);
 				if (piece != null) {
-					// TODO: Handle other piece types
 					let origin = this._squareToOrigin(file + rank);
-					if (piece.type === 'p') {
-						this._drawPawn(origin, piece.color);
-					}
+					this._drawPiece(piece, origin);
 				}
 			}
 		}
