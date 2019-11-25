@@ -92,16 +92,6 @@ class APIHandler {
 		}).then(json => {
 			model.reload(json.current_fen);
 		});
-		// fetch(`${this.apiUrl}/match/${model.matchId}`, {
-		// 	method: 'GET',
-		// 	headers: {
-		// 		'Authorization': `Bearer ${config.token}`
-		// 	}
-		// }).then(response => {
-		// 	return response.json();
-		// }).then(json => {
-		// 	model.reload(json.current_fen);
-		// });
 	}
 
 	requestMove(model, move) {
@@ -256,9 +246,8 @@ class MatchModel {
 
 }
 
-// Like the class name implies, this controls the board view. It
-// handles all player actions. This implementation relies on maniuplating
-// HTML Elements for displaying the board and handling input.
+// Like the class name implies, this controls the board view. It handles all
+// player actions. This implementation relies on the Canvas API.
 class CanvasBoardViewController {
 
 	constructor(model, squareWidth = 60) {
