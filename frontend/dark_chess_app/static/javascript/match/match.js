@@ -269,9 +269,8 @@ class CanvasBoardViewController {
 
 			this._setupClickHandlers();
 
-			this._pieceRenderers = {
-				p: this._drawPawn
-			}
+			this._moveOptions = [];
+			this._selectedSquare = null;
 
 			this._render();
 		} else {
@@ -290,11 +289,7 @@ class CanvasBoardViewController {
 
 	_setupClickHandlers() {
 		this._canvas.addEventListener('click', event => {
-			console.log(
-				this._pointToSquare(
-					{x: event.offsetX, y: event.offsetY}
-				)
-			);
+			this._handleSquareClick(event);
 		});
 		let flipBoardButton = document.getElementById('flip-board-button');
 		flipBoardButton.addEventListener('click', event => {
@@ -305,6 +300,40 @@ class CanvasBoardViewController {
 	_handleFlipBoardClick() {
 		this._boardFlipped = !this._boardFlipped;
 		this._render();
+	}
+
+	_handleSquareClick(event) {
+		let point = {x: event.offsetX, y: event.offsetY};
+		let square = this._pointToSquare(point);
+		if (config.debug) {
+			let piece = this._model.pieceAt(square);
+			if (piece != null) {
+				let pieceJSON = JSON.stringify(piece);
+				logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
+			} else {
+				logDebug(`Square at ${square}.`, 'Click');
+			}
+		}
+		if (this._model.playersPiece(square)) {
+			this._loadMoveOptions(square);
+		}
+		this._render();
+		// if (this._model.playersTurn() && this._moveBuffer == null) {
+		// 	if (square.classList.contains('move-option')) {
+		// 		let move = this._selectedSquare + square.id;
+		// 		if (this._model.promotionAvailable(move)) {
+		// 			logDebug(`Promotion available, buffering move: ${move}`, 'Render')
+		// 			this._moveBuffer = move;
+		// 			this._displayPromotionChoices()
+		// 		} else {
+		// 			this._listener.handleMoveRequest(move);
+		// 		}
+		// 	} else if (this._selectedSquare != null) {
+		// 		this._clearRenderedMoveOptions();
+		// 	} else if (this._model.playersPiece(square.id)) {
+		// 		this._renderMoveOptions(square.id);
+		// 	}
+		// }
 	}
 
 	/* internals */
@@ -345,7 +374,16 @@ class CanvasBoardViewController {
 		return {x, y};
 	}
 
-	/* helper methods */
+	_fillMoveOptions(fromSquare) {
+		logDebug('Filling move options', 'Render');
+		this._selectedSquare = fromSquare;
+		for (const move of this._model.movesFrom(fromSquare)) {
+			logDebug(`move option: ${fromSquare} to ${move.to}`, 'Render');
+			this._moveOptions.push(move.to);
+		}
+	}
+
+	/* helper canvas methods */
 	
 	_helperDrawLine(p1, p2) {
 		this._ctx.beginPath();
@@ -354,6 +392,19 @@ class CanvasBoardViewController {
 		this._ctx.closePath();
 		this._ctx.stroke();
 	}
+
+	_helperHighlightSquare(square, color) {
+		let origin = this._squareToOrigin(square);
+		this._ctx.strokeStyle = color;
+		this._ctx.strokeRect(
+			origin.x + 2,
+			origin.y + 2,
+			this._squareWidth - 4,
+			this._squareWidth - 4
+		)
+	}
+
+	/* Core Rendering */
 
 	/* Piece rendering */
 
@@ -591,6 +642,13 @@ class CanvasBoardViewController {
 					this._drawPiece(piece, origin);
 				}
 			}
+		}
+		// render selected square and move options
+		if (this._selectedSquare != null) {
+			this._helperHighlightSquare(this._selectedSquare, 'blue');			
+		}
+		for (const square of this._moveOptions) {
+			this._helperHighlightSquare(square, 'green');
 		}
 	}
 
