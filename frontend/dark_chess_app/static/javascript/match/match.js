@@ -352,10 +352,11 @@ class CanvasBoardViewController {
 	}
 
 	_pointToSquare(point) {
-		let ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 		if (this._boardFlipped) {
 			ranks.reverse();
+			files.reverse();
 		}
 		let rank = ranks[Math.floor(point.y / this._squareWidth)];
 		let file = files[Math.floor(point.x / this._squareWidth)];
@@ -364,10 +365,11 @@ class CanvasBoardViewController {
 	}
 
 	_squareToOrigin(square) {
-		let ranks = ['1', '2', '3', '4', '5', '6', '7', '8'];
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
 		if (this._boardFlipped) {
 			ranks.reverse();
+			files.reverse();
 		}
 		let x = files.indexOf(square[0]) * this._squareWidth;
 		let y = ranks.indexOf(square[1]) * this._squareWidth;
@@ -604,6 +606,8 @@ class CanvasBoardViewController {
 	}
 
 	_render() {
+		// clear the canvas
+		this._ctx.clearRect(0, 0, this._ctx.width, this._ctx.height);
 		// render grid
 		for (let row = 0; row < 10; row++) {
 			this._helperDrawLine(
@@ -617,10 +621,10 @@ class CanvasBoardViewController {
 				{x: this._squareWidth * col, y: this._width}
 			);
 		}
-		// render squares
+		// render filled in squares
 		this._ctx.fillStyle = '#6aa1c8';
 		for (let row = 0; row < 9; row++) {
-			let offset = row % 2 == 0 ? 0: 1;
+			let offset = row % 2 == 1 ? 0 : 1;
 			for (let col = 0; col < 4; col++) {
 				let unspacedX = col * this._squareWidth + 1;
 				let spacedX = unspacedX + ((col + offset) * this._squareWidth);
