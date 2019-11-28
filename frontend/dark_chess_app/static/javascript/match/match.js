@@ -315,7 +315,8 @@ class CanvasBoardViewController {
 			}
 		}
 		if (this._model.playersPiece(square)) {
-			this._loadMoveOptions(square);
+			this._clearMoveOptions();
+			this._fillMoveOptions(square);
 		}
 		this._render();
 		// if (this._model.playersTurn() && this._moveBuffer == null) {
@@ -376,6 +377,12 @@ class CanvasBoardViewController {
 		return {x, y};
 	}
 
+	_clearMoveOptions() {
+		logDebug('Clearing move options', 'Render');
+		this._selectedSquare = null;
+		this._moveOptions = [];
+	}
+
 	_fillMoveOptions(fromSquare) {
 		logDebug('Filling move options', 'Render');
 		this._selectedSquare = fromSquare;
@@ -396,6 +403,7 @@ class CanvasBoardViewController {
 	}
 
 	_helperHighlightSquare(square, color) {
+		let resetStyle = this._ctx.strokeStyle;
 		let origin = this._squareToOrigin(square);
 		this._ctx.strokeStyle = color;
 		this._ctx.strokeRect(
@@ -404,6 +412,7 @@ class CanvasBoardViewController {
 			this._squareWidth - 4,
 			this._squareWidth - 4
 		)
+		this._ctx.strokeStyle = resetStyle;
 	}
 
 	/* Core Rendering */
@@ -607,7 +616,7 @@ class CanvasBoardViewController {
 
 	_render() {
 		// clear the canvas
-		this._ctx.clearRect(0, 0, this._ctx.width, this._ctx.height);
+		this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
 		// render grid
 		for (let row = 0; row < 10; row++) {
 			this._helperDrawLine(
