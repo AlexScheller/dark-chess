@@ -314,11 +314,20 @@ class CanvasBoardViewController {
 				logDebug(`Square at ${square}.`, 'Click');
 			}
 		}
-		if (this._model.playersPiece(square)) {
-			this._clearMoveOptions();
-			this._fillMoveOptions(square);
+		if (this._model.playersTurn()) {
+			if (this._model.playersPiece(square)) {
+				this._clearMoveOptions();
+				this._fillMoveOptions(square);
+			} else if (this._moveOptions.includes(square)) {
+				// note it is implied that a piece is selected if the above is
+				// true.
+				let move = this._selectedSquare + square;
+				this._listener.handleMoveRequest(move);
+			} else {
+				this._clearMoveOptions();
+			}
+			this._render();
 		}
-		this._render();
 		// if (this._model.playersTurn() && this._moveBuffer == null) {
 		// 	if (square.classList.contains('move-option')) {
 		// 		let move = this._selectedSquare + square.id;
@@ -335,6 +344,14 @@ class CanvasBoardViewController {
 		// 		this._renderMoveOptions(square.id);
 		// 	}
 		// }
+	}
+
+	/* ModelListener methods */
+
+	handleModelReload() {
+		this._selectedSquare = null;
+		this._clearMoveOptions();
+		this._render();
 	}
 
 	/* internals */
