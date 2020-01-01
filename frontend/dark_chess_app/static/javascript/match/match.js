@@ -319,12 +319,13 @@ class CanvasBoardViewController {
 			}
 		}
 		if (this._model.playersTurn()) {
-			if (this._model.playersPiece(square)) {
+			if (
+				this._model.playersPiece(square) &&
+				this._selectedSquare !== square // otherwise clear options.
+			) {
 				this._clearMoveOptions();
 				this._fillMoveOptions(square);
 			} else if (this._moveOptions.includes(square)) {
-				// note it is implied that a piece is selected if the above is
-				// true.
 				let move = this._selectedSquare + square;
 				this._listener.handleMoveRequest(move);
 			} else {
