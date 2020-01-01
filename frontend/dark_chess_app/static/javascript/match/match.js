@@ -1,8 +1,18 @@
+/* Utility Functions */
+
 function logDebug(msg, eventType) {
 	if (config.debug) {
 		let typeMsg = (eventType != null) ? `(${eventType} Event) ` : '';
 		console.debug(`${typeMsg}${msg}`);
 	}
+}
+
+function swapEl(el1, el2) {
+	let tempLoc = document.createElement('div');
+	el1.parentNode.insertBefore(tempLoc, el1);
+	el2.parentNode.insertBefore(el1, el2);
+	tempLoc.parentNode.insertBefore(el2, tempLoc)
+	tempLoc.parentNode.removeChild(tempLoc);
 }
 
 // WebsocketHandler listens to events from the backend on behalf of the
@@ -267,14 +277,18 @@ class CanvasBoardViewController {
 			this._canvas.height = this._height;
 			this._canvas.width = this._height;
 
-			this._boardFlipped = this._model.playerSide === 'b' ? true : false;
-
 			this._ctx = this._canvas.getContext('2d');
 
 			this._setupClickHandlers();
 
 			this._moveOptions = [];
 			this._selectedSquare = null;
+
+			this._boardFlipped = false;
+
+			if (this._model.playerSide === 'b') {
+				this._flipBoard();
+			}
 
 			this._render();
 		} else {
@@ -302,8 +316,7 @@ class CanvasBoardViewController {
 	}
 
 	_handleFlipBoardClick() {
-		this._boardFlipped = !this._boardFlipped;
-		this._render();
+		this._flipBoard();
 	}
 
 	_handleSquareClick(event) {
@@ -412,6 +425,17 @@ class CanvasBoardViewController {
 			logDebug(`move option: ${fromSquare} to ${move.to}`, 'Render');
 			this._moveOptions.push(move.to);
 		}
+	}
+
+	_flipBoard() {
+		// There are still a few things that are handled with regular old html
+		// elements.
+		let playerWhite = document.getElementById('player-white'); 
+		let playerBlack = document.getElementById('player-black');
+		swapEl(playerWhite, playerBlack);
+		// The rest is handled on the canvas
+		this._boardFlipped = !this._boardFlipped;
+		this._render();
 	}
 
 	/* helper canvas methods */
@@ -837,13 +861,6 @@ class HTMLElementBoardViewController {
 
 	// When playing as black
 	_flipBoard() {
-		function swapEl(el1, el2) {
-			let tempLoc = document.createElement('div');
-			el1.parentNode.insertBefore(tempLoc, el1);
-			el2.parentNode.insertBefore(el1, el2);
-			tempLoc.parentNode.insertBefore(el2, tempLoc)
-			tempLoc.parentNode.removeChild(tempLoc);
-		}
 		for (const col of 'abcdefgh') {
 			for (let row = 1; row <= 4; row++) {
 				swapEl(
