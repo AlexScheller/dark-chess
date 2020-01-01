@@ -186,6 +186,10 @@ class MatchModel {
 		return this._playerSide;
 	}
 
+	get turn() {
+		return this._board.turn();
+	}
+
 	playersTurn(id = null) {
 		if (id != null) {
 			if (id == this._playerId) {
@@ -559,6 +563,10 @@ class CanvasBoardViewController {
 				center.x - (this._squareWidth / 3),
 				center.y + (this._squareWidth / 3)
 			);
+			if (this._model.turn == piece.color) {
+				this._ctx.strokeStyle = 'red';
+				this._ctx.fillStyle = 'red';
+			}
 			if (piece.color === 'b') {
 				this._ctx.fill();
 			} else {
@@ -581,6 +589,8 @@ class CanvasBoardViewController {
 				this._ctx.lineWidth = this._lineWidth;
 				this._ctx.stroke();
 			}
+			this._ctx.strokeStyle = 'black';
+			this._ctx.fillStyle = 'black';
 		} else if (piece.type === 'q') { // queens
 			this._ctx.beginPath();
 			// left spike
