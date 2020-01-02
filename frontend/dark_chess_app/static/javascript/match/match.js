@@ -200,6 +200,15 @@ class MatchModel {
 		return this._board.turn();
 	}
 
+	// This is probably a little jank
+	get inProgress() {
+		return (
+			this._playerSide != null &&
+			this._opponentSide != null && 
+			!this._board.game_over()
+		);
+	}
+
 	playersTurn(id = null) {
 		if (id != null) {
 			if (id == this._playerId) {
@@ -270,6 +279,7 @@ class CanvasBoardViewController {
 		if (this._canvas.getContext) {
 			
 			this._model = model;
+			this._active = this._model.inProgress;
 			this._model.setListener(this);
 
 			this._squareWidth = squareWidth;
@@ -279,8 +289,6 @@ class CanvasBoardViewController {
 
 			this._ctx = this._canvas.getContext('2d');
 
-			this._setupClickHandlers();
-
 			this._moveOptions = [];
 			this._selectedSquare = null;
 
@@ -288,6 +296,10 @@ class CanvasBoardViewController {
 
 			if (this._model.playerSide === 'b') {
 				this._flipBoard();
+			}
+
+			if (this._active) {
+				this._setupClickHandlers();
 			}
 
 			this._render();
@@ -320,57 +332,98 @@ class CanvasBoardViewController {
 	}
 
 	_handleSquareClick(event) {
-		let point = {x: event.offsetX, y: event.offsetY};
-		let square = this._pointToSquare(point);
-		if (config.debug) {
-			let piece = this._model.pieceAt(square);
-			if (piece != null) {
-				let pieceJSON = JSON.stringify(piece);
-				logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
-			} else {
-				logDebug(`Square at ${square}.`, 'Click');
+		if (this._active) {
+			let point = {x: event.offsetX, y: event.offsetY};
+			let square = this._pointToSquare(point);
+			if (config.debug) {
+				let piece = this._model.pieceAt(square);
+				if (piece != null) {
+					let pieceJSON = JSON.stringify(piece);
+					logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
+				} else {
+					logDebug(`Square at ${square}.`, 'Click');
+				}
 			}
-		}
-		if (this._model.playersTurn()) {
-			if (
-				this._model.playersPiece(square) &&
-				this._selectedSquare !== square // otherwise clear options.
-			) {
-				this._clearMoveOptions();
-				this._fillMoveOptions(square);
-			} else if (this._moveOptions.includes(square)) {
-				let move = this._selectedSquare + square;
-				this._listener.handleMoveRequest(move);
-			} else {
-				this._clearMoveOptions();
+			if (this._model.playersTurn()) {
+				if (
+					this._model.playersPiece(square) &&
+					this._selectedSquare !== square // otherwise clear options.
+				) {
+					this._clearMoveOptions();
+					this._fillMoveOptions(square);
+				} else if (this._moveOptions.includes(square)) {
+					let move = this._selectedSquare + square;
+					this._listener.handleMoveRequest(move);
+				} else {
+					this._clearMoveOptions();
+				}
+				this._render();
 			}
-			this._render();
+			// if (this._model.playersTurn() && this._moveBuffer == null) {
+			// 	if (square.classList.contains('move-option')) {
+			// 		let move = this._selectedSquare + square.id;
+			// 		if (this._model.promotionAvailable(move)) {
+			// 			logDebug(`Promotion available, buffering move: ${move}`, 'Render')
+			// 			this._moveBuffer = move;
+			// 			this._displayPromotionChoices()
+			// 		} else {
+			// 			this._listener.handleMoveRequest(move);
+			// 		}
+			// 	} else if (this._selectedSquare != null) {
+			// 		this._clearRenderedMoveOptions();
+			// 	} else if (this._model.playersPiece(square.id)) {
+			// 		this._renderMoveOptions(square.id);
+			// 	}
+			// }
 		}
-		// if (this._model.playersTurn() && this._moveBuffer == null) {
-		// 	if (square.classList.contains('move-option')) {
-		// 		let move = this._selectedSquare + square.id;
-		// 		if (this._model.promotionAvailable(move)) {
-		// 			logDebug(`Promotion available, buffering move: ${move}`, 'Render')
-		// 			this._moveBuffer = move;
-		// 			this._displayPromotionChoices()
-		// 		} else {
-		// 			this._listener.handleMoveRequest(move);
-		// 		}
-		// 	} else if (this._selectedSquare != null) {
-		// 		this._clearRenderedMoveOptions();
-		// 	} else if (this._model.playersPiece(square.id)) {
-		// 		this._renderMoveOptions(square.id);
-		// 	}
-		// }
+	}
+
+	_renderPlayerHTML(playerData, playerSide) {
+		let side = (playerSide == 'w') ? 'white' : 'black';
+		let playersTurn = '';
+		if (this._model.playersTurn(playerData.id)) {
+			playersTurn == '<i class="far fa-chevron-double-left"></i>'
+		}
+		return `
+			<h3
+				id="player-${playerData.id}"
+				class="player-title player-${side}-title"
+			>${playerData.username}</h3>${playersTurn}
+		`
 	}
 
 	/* ModelListener methods */
+	renderNewOpponent(opponentData, opponentSide) {
+		let side = (opponentSide == 'w') ? 'white' : 'black'; 
+		let container = document.getElementById(`player-${side}`);
+		container.innerHTML = this._renderPlayerHTML(
+			opponentData,
+			opponentSide
+		);
+	}
 
 	handleModelReload() {
 		this._selectedSquare = null;
 		this._clearMoveOptions();
+		this._active = this._model.inProgress;
 		this._render();
 	}
+
+	// handleGameOver(winner) {
+	// 	// flash the checkmated king
+	// 	let interval = 1000;
+	// 	let expectedTick = Date.now() + interval;
+	// 	function tick() {
+	// 		let drift = Date.now() - expectedTick;
+	// 		if (drift > interval) {
+	// 			// TODO: do something?
+	// 		}
+	// 		// flash/render
+	// 		expectedTick += interval;
+	// 		setTimeout(tick(), Math.max(0, interval - drift));
+	// 	}
+	// 	tick();
+	// }
 
 	/* internals */
 
@@ -910,6 +963,7 @@ class HTMLElementBoardViewController {
 		`
 	}
 
+	/* ModelListener methods */
 	renderNewOpponent(opponentData, opponentSide) {
 		let side = (opponentSide == 'w') ? 'white' : 'black'; 
 		let container = document.getElementById(`player-${side}`);
@@ -919,17 +973,16 @@ class HTMLElementBoardViewController {
 		);
 	}
 
-	handleGameOver(winner) {
-		let winnerEl = document.getElementById(`player-${winner.id}`);
-		winnerEl.innerText = winnerEl.innerText + ' Winner!';
-		document.getElementById('board').classList.add('inactive');
-	}
-
-	/* ModelListener methods */
 	handleModelReload() {
 		this._moveBuffer = null;
 		this._clearRenderedMoveOptions();
 		this._render();
+	}
+
+	handleGameOver(winner) {
+		let winnerEl = document.getElementById(`player-${winner.id}`);
+		winnerEl.innerText = winnerEl.innerText + ' Winner!';
+		document.getElementById('board').classList.add('inactive');
 	}
 
 }
