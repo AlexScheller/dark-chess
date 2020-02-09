@@ -18,6 +18,16 @@ def get_match(id):
 	match = Match.query.get_or_404(id)
 	return match.as_dict()
 
+@matches.route('/<int:id>/as-player', methods=['GET'])
+@token_auth.login_required
+def get_match_as_player(id):
+	match = Match.query.get_or_404(id)
+	if g.current_user.id == match.player_white_id:
+		return match.as_dict('white')
+	elif g.current_user.id == match.player_black_id:
+		return match.as_dict('black')
+	return error_response(403, 'You are not currently playing this match.')
+
 @matches.route('/open-matches', methods=['GET'])
 @token_auth.login_required
 def get_open_matches():

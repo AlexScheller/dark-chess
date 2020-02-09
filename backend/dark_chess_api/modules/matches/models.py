@@ -93,6 +93,33 @@ class Match(db.Model):
 	def current_fen(self):
 		return self.history[-1].fen
 
+	def current_dark_board(self, side):
+		board = chess.Board(fen=self.history[-1].fen)
+		# TODO: See if this needs to change...probably not though since this is
+		# cliffhanger dark
+		player_side = chess.WHITE if side == 'white' else chess.BLACK
+		if player_side != board.turn:
+			return '????????/????????/????????/????????/????????/????????/????????/????????'
+		visible_squares = []
+		for move in board.pseudo_legal_moves:
+			visible_squares.append(move.from_square)
+			visible_squares.append(move.to_square)
+		dfen = ''
+		for rank in range(8):
+			for file in range(8):
+				square = chess.square(file, rank)
+				piece = board.piece_at(square)
+				if piece is not None:
+					if piece.color == player_side or square in visible_squares:
+						dfen += piece.symbol()
+				elif square in visible_squares:
+					dfen += '_'
+				else:
+					dfen += '?'
+			if rank < 7:
+				dfen += '/'
+		return dfen
+
 	@property
 	def current_side(self):
 		if not self.in_progress:
@@ -138,7 +165,7 @@ class Match(db.Model):
 	# Some of the initial properties are mutually exclusive, and
 	# could therefore be inferred from eachother, but they are
 	# all left in for convienience of questioning.
-	def as_dict(self):
+	def as_dict(self, side=None):
 		ret = {
 			'id' : self.id,
 			'connection_hash': self.connection_hash,
@@ -157,10 +184,17 @@ class Match(db.Model):
 		}
 		if self.in_progress:
 			ret.update({
-				'current_fen': self.current_fen,
 				'current_side': self.current_side,
 				'current_player_id': self.current_player.id
 			})
+			if side is not None:
+				ret.update({
+					'current_dark_board': self.current_dark_board(side),
+				})
+			else:
+				ret.update({
+					'current_fen': self.current_fen,
+				})
 		if self.is_finished:
 			ret.update({
 				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',
