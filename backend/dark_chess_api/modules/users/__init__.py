@@ -27,6 +27,9 @@ def mock():
 			seen_name_counts[username] = 1
 		u = User(username, f'{username.lower()}@example.com', 'password')
 		users.append(u)
+	# Include a couple of hardcoded ones to rely on
+	users.append(User('alex', 'alex@example.com', 'password'))
+	users.append(User('maya', 'maya@examplecom', 'password'))
 	db.session.add_all(users)
 	db.session.commit()
 
