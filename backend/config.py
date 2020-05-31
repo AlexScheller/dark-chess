@@ -37,7 +37,7 @@ class Config:
 	### database ###
 	DATABASE_URIS = {
 		'MYSQL' : f'mysql+mysqldb://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}{DB_SSL_STRING}',
-		'POSTGRESQL': f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}{DB_SSL_STRING}',
+		'POSTGRES': f'postgresql+psycopg2://{DB_USERNAME}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}{DB_SSL_STRING}',
 		'SQLITE' : 'sqlite:///' + os.path.join(basedir, 'app.db')
 	}
 	CHOSEN_DATABASE = os.environ.get('CHOSEN_DATABASE') or 'SQLITE'
