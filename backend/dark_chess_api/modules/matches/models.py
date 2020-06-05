@@ -7,6 +7,41 @@ import chess
 import random
 import secrets
 
+# Note that this file is full of inneficient code, most notably many
+# instantiations of board objects for simple functions. In the future this may
+# be made more efficient, but currently development time is prioritized, as
+# projected actual usage (that is, http requests) is super low.
+
+# This helper class encapsulates the chess.py board and provides some darkchess
+# specific utility functions.
+# TODO: Convert most (all?) calls to `chess.Board` to use this class instead.
+class DarkBoard(chess.Board):
+
+	def dark_fen(self, side):
+		player_side = chess.WHITE if side == 'white' else chess.BLACK
+		if player_side != self.turn:
+			return '????????/????????/????????/????????/????????/????????/????????/????????'
+		attackable_squares = []
+		for move in self.pseudo_legal_moves:
+			attackable_squares.append(move.from_square)
+			attackable_squares.append(move.to_square)
+		dfen = ''
+		# chess.py conceives of boards as being a1 -> h8 with white on top, but
+		# we use the traditional method of a8 -> h1 with black on top. Because
+		# of this, we iterate in reverse.
+		for rank in range(7, -1, -1):
+			for file in range(7, -1, -1):
+				square = chess.square(file, rank)
+				piece = self.piece_at(square)
+				if (square in attackable_squares or
+					(piece is not None and piece.color == player_side)):
+					dfen += piece.symbol() if piece is not None else '_'
+				else:
+					dfen += '?'
+			if rank > 0:
+				dfen += '/'
+		return dfen
+
 class MatchState(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
@@ -14,7 +49,6 @@ class MatchState(db.Model):
 	fen = db.Column(db.String(256))
 
 	match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
-
 
 class Match(db.Model):
 
@@ -93,32 +127,21 @@ class Match(db.Model):
 	def current_fen(self):
 		return self.history[-1].fen
 
-	def current_dark_board(self, side):
-		board = chess.Board(fen=self.history[-1].fen)
-		# TODO: See if this needs to change...probably not though since this is
-		# cliffhanger dark
-		player_side = chess.WHITE if side == 'white' else chess.BLACK
-		if player_side != board.turn:
-			return '????????/????????/????????/????????/????????/????????/????????/????????'
-		visible_squares = []
-		for move in board.pseudo_legal_moves:
-			visible_squares.append(move.from_square)
-			visible_squares.append(move.to_square)
-		dfen = ''
-		for rank in range(8):
-			for file in range(8):
-				square = chess.square(file, rank)
-				piece = board.piece_at(square)
-				if piece is not None:
-					if piece.color == player_side or square in visible_squares:
-						dfen += piece.symbol()
-				elif square in visible_squares:
-					dfen += '_'
-				else:
-					dfen += '?'
-			if rank < 7:
-				dfen += '/'
-		return dfen
+	def current_dark_fen(self, side):
+		if not self.in_progress:
+			return None
+		return self.current_board(side).dark_fen(side)
+
+	# @property
+	# def current_board(self):
+	# 	if not self.in_progress:
+	# 		return None
+	# 	return chess.Board(fen=self.current_fen)
+
+	def current_board(self, side):
+		if not self.in_progress:
+			return None
+		return DarkBoard(fen=self.current_fen)
 
 	@property
 	def current_side(self):
@@ -148,6 +171,33 @@ class Match(db.Model):
 		player_side = chess.BLACK if player.id == self.player_black_id else chess.WHITE
 		return player_side == board.turn
 
+	# Note that be cause this is dark chess, the list of moves includes pseudo-
+	# legal ones, such as moves that leave the king in check.
+	def possible_moves(self, side):
+		if not self.in_progress:
+			return {}
+		if self.current_side != side:
+			return {}
+		moves = self.current_board(side).pseudo_legal_moves
+		# List comprehensions may be nicer to look at here, but would be less
+		# performant
+		ret = {}
+		for move in moves:
+			if move.from_square in ret:
+				ret[move.from_square].append(move.to_square)
+			else:
+				ret[move.from_square] = [move.to_square]
+		return ret
+
+	def possible_moves_as_names(self, side):
+		return [
+			{
+				chess.SQUARE_NAMES[move_from]: [
+					chess.SQUARE_NAMES[move_to] for move_to in moves_to
+				]
+			} for move_from, moves_to in self.possible_moves(side).items()
+		]
+
 	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)
 		board = chess.Board(fen=self.current_fen)
@@ -162,14 +212,13 @@ class Match(db.Model):
 			return True
 		return False
 
-	# Some of the initial properties are mutually exclusive, and
-	# could therefore be inferred from eachother, but they are
-	# all left in for convienience of questioning.
+	# Some of the initial properties are mutually exclusive, and could
+	# therefore be inferred from eachother, but they are all left in for
+	# convienience of questioning. This whole method probably should be
+	# refactored.
 	def as_dict(self, side=None):
 		ret = {
 			'id' : self.id,
-			'connection_hash': self.connection_hash,
-			'history' : [ms.fen for ms in self.history],
 			'is_finished' : self.is_finished,
 			'in_progress' : self.in_progress,
 			'open' : self.open,
@@ -182,19 +231,38 @@ class Match(db.Model):
 				'username': self.player_white.username
 			} if self.player_white is not None else None
 		}
+		# I guess it doesn't really matter to hide the connection hash ever,
+		# since until the match is full it's fully exposed and anyone can copy
+		# it or scrape it or whatever. TODO: Think about this one some more.
+		if side is not None or self.open:
+			ret.update({
+				'connection_hash': self.connection_hash
+			})
+		if side == 'spectating':
+			ret.update({
+				'transparent_history': [ms.fen for ms in self.history]
+			})
+		else:
+			ret.update({
+				f'{side}_vision_history': [
+					DarkBoard(fen=ms.fen).dark_fen(side) for ms in self.history
+				]
+			})
 		if self.in_progress:
 			ret.update({
 				'current_side': self.current_side,
 				'current_player_id': self.current_player.id
 			})
 			if side is not None:
-				ret.update({
-					'current_dark_board': self.current_dark_board(side),
-				})
-			else:
-				ret.update({
-					'current_fen': self.current_fen,
-				})
+				if side != 'spectating':
+					ret.update({
+						'current_dark_fen': self.current_dark_fen(side),
+						'possible_moves': self.possible_moves_as_names(side)
+					})
+				else:
+					ret.update({
+						'current_fen': self.current_fen,
+					})
 		if self.is_finished:
 			ret.update({
 				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',

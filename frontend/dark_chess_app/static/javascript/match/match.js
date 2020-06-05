@@ -137,137 +137,279 @@ class APIHandler {
 
 }
 
-// This is just a client cache for the backend's model. Its main
-// intention is to allow client-side move verification.
 class MatchModel {
 
 	constructor(matchData, playerData, opponentData = null) {
 		logDebug('Constructing MatchModel.');
-		this._board = new Chess();
-		// console.log(matchData.history[matchData.history.length - 1]);
-		if (matchData.history.length > 0) {
-			this._board.load(matchData.history[matchData.history.length - 1]);
+		this._matchData = matchData;
+		console.log(matchData);
+		if (this._matchData.in_progress) {
+			this._board = this.loadFromDarkFen(this._matchData.current_dark_fen);
 		}
-		this.matchId = matchData.id;
-		this._playerId = playerData.id;
-		if ((matchData.player_black != null) &&
-			(matchData.player_black.id == this._playerId)) {
-			this._playerSide = 'b';
-		} else if ((matchData.player_white != null) &&
-			(matchData.player_white.id == this._playerId)) {
-			this._playerSide = 'w';
-		} else {
-			this._playerSide = null;
+		this._playerData = playerData;
+		this._opponentData = opponentData;
+	}
+
+	// Public accessors for internal data clusters.
+	
+	// Many of these could be made
+	// more performant by a one time check at instantiation-time, but a client
+	// will only run a single one of these match models at once, and for now I
+	// prefer the functional approach.
+
+	get matchId() {
+		return this._matchData.id;
+	}
+
+	get playerSide() {
+		if (this._matchData.player_black?.id == this._playerData.id) return 'b';
+		if (this._matchData.player_white?.id == this._playerData.id) return 'w';
+		return null;
+	}
+
+	get opponentSide() {
+		if (this.playerSide) {
+			return this.playerSide == 'w' ? 'b' : 'w';
 		}
-		this._opponentId = null;
-		if (this._playerSide != null) {
-			this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
+		return null;
+	}
+
+	get inProgress() {
+		return this._matchData.in_progress;
+	}
+
+	get turn() {
+		if (this._matchData.in_progress) {
+			return this._matchData.current_side == 'white' ? 'w' : 'b';
 		}
-		if (opponentData != null) {
-			this._opponentId = opponentData.id;
+		return null;
+	}
+
+		// This seems pretty jank...
+	contentAtSquare(square) {
+		if (this._board) {
+			let value = this._board[square].toLowerCase();
+			let type = ['_', '?'].includes(value) ? 'vision' : 'piece';
+			let color = null;
+			if (type === 'piece') {
+				// If the piece were originally lower case, it is black.
+				color = this._board[square] === value ? 'b' : 'w'; 
+			}
+			return { type, value, color }
 		}
+		return null;
+	}
+
+	pieceAtSquare(square) {
+		if (this._board) {
+			let content = this.contentAtSquare(square);
+			if (content.type !== 'piece') {
+				return null;
+			}
+			return { type: content.value, color: content.color };
+		}
+		return null;
+	}
+
+	playersTurn(id = null) {
+		if (id != null) {
+			if (id == this._playerData.id) {
+				return this.turn == this.playerSide;
+			} else if (this._opponentData?.id == id) {
+				return this.turn == this.opponentSide;
+			}
+			throw new RangeError(`no such player id in match: ${id}`);
+		}
+		if (this.playerSide == null) {
+			return false;
+		}
+		return this.turn == this.playerSide;
+	}
+
+	playersPiece(square) {
+		let squarePiece = this.pieceAtSquare(square);
+		if (squarePiece == null || this.playerSide == null) {
+			return null;
+		}
+		return this.playerSide == squarePiece.color;
+	}
+
+	movesFrom(fromSquare) {
+		let ret = this.matchData?.possible_moves?.fromSquare;
+		return ret !== undefined ? ret : [];
 	}
 
 	setListener(listener) {
 		this._listener = listener;
 	}
 
-	loadOpponent(opponentData) {
-		this._opponentId = opponentData.id;
-		this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
-		this._listener.renderNewOpponent(opponentData, this._opponentSide);
-	}
-
-	begin(fen) {
-		this.reload(fen);
-	}
-
-	reload(fen) {
-		logDebug(`(Reload Event) Match model reloading with fen: '${fen}'`)
-		let successful = this._board.load(fen);
-		if (successful) {
-			this._listener.handleModelReload();
-		} else {
-			console.error(`Unable to load board from fen: ${fen}`)
-		}
-	}
-
-	get playerSide() {
-		return this._playerSide;
-	}
-
-	get turn() {
-		return this._board.turn();
-	}
-
-	// This is probably a little jank
-	get inProgress() {
-		return (
-			this._playerSide != null &&
-			this._opponentSide != null && 
-			!this._board.game_over()
-		);
-	}
-
-	playersTurn(id = null) {
-		if (id != null) {
-			if (id == this._playerId) {
-				return this._board.turn() == this._playerSide;
-			} else if (this._opponentId != null && id == this._opponentId) {
-				return this._board.turn() ==  this._opponentSide;
+	loadFromDarkFen(darkFen) { 
+		let ret = {}
+		let squares = darkFen.split('/').join('')
+		let curr = 0;
+		for (let rank of '87654321') {
+			for (let file of 'abcdefgh') {
+				ret[file + rank] = squares[curr++] 
 			}
-			throw new RangeError(`no such player id in match: ${id}`);
 		}
-		if (this._playerSide == null) {
-			return false;
-		}
-		return this._board.turn() == this._playerSide;
+		return ret;
 	}
 
-	getPlayerId() {
-		return this._playerId;
+	loadOpponent(opponentData) {
+		this._opponentData = opponentData;
+		this._listener.renderNewOpponent(opponentData, this.opponentSide);
 	}
 
-	playersPiece(square) {
-		let bSquare = this._board.get(square);
-		if (bSquare == null || this._playerSide == null) {
-			return null;
-		}
-		return this._playerSide == bSquare.color;
+	reload(darkFen, possibleMoves = null) {
+		logDebug(`(Reload Event) Match model reloading with fen: '${dark_fen}'`)
+		this._board = this.loadFromDarkFen(darkFen)
+		this._possibleMoves = possibleMoves
+		this._listener.handleModelReload();
 	}
 
-	// expects same notation as used by backend, namely uci
-	validMove(move) {
-		return this._board.move(move, {sloppy: true}) != null;
-	}
-
-	pieceAt(square) {
-		return this._board.get(square);
-	}
-
-	// Note this assumes that this move is being requested by the player, not
-	// the opponent.
-	promotionAvailable(move) {
-		let from = move.substring(0, 2);
-		let to = move.substring(2, 4);
-		if (this.pieceAt(from).type != 'p') {
-			return false;
-		}
-		let promoRank = (this.playerSide == 'b') ? '1' : '8';
-		return (to[1] === promoRank);
-	}
-
-	movesFrom(fromSquare) {
-		return this._board.moves({
-			verbose: true
-		}).filter(move => move.from == fromSquare);
-	}
-
-	moveMade(player, uciString, currentFen) {
-		this.reload(currentFen);
+	begin(dark_fen, possible_moves = null) {
+		this.reload(dark_fen, possible_moves);
 	}
 
 }
+
+// This is just a client cache for the backend's model.
+// class MatchModel {
+
+// 	constructor(matchData, playerData, opponentData = null) {
+// 		logDebug('Constructing MatchModel.');
+// 		this.matchData = matchData;
+// 		this.board = this.loadFromDarkFen(this.matchData.dark_fen);
+// 		this.playerData = playerData;
+// 		this.opponentData = opponentData;
+// 		// // console.log(matchData.history[matchData.history.length - 1]);
+// 		// this.matchId = matchData.id;
+// 		// this._playerId = playerData.id;
+// 		// if ((matchData.player_black != null) &&
+// 		// 	(matchData.player_black.id == this._playerId)) {
+// 		// 	this._playerSide = 'b';
+// 		// } else if ((matchData.player_white != null) &&
+// 		// 	(matchData.player_white.id == this._playerId)) {
+// 		// 	this._playerSide = 'w';
+// 		// } else {
+// 		// 	this._playerSide = null;
+// 		// }
+// 		// this._opponentId = null;
+// 		// if (this._playerSide != null) {
+// 		// 	this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
+// 		// }
+// 		// if (opponentData != null) {
+// 		// 	this._opponentId = opponentData.id;
+// 		// }
+// 	}
+
+// 	setListener(listener) {
+// 		this._listener = listener;
+// 	}
+
+// 	loadOpponent(opponentData) {
+// 		this._opponentId = opponentData.id;
+// 		this._opponentSide = this._playerSide == 'b' ? 'w' : 'b';
+// 		this._listener.renderNewOpponent(opponentData, this._opponentSide);
+// 	}
+
+// 	loadFromDarkFen(darkFen) {
+// 		this.board = [];
+// 		let rows = darkFen.split('\\');
+// 		for (const row of rows) {
+// 			this.board.push(row.split())
+// 		}
+// 	}
+
+// 	begin(dark_fen, possible_moves = null) {
+// 		this.reload(dark_fen, possible_moves);
+// 	}
+
+// 	reload(dark_fen, possible_moves = null) {
+// 		logDebug(`(Reload Event) Match model reloading with fen: '${dark_fen}'`)
+// 		this._board_fen = dark_fen;
+// 		this._possible_moves = possible_moves
+// 		this._listener.handleModelReload();
+// 	}
+
+// 	get playerSide() {
+// 		return this._playerSide;
+// 	}
+
+// 	get turn() {
+// 		return this._board.turn();
+// 		return
+// 	}
+
+// 	// This is probably a little jank
+// 	get inProgress() {
+// 		return (
+// 			this._playerSide != null &&
+// 			this._opponentSide != null && 
+// 			!this._board.game_over()
+// 		);
+// 	}
+
+// 	playersTurn(id = null) {
+// 		if (id != null) {
+// 			if (id == this._playerId) {
+// 				return this._board.turn() == this._playerSide;
+// 			} else if (this._opponentId != null && id == this._opponentId) {
+// 				return this._board.turn() ==  this._opponentSide;
+// 			}
+// 			throw new RangeError(`no such player id in match: ${id}`);
+// 		}
+// 		if (this._playerSide == null) {
+// 			return false;
+// 		}
+// 		return this._board.turn() == this._playerSide;
+// 	}
+
+// 	getPlayerId() {
+// 		return this._playerId;
+// 	}
+
+// 	playersPiece(square) {
+// 		let bSquare = this._board.get(square);
+// 		if (bSquare == null || this._playerSide == null) {
+// 			return null;
+// 		}
+// 		return this._playerSide == bSquare.color;
+// 	}
+
+// 	// expects same notation as used by backend, namely uci
+// 	validMove(move) {
+// 		return this._board.move(move, {sloppy: true}) != null;
+// 	}
+
+// 	pieceAt(square) {
+// 		return this._board.get(square);
+// 	}
+
+// 	// Note this assumes that this move is being requested by the player, not
+// 	// the opponent.
+// 	promotionAvailable(move) {
+// 		let from = move.substring(0, 2);
+// 		let to = move.substring(2, 4);
+// 		if (this.pieceAt(from).type != 'p') {
+// 			return false;
+// 		}
+// 		let promoRank = (this.playerSide == 'b') ? '1' : '8';
+// 		return (to[1] === promoRank);
+// 	}
+
+// 	movesFrom(fromSquare) {
+// 		return this.matchData?.possible_moves?.fromSquare;
+// 		// return this._board.moves({
+// 		// 	verbose: true
+// 		// }).filter(move => move.from == fromSquare);
+// 	}
+
+// 	moveMade(player, uciString, currentFen) {
+// 		this.reload(currentFen);
+// 	}
+
+// }
 
 // Like the class name implies, this controls the board view. It handles all
 // player actions. This implementation relies on the Canvas API.
@@ -336,7 +478,7 @@ class CanvasBoardViewController {
 			let point = {x: event.offsetX, y: event.offsetY};
 			let square = this._pointToSquare(point);
 			if (config.debug) {
-				let piece = this._model.pieceAt(square);
+				let piece = this._model.pieceAtSquare(square);
 				if (piece != null) {
 					let pieceJSON = JSON.stringify(piece);
 					logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
@@ -344,6 +486,7 @@ class CanvasBoardViewController {
 					logDebug(`Square at ${square}.`, 'Click');
 				}
 			}
+			console.log(this._model.playersTurn());
 			if (this._model.playersTurn()) {
 				if (
 					this._model.playersPiece(square) &&
@@ -719,6 +862,24 @@ class CanvasBoardViewController {
 
 	}
 
+	_drawFog(origin) {
+		let center = {
+			x: origin.x + Math.floor(this._squareWidth / 2),
+			y: origin.y + Math.floor(this._squareWidth / 2)
+		}
+		this._ctx.fillStyle = 'black';
+		let crossHalfWidth = this._squareWidth / 2;
+		this._ctx.lineWidth = this._lineWidth;
+		this._helperDrawLine(
+			{ x: center.x - crossHalfWidth, y: center.y - crossHalfWidth },
+			{ x: center.x + crossHalfWidth, y: center.y + crossHalfWidth }
+		);
+		this._helperDrawLine(
+			{ x: center.x + crossHalfWidth, y: center.y - crossHalfWidth },
+			{ x: center.x - crossHalfWidth, y: center.y + crossHalfWidth }
+		);
+	}
+
 	_render() {
 		// clear the canvas
 		this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
@@ -754,10 +915,21 @@ class CanvasBoardViewController {
 		// render pieces
 		for (let rank = 1; rank <= 8; rank++) {
 			for (let file of 'abcdefgh') {
-				let piece = this._model.pieceAt(file + rank);
-				if (piece != null) {
+				let squareContent = this._model.contentAtSquare(file + rank);
+				if (squareContent != null) {
 					let origin = this._squareToOrigin(file + rank);
-					this._drawPiece(piece, origin);
+					if (squareContent.type === 'piece') {
+						let piece = {
+							type: squareContent.value,
+							color: squareContent.color 
+						};
+						this._drawPiece(piece, origin);
+					} else if (
+						squareContent.type === 'vision' &&
+						squareContent.value == '?'
+					) {
+						this._drawFog(origin)
+					}
 				}
 			}
 		}
@@ -776,6 +948,9 @@ class CanvasBoardViewController {
 // Like the class name implies, this controls the board view. It
 // handles all player actions. This implementation relies on maniuplating
 // HTML Elements for displaying the board and handling input.
+//
+// As of 2020-05-31, this Controller is deprecated, but kept in the source for
+// posterity, in case it ever gets revived.
 class HTMLElementBoardViewController {
 
 	constructor(model) {
@@ -837,7 +1012,7 @@ class HTMLElementBoardViewController {
 	_handleSquareClick(event) {
 		let square = event.currentTarget;
 		if (config.debug) {
-			let pieceJSON = JSON.stringify(this._model.pieceAt(square.id));
+			let pieceJSON = JSON.stringify(this._model.pieceAtSquare(square.id));
 			logDebug(`Piece at ${square.id} ${pieceJSON}`, 'Click');
 		}
 		if (this._model.playersTurn() && this._moveBuffer == null) {
@@ -928,7 +1103,7 @@ class HTMLElementBoardViewController {
 		// render board
 		for (let row = 1; row <= 8; row++) {
 			for (const col of 'abcdefgh') {
-				let piece = this._model.pieceAt(col + row);
+				let piece = this._model.pieceAtSquare(col + row);
 				let square = document.getElementById(col + row);
 				if (piece != null) {
 					let pieceHTML = this._renderPieceIconHTML(
@@ -992,15 +1167,21 @@ class Match {
 	
 	constructor(config, matchData, playerData) {
 		this._mm = new MatchModel(matchData, playerData);
-		try {
-			this._bvc = new CanvasBoardViewController(this._mm);		
-		} catch(error) {
-			logDebug(error);
-			let canvas = document.getElementById('board-canvas');
-			canvas.classList.add('disabled');
-			// fallback
-			this._bvc = new HTMLElementBoardViewController(this._mm);		
-		}
+		// As of 2020-05-31, the HTMLElement board controllers is dprecated. If
+		// The client doesn't have a browser that supports HTML5 canvas (which
+		// is less than 2% of users according to caniuse.com), they simply won't
+		// be able to play. The following code is kept for posterity in case
+		// someone want's to revive it later.
+		// try {
+		// 	this._bvc = new CanvasBoardViewController(this._mm);		
+		// } catch(error) {
+		// 	logDebug(error);
+		// 	let canvas = document.getElementById('board-canvas');
+		// 	canvas.classList.add('disabled');
+		// 	// fallback
+		// 	this._bvc = new HTMLElementBoardViewController(this._mm);		
+		// }
+		this._bvc = new CanvasBoardViewController(this._mm);
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
 		this._wsh = new WebsocketHandler(config, matchData.connection_hash);

@@ -10,7 +10,7 @@ from dark_chess_api.modules.users.models import User
 # events. It's not really a big deal if a malicious user wants to 'listen in'
 # on some random game.
 
-# The followin method is kept for posterity's sake in case some kind of token
+# The following method is kept for posterity's sake in case some kind of token
 # authentication is indeed required. If that occurs, the token used should NOT
 # be the same as the user's api token (i.e. an additional token model/field
 # should be created).

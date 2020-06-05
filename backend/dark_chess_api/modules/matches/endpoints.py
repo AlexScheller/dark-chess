@@ -12,21 +12,37 @@ from dark_chess_api.modules.websockets import events as ws_events
 
 # Convenience endpoints
 
+# Previously you could just get any match you wanted, but obviously this allows
+# for cheating. Until a robust spectating system is developed, you can only get
+# your own matches, or previous matches. The below two routes are kept for
+# posterity.
+
+# @matches.route('/<int:id>', methods=['GET'])
+# @token_auth.login_required
+# def get_match(id):
+# 	match = Match.query.get_or_404(id)
+# 	return match.as_dict()
+
+# @matches.route('/<int:id>/as-player', methods=['GET'])
+# @token_auth.login_required
+# def get_match_as_player(id):
+# 	match = Match.query.get_or_404(id)
+# 	if g.current_user.id == match.player_white_id:
+# 		return match.as_dict('white')
+# 	elif g.current_user.id == match.player_black_id:
+# 		return match.as_dict('black')
+# 	return error_response(403, 'You are not currently playing this match.')
+
 @matches.route('/<int:id>', methods=['GET'])
 @token_auth.login_required
 def get_match(id):
 	match = Match.query.get_or_404(id)
-	return match.as_dict()
-
-@matches.route('/<int:id>/as-player', methods=['GET'])
-@token_auth.login_required
-def get_match_as_player(id):
-	match = Match.query.get_or_404(id)
 	if g.current_user.id == match.player_white_id:
-		return match.as_dict('white')
+		return match.as_dict(side='white')
 	elif g.current_user.id == match.player_black_id:
-		return match.as_dict('black')
-	return error_response(403, 'You are not currently playing this match.')
+		return match.as_dict(side='black')
+	# if spectating: return match.as_dict(side='spectator')
+	return match.as_dict(side=None)
 
 @matches.route('/open-matches', methods=['GET'])
 @token_auth.login_required
