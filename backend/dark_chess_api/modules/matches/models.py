@@ -19,8 +19,14 @@ class DarkBoard(chess.Board):
 
 	def dark_fen(self, side):
 		player_side = chess.WHITE if side == 'white' else chess.BLACK
-		if player_side != self.turn:
-			return '????????/????????/????????/????????/????????/????????/????????/????????'
+		# This is wrong, but may not be able to be addressed within this class.
+		# instead of simply returning fog, this should return the dark fen for
+		# the previous turn (that is, the last time it was this player's turn.)
+		# if player_side != self.turn:
+		# 	return (
+		# 		'????????/????????/????????/????????/'
+		# 		'????????/????????/????????/????????'
+		# 	)
 		attackable_squares = []
 		for move in self.pseudo_legal_moves:
 			attackable_squares.append(move.from_square)
@@ -77,7 +83,7 @@ class Match(db.Model):
 		foreign_keys='Match.player_black_id'
 	)
 
-	is_finished = db.Column(db.Boolean, default=False)
+	is_finished = db.Column(db.Boolean, default=False, nullable=False)
 
 	winning_player_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	winning_player = db.relationship('User',
@@ -130,7 +136,17 @@ class Match(db.Model):
 	def current_dark_fen(self, side):
 		if not self.in_progress:
 			return None
-		return self.current_board(side).dark_fen(side)
+		if side == self.current_side:
+			return self.current_board(side).dark_fen(side)
+		# In cliffhanger dark, you don't see the results of your move until it's
+		# your turn again, so we return the fen from one move ago, not the
+		# actual current fen.
+		if len(self.history) >= 2:
+			return DarkBoard(fen=self.history[-2].fen).dark_fen(side)
+		return (
+			'????????/????????/????????/????????/'
+			'????????/????????/????????/????????'
+		)
 
 	# @property
 	# def current_board(self):
@@ -171,6 +187,11 @@ class Match(db.Model):
 		player_side = chess.BLACK if player.id == self.player_black_id else chess.WHITE
 		return player_side == board.turn
 
+	# def player_side(self, player):
+	# 	if not self.playing(player):
+	# 		return None
+	# 	return 'w'
+
 	# Note that be cause this is dark chess, the list of moves includes pseudo-
 	# legal ones, such as moves that leave the king in check.
 	def possible_moves(self, side):
@@ -190,13 +211,12 @@ class Match(db.Model):
 		return ret
 
 	def possible_moves_as_names(self, side):
-		return [
-			{
-				chess.SQUARE_NAMES[move_from]: [
-					chess.SQUARE_NAMES[move_to] for move_to in moves_to
-				]
-			} for move_from, moves_to in self.possible_moves(side).items()
-		]
+		return {
+			chess.SQUARE_NAMES[move_from]: [
+				chess.SQUARE_NAMES[move_to] for move_to in moves_to
+			]
+			for move_from, moves_to in self.possible_moves(side).items()
+		}
 
 	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)

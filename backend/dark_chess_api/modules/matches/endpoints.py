@@ -111,11 +111,7 @@ def join_match(id):
 		)
 	match.join(player)
 	db.session.commit()
-	ws_events.broadcast_match_begun(
-		match.current_fen,
-		match.connection_hash,
-		player.as_dict()
-	)
+	ws_events.broadcast_match_begun(match.connection_hash)
 	return {
 		'message' : 'Player successfully joined match.',
 		'match' : match.as_dict()

@@ -13,13 +13,13 @@ from dark_chess_api import socketio
 @socketio.on('connect', namespace='/match-moves')
 def handle_connect():
 	if current_app.config['DEBUG']:
-		print('Client connection event.')
+		current_app.logger.info('(WS) Client connection event.')
 
 @socketio.on('authenticate', namespace='/match-moves')
 def handle_authenticate(json):
 	if current_app.config['DEBUG']:
-		print(f'Client successfully authenticated. Connected from match {json["connectionHash"]}')
-		print(f'Client joining room: {json["connectionHash"]}')
+		current_app.logger.info(f'(WS) Client successfully authenticated. Connected from match {json["connectionHash"]}')
+		current_app.logger.info(f'(WS) Client joining room: {json["connectionHash"]}')
 	join_room(json['connectionHash'])
 	# emit('authenticated', {
 	# 	'msg': f'user ({g.current_user.username}:{g.current_user.id}) authenticated'
@@ -28,20 +28,14 @@ def handle_authenticate(json):
 @socketio.on('disconnect', namespace='/match-moves')
 def handle_disconnect():
 	if current_app.config['DEBUG']:
-		print('Client disconnection event.')
+		print('(WS) Client disconnection event.')
 
 #####################
 #  Outgoing Events  #
 #####################
 
-def broadcast_match_begun(current_fen, connection_hash, joining_player):
-	socketio.emit('match-begun', {
-			'current_fen': current_fen,
-			'joining_player': joining_player
-		},
-		room=connection_hash,
-		namespace='/match-moves'
-	)
+def broadcast_match_begun(connection_hash):
+	socketio.emit('match-begun', room=connection_hash, namespace='/match-moves')
 
 def broadcast_move_made(player, move, current_fen, connection_hash):
 	socketio.emit('move-made', {

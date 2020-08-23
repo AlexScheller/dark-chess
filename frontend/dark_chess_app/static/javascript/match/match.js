@@ -1,6 +1,6 @@
 /* Utility Functions */
 
-function logDebug(msg, eventType) {
+function logDebug(msg, eventType = null) {
 	if (config.debug) {
 		let typeMsg = (eventType != null) ? `(${eventType} Event) ` : '';
 		console.debug(`${typeMsg}${msg}`);
@@ -15,8 +15,9 @@ function swapEl(el1, el2) {
 	tempLoc.parentNode.removeChild(tempLoc);
 }
 
-// WebsocketHandler listens to events from the backend on behalf of the
-// other classes.
+// WebsocketHandler listens to events from the backend on behalf of the other
+// classes. Since we don't want to leak player positions, most of these simply
+// prompt the API handler to request a new model state.
 class WebsocketHandler {
 
 	constructor(config, connectionHash) {
@@ -49,23 +50,16 @@ class WebsocketHandler {
 			logDebug('Authenticated', 'Websocket');
 			logDebug(event);
 		});
-		this._conn.on('match-begun', event => {
+		this._conn.on('match-begun', () => {
 			logDebug('Match begun', 'Websocket');
-			this._listener.handleMatchBegin(
-				event.current_fen,
-				event.joining_player
-			);
+			this._listener.handleMatchBegin();
 		});
 		this._conn.on('move-made', event => {
 			logDebug('Move made', 'Websocket');
 			if (config.debug) {
 				console.debug(event);
 			}
-			this._listener.handleMoveEvent(
-				event.player,
-				event.uci_string,
-				event.current_fen
-			);
+			this._listener.handleMoveEvent();
 		});
 		this._conn.on('match-finish', event => {
 			logDebug('Match Finished', 'Websocket');
@@ -87,7 +81,7 @@ class APIHandler {
 	}
 
 	syncMatchState(model) {
-		fetch(`${window.location.href}/match/api/${model.matchId}`, {
+		fetch(`${window.location.origin}/match/api/${model.matchId}`, {
 			method: 'GET',
 		}).then(response => {
 			if (!response.ok) {
@@ -100,7 +94,7 @@ class APIHandler {
 				return response.json();
 			}
 		}).then(json => {
-			model.reload(json.current_fen);
+			model.reload(json);
 		});
 	}
 
@@ -148,6 +142,20 @@ class MatchModel {
 		}
 		this._playerData = playerData;
 		this._opponentData = opponentData;
+	}
+
+	reload(matchData) {
+		logDebug('(Load Event) loading/reloading match model.');
+		this._matchData = matchData;
+		if (matchData.in_progress) {
+			this._board = this.loadFromDarkFen(matchData.current_dark_fen);
+			if (this._playerData.id == matchData.player_black.id) {
+				this._opponentData = matchData.player_white;
+			} else {
+				this._opponentData = matchData.player_black;
+			}
+		}
+		this._listener.handleModelReload();
 	}
 
 	// Public accessors for internal data clusters.
@@ -235,15 +243,19 @@ class MatchModel {
 	}
 
 	movesFrom(fromSquare) {
-		let ret = this.matchData?.possible_moves?.fromSquare;
+		let ret = this._matchData?.possible_moves[fromSquare];
 		return ret !== undefined ? ret : [];
+	}
+
+	moveMade(player, uciString, currentFen) {
+		this.reload(currentFen);
 	}
 
 	setListener(listener) {
 		this._listener = listener;
 	}
 
-	loadFromDarkFen(darkFen) { 
+	loadFromDarkFen(darkFen) {
 		let ret = {}
 		let squares = darkFen.split('/').join('')
 		let curr = 0;
@@ -260,15 +272,22 @@ class MatchModel {
 		this._listener.renderNewOpponent(opponentData, this.opponentSide);
 	}
 
-	reload(darkFen, possibleMoves = null) {
-		logDebug(`(Reload Event) Match model reloading with fen: '${dark_fen}'`)
-		this._board = this.loadFromDarkFen(darkFen)
-		this._possibleMoves = possibleMoves
-		this._listener.handleModelReload();
-	}
+	// reload(darkFen, possibleMoves = null) {
+	// 	logDebug(`(Reload Event) Match model reloading with fen: '${darkFen}'`);
+	// 	this._board = this.loadFromDarkFen(darkFen);
+	// 	this._possibleMoves = possibleMoves;
+	// 	this._listener.handleModelReload();
+	// }
 
-	begin(dark_fen, possible_moves = null) {
-		this.reload(dark_fen, possible_moves);
+	// reloadMatchState(matchData) {
+	// 	logDebug(`(Reload Event) Match model reloading.`);
+	// 	this._board = this.loadFromDarkFen(matchData.current_dark_fen);
+	// 	this._possibleMoves = matchData.possible_moves;
+	// 	this._listener.handleModelReload();
+	// }
+
+	begin(matchData) {
+		this.reload(matchData);
 	}
 
 }
@@ -486,7 +505,6 @@ class CanvasBoardViewController {
 					logDebug(`Square at ${square}.`, 'Click');
 				}
 			}
-			console.log(this._model.playersTurn());
 			if (this._model.playersTurn()) {
 				if (
 					this._model.playersPiece(square) &&
@@ -618,8 +636,8 @@ class CanvasBoardViewController {
 		logDebug('Filling move options', 'Render');
 		this._selectedSquare = fromSquare;
 		for (const move of this._model.movesFrom(fromSquare)) {
-			logDebug(`move option: ${fromSquare} to ${move.to}`, 'Render');
-			this._moveOptions.push(move.to);
+			logDebug(`move option: ${fromSquare} to ${move}`, 'Render');
+			this._moveOptions.push(move);
 		}
 	}
 
@@ -1204,13 +1222,12 @@ class Match {
 	}
 
 	/* Websocket Event Listener methods */
-	handleMatchBegin(currentFen, joiningPlayer) {
-		this._mm.loadOpponent(joiningPlayer)
-		this._mm.begin(currentFen);
+	handleMatchBegin() {
+		this.syncModelWithRemote();
 	}
 
-	handleMoveEvent(playerJSON, uciString, currentFen) {
-		this._mm.moveMade(playerJSON, uciString, currentFen);
+	handleMoveEvent() {
+		this.syncModelWithRemote();
 	}
 
 	handleMatchFinish(winningPlayerJSON) {
@@ -1218,7 +1235,7 @@ class Match {
 	}
 
 	syncModelWithRemote() {
-		this._api.syncMatchState(this._model);
+		this._api.syncMatchState(this._mm);
 	}
 
 }

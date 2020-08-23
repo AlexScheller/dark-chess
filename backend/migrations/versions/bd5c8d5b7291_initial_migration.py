@@ -37,7 +37,7 @@ def upgrade():
     sa.Column('connection_hash', sa.String(length=255), nullable=True),
     sa.Column('player_white_id', sa.Integer(), nullable=True),
     sa.Column('player_black_id', sa.Integer(), nullable=True),
-    sa.Column('is_finished', sa.Boolean(), nullable=True),
+    sa.Column('is_finished', sa.Boolean(), nullable=False),
     sa.Column('winning_player_id', sa.Integer(), nullable=True),
     sa.ForeignKeyConstraint(['player_black_id'], ['user.id'], ),
     sa.ForeignKeyConstraint(['player_white_id'], ['user.id'], ),
