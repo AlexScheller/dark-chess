@@ -19,14 +19,9 @@ class DarkBoard(chess.Board):
 
 	def dark_fen(self, side):
 		player_side = chess.WHITE if side == 'white' else chess.BLACK
-		# This is wrong, but may not be able to be addressed within this class.
-		# instead of simply returning fog, this should return the dark fen for
-		# the previous turn (that is, the last time it was this player's turn.)
-		# if player_side != self.turn:
-		# 	return (
-		# 		'????????/????????/????????/????????/'
-		# 		'????????/????????/????????/????????'
-		# 	)
+		# We swap the board to the requesting side so that it can render the
+		# proper vision from `self.pseudo_legal_moves`
+		self.turn = player_side
 		attackable_squares = []
 		for move in self.pseudo_legal_moves:
 			attackable_squares.append(move.from_square)
@@ -136,17 +131,19 @@ class Match(db.Model):
 	def current_dark_fen(self, side):
 		if not self.in_progress:
 			return None
-		if side == self.current_side:
-			return self.current_board(side).dark_fen(side)
-		# In cliffhanger dark, you don't see the results of your move until it's
-		# your turn again, so we return the fen from one move ago, not the
-		# actual current fen.
-		if len(self.history) >= 2:
-			return DarkBoard(fen=self.history[-2].fen).dark_fen(side)
-		return (
-			'????????/????????/????????/????????/'
-			'????????/????????/????????/????????'
-		)
+		return self.current_board(side).dark_fen(side)
+		# This is kept for a while, but this will longer be cliffhanger dark.
+		# if side == self.current_side:
+		# 	return self.current_board(side).dark_fen(side)
+		# # In cliffhanger dark, you don't see the results of your move until it's
+		# # your turn again, so we return the fen from one move ago, not the
+		# # actual current fen.
+		# if len(self.history) >= 2:
+		# 	return DarkBoard(fen=self.history[-2].fen).dark_fen(side)
+		# return (
+		# 	'????????/????????/????????/????????/'
+		# 	'????????/????????/????????/????????'
+		# )
 
 	# @property
 	# def current_board(self):
