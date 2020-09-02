@@ -343,13 +343,21 @@ class CanvasBoardViewController {
 	/* event handlers */
 
 	_setupClickHandlers() {
-		this._canvas.addEventListener('click', event => {
-			this._handleSquareClick(event);
-		});
+		logDebug('Setting up click handlers', 'Setup');
+		this._canvas.addEventListener('click',
+			this._handleSquareClick.bind(this)
+		);
 		let flipBoardButton = document.getElementById('flip-board-button');
-		flipBoardButton.addEventListener('click', event => {
-			this._handleFlipBoardClick();
-		});
+		flipBoardButton.addEventListener('click',
+			this._handleFlipBoardClick.bind(this)
+		);
+	}
+
+	_tearDownClickHandlers() {
+		logDebug('Removing click handlers', 'Teardown')
+		this._canvas.removeEventListener('click', this._handleSquareClick);
+		let flipBoardButton = document.getElementById('flip-board-button');
+		flipBoardButton.addEventListener('click', this._handleFlipBoardClick);
 	}
 
 	_handleFlipBoardClick() {
@@ -357,6 +365,7 @@ class CanvasBoardViewController {
 	}
 
 	_handleSquareClick(event) {
+		logDebug('Handling square click', 'Input');
 		if (this._active) {
 			let point = {x: event.offsetX, y: event.offsetY};
 			let square = this._pointToSquare(point);
@@ -384,22 +393,6 @@ class CanvasBoardViewController {
 				}
 				this._render();
 			}
-			// if (this._model.playersTurn() && this._moveBuffer == null) {
-			// 	if (square.classList.contains('move-option')) {
-			// 		let move = this._selectedSquare + square.id;
-			// 		if (this._model.promotionAvailable(move)) {
-			// 			logDebug(`Promotion available, buffering move: ${move}`, 'Render')
-			// 			this._moveBuffer = move;
-			// 			this._displayPromotionChoices()
-			// 		} else {
-			// 			this._listener.handleMoveRequest(move);
-			// 		}
-			// 	} else if (this._selectedSquare != null) {
-			// 		this._clearRenderedMoveOptions();
-			// 	} else if (this._model.playersPiece(square.id)) {
-			// 		this._renderMoveOptions(square.id);
-			// 	}
-			// }
 		}
 	}
 
@@ -438,21 +431,9 @@ class CanvasBoardViewController {
 		this._render();
 	}
 
-	// handleGameOver(winner) {
-	// 	// flash the checkmated king
-	// 	let interval = 1000;
-	// 	let expectedTick = Date.now() + interval;
-	// 	function tick() {
-	// 		let drift = Date.now() - expectedTick;
-	// 		if (drift > interval) {
-	// 			// TODO: do something?
-	// 		}
-	// 		// flash/render
-	// 		expectedTick += interval;
-	// 		setTimeout(tick(), Math.max(0, interval - drift));
-	// 	}
-	// 	tick();
-	// }
+	handleGameOver(winner) {
+		this._tearDownClickHandlers();
+	}
 
 	/* internals */
 
