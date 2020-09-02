@@ -321,7 +321,9 @@ class CanvasBoardViewController {
 				this._flipBoard();
 			}
 
+			this._clickHandlersSetup = false;
 			if (this._active) {
+				this._clickHandlersSetup = true;
 				this._setupClickHandlers();
 			}
 
@@ -429,6 +431,9 @@ class CanvasBoardViewController {
 		this._selectedSquare = null;
 		this._clearMoveOptions();
 		this._active = this._model.inProgress;
+		if (!this._clickHandlersSetup) {
+			this._setupClickHandlers();
+		}
 		this._render();
 	}
 
@@ -824,243 +829,11 @@ class CanvasBoardViewController {
 
 }
 
-
-// Like the class name implies, this controls the board view. It
-// handles all player actions. This implementation relies on maniuplating
-// HTML Elements for displaying the board and handling input.
-//
-// As of 2020-05-31, this Controller is deprecated, but kept in the source for
-// posterity, in case it ever gets revived.
-class HTMLElementBoardViewController {
-
-	constructor(model) {
-		logDebug('Constructing HTMLElementBoardViewController.');
-		this._pieceNames = {
-			p: 'pawn', r: 'rook', n: 'knight',
-			b: 'bishop', k: 'king', q: 'queen'
-		}
-		this._setupClickHandlers();
-		this._model = model;
-		this._model.setListener(this);
-		this._selectedSquare = null;
-		this._moveBuffer = null;
-		this._boardEl = document.getElementById('board');
-		this._boardEl.classList.remove('disabled');
-		if (this._model.playerSide == 'b') {
-			this._flipBoard();
-		}
-		this._render();
-	}
-
-	/* Setup */
-
-	setListener(listener) {
-		this._listener = listener;
-	}
-
-	_setupClickHandlers() {
-		let squares = document.getElementsByClassName('board-square');
-		for (const square of squares) {
-			square.addEventListener('click', event =>
-				this._handleSquareClick(event)
-			);
-		}
-		let promoButton = document.getElementById('promotion-button');
-		// This should only be visible when promotion is an option, but could
-		// perhaps be made more secure with some kind of status check. Also
-		// This is difficult to program for latency/server failure.
-		promoButton.addEventListener('click', event => {
-			let promos = document.getElementsByName('promo-choices');
-			for (const promo of promos) {
-				if (promo.checked) {
-					logDebug(`promotion selected: ${promo.value}, requesting move.`, 'Render')
-					let move = this._moveBuffer;
-					this._moveBuffer = null;
-					this._listener.handleMoveRequest(move + promo.value);
-					document.getElementById('promotion-choices').classList.add('hidden');
-				}
-			}
-		});
-		let flipBoardButton = document.getElementById('flip-board-button');
-		flipBoardButton.addEventListener('click', event => {
-			this._handleFlipBoardClick();
-		});
-	}
-
-	/* Input Handlers */
-
-	_handleSquareClick(event) {
-		let square = event.currentTarget;
-		if (config.debug) {
-			let pieceJSON = JSON.stringify(this._model.pieceAtSquare(square.id));
-			logDebug(`Piece at ${square.id} ${pieceJSON}`, 'Click');
-		}
-		if (this._model.playersTurn() && this._moveBuffer == null) {
-			if (square.classList.contains('move-option')) {
-				let move = this._selectedSquare + square.id;
-				if (this._model.promotionAvailable(move)) {
-					logDebug(`Promotion available, buffering move: ${move}`, 'Render')
-					this._moveBuffer = move;
-					this._displayPromotionChoices()
-				} else {
-					this._listener.handleMoveRequest(move);
-				}
-			} else if (this._selectedSquare != null) {
-				this._clearRenderedMoveOptions();
-			} else if (this._model.playersPiece(square.id)) {
-				this._renderMoveOptions(square.id);
-			}
-		}
-	}
-
-	_handleFlipBoardClick(event) {
-		this._flipBoard();
-	}
-
-	/* Core Rendering */
-
-	_renderMoveOptions(fromSquare) {
-		logDebug('Rendering move options', 'Render');
-		this._selectedSquare = fromSquare;
-		document.getElementById(fromSquare).classList.add('selected-square');
-		for (const move of this._model.movesFrom(fromSquare)) {
-			logDebug('(Render Event) rendering move option: ' + fromSquare + move.to);
-			document.getElementById(move.to).classList.add('move-option');
-		}
-	}
-
-	_clearRenderedMoveOptions() {
-		logDebug('Clearing rendered move options', 'Render');
-		if (this._selectedSquare != null) {
-			document.getElementById(this._selectedSquare).classList.remove('selected-square');
-			this._selectedSquare = null;
-		}
-		let options = document.querySelectorAll('.board-square.move-option');
-		for (const option of options) {
-			logDebug(`Clearing 'move-option' from square: ${option.id}`, 'Render');
-			option.classList.remove('move-option');
-		}
-	}
-
-	_displayPromotionChoices(side) {
-		if (config.debug) {
-			logDebug('Displaying promotion options', 'Render');
-		}
-		let choicesEl = document.getElementById('promotion-choices');
-		choicesEl.classList.remove('hidden');
-	}
-
-	// Probably faster to inline this up top but this is a lot cleaner.
-	_renderPieceIconHTML(side, piece) {
-		let weight = (side == 'b') ? 's' : 'l';
-		return `
-			<i class="fa${weight} fa-chess-${this._pieceNames[piece]} piece"></i>
-		`
-	}
-
-	_renderPieceIconElement(side, piece) {
-		let weight = (side == 'b') ? 's' : 'l';
-		let ret = document.createElement('<i></i>');
-		ret.classList.add(
-			`fa${weight}`, `fa-chess-${this._pieceNames[piece]}`, 'piece'
-		);
-		return ret;
-	}
-
-	// When playing as black
-	_flipBoard() {
-		for (const col of 'abcdefgh') {
-			for (let row = 1; row <= 4; row++) {
-				swapEl(
-					document.getElementById(col + row),
-					document.getElementById(col + (8 - (row - 1)))
-				)
-			}
-		}
-	}
-
-	_render() {
-		// render board
-		for (let row = 1; row <= 8; row++) {
-			for (const col of 'abcdefgh') {
-				let piece = this._model.pieceAtSquare(col + row);
-				let square = document.getElementById(col + row);
-				if (piece != null) {
-					let pieceHTML = this._renderPieceIconHTML(
-						piece.color, piece.type
-					);
-					square.innerHTML = pieceHTML;
-				} else {
-					square.innerHTML = '';
-				}
-			}
-		}
-		// render players
-		// if (this._model.playersTurn()) {
-		// 	let turnIcon = document.getElementById(
-		// 		`player-${this._model.getPlayerId()}`
-		// 	);
-
-		// }
-	}
-
-	_renderPlayerHTML(playerData, playerSide) {
-		let side = (playerSide == 'w') ? 'white' : 'black';
-		let playersTurn = '';
-		if (this._model.playersTurn(playerData.id)) {
-			playersTurn == '<i class="far fa-chevron-double-left"></i>'
-		}
-		return `
-			<h3
-				id="player-${playerData.id}"
-				class="player-title player-${side}-title"
-			>${playerData.username}</h3>${playersTurn}
-		`
-	}
-
-	/* ModelListener methods */
-	renderNewOpponent(opponentData, opponentSide) {
-		let side = (opponentSide == 'w') ? 'white' : 'black'; 
-		let container = document.getElementById(`player-${side}`);
-		container.innerHTML = this._renderPlayerHTML(
-			opponentData,
-			opponentSide
-		);
-	}
-
-	handleModelReload() {
-		this._moveBuffer = null;
-		this._clearRenderedMoveOptions();
-		this._render();
-	}
-
-	handleGameOver(winner) {
-		let winnerEl = document.getElementById(`player-${winner.id}`);
-		winnerEl.innerText = winnerEl.innerText + ' Winner!';
-		document.getElementById('board').classList.add('inactive');
-	}
-
-}
-
 // Main class
 class Match {
 	
 	constructor(config, matchData, playerData) {
 		this._mm = new MatchModel(matchData, playerData);
-		// As of 2020-05-31, the HTMLElement board controllers is dprecated. If
-		// The client doesn't have a browser that supports HTML5 canvas (which
-		// is less than 2% of users according to caniuse.com), they simply won't
-		// be able to play. The following code is kept for posterity in case
-		// someone want's to revive it later.
-		// try {
-		// 	this._bvc = new CanvasBoardViewController(this._mm);		
-		// } catch(error) {
-		// 	logDebug(error);
-		// 	let canvas = document.getElementById('board-canvas');
-		// 	canvas.classList.add('disabled');
-		// 	// fallback
-		// 	this._bvc = new HTMLElementBoardViewController(this._mm);		
-		// }
 		this._bvc = new CanvasBoardViewController(this._mm);
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
