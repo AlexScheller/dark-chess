@@ -218,7 +218,7 @@ class Match(db.Model):
 	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)
 		board = chess.Board(fen=self.current_fen)
-		if self.players_turn(player) and move in board.legal_moves:
+		if self.players_turn(player) and move in board.pseudo_legal_moves:
 			board.push(move)
 			self.history.append(MatchState(fen=board.fen()))
 			# Naive game over checking for now. There are other ways the
