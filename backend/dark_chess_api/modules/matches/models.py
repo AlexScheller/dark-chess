@@ -43,6 +43,9 @@ class DarkBoard(chess.Board):
 				dfen += '/'
 		return dfen
 
+	def king_captured(self):
+		return self.king(self.turn) is None
+
 class MatchState(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
@@ -217,13 +220,11 @@ class Match(db.Model):
 
 	def attempt_move(self, player, uci_string):
 		move = chess.Move.from_uci(uci_string)
-		board = chess.Board(fen=self.current_fen)
+		board = DarkBoard(fen=self.current_fen)
 		if self.players_turn(player) and move in board.pseudo_legal_moves:
 			board.push(move)
 			self.history.append(MatchState(fen=board.fen()))
-			# Naive game over checking for now. There are other ways the
-			# game could end.
-			if board.is_checkmate():
+			if board.is_checkmate() or board.king_captured():
 				self.is_finished = True
 				self.winning_player = player
 			return True
@@ -283,6 +284,7 @@ class Match(db.Model):
 		if self.is_finished:
 			ret.update({
 				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',
+				'current_fen': self.fen,
 				'winner': self.winning_player.as_dict()
 			})
 		return ret

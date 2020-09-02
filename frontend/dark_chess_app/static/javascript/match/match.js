@@ -142,6 +142,7 @@ class MatchModel {
 		}
 		this._playerData = playerData;
 		this._opponentData = opponentData;
+		this._promoMoveBuffer = null;
 	}
 
 	reload(matchData) {
@@ -191,6 +192,10 @@ class MatchModel {
 			return this._matchData.current_side == 'white' ? 'w' : 'b';
 		}
 		return null;
+	}
+
+	get promotionMove() {
+		return this._promoMoveBuffer;
 	}
 
 		// This seems pretty jank...
@@ -368,30 +373,40 @@ class CanvasBoardViewController {
 		logDebug('Handling square click', 'Input');
 		if (this._active) {
 			let point = {x: event.offsetX, y: event.offsetY};
-			let square = this._pointToSquare(point);
-			if (config.debug) {
-				let piece = this._model.pieceAtSquare(square);
-				if (piece != null) {
-					let pieceJSON = JSON.stringify(piece);
-					logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
-				} else {
-					logDebug(`Square at ${square}.`, 'Click');
+			this._promoting = true; // debug REMOVE
+			if (this._promoting) {
+				let pieces = ['n', 'b', 'r', 'q'];
+				let rowOffset = Math.floor(point.y / (this._height / 2));
+				let col = Math.floor(point.x / (this._width / 2));
+				let pieceChosen = pieces[(rowOffset * 2) + col];
+				logDebug(`Promotion choice ${pieceChosen}`, 'Click');
+				this._listener.handlePromotionRequest(pieceChosen);
+			} else {
+				let square = this._pointToSquare(point);
+				if (config.debug) {
+					let piece = this._model.pieceAtSquare(square);
+					if (piece != null) {
+						let pieceJSON = JSON.stringify(piece);
+						logDebug(`Piece at ${square} ${pieceJSON}.`, 'Click');
+					} else {
+						logDebug(`Square at ${square}.`, 'Click');
+					}
 				}
-			}
-			if (this._model.playersTurn()) {
-				if (
-					this._model.playersPiece(square) &&
-					this._selectedSquare !== square // otherwise clear options.
-				) {
-					this._clearMoveOptions();
-					this._fillMoveOptions(square);
-				} else if (this._moveOptions.includes(square)) {
-					let move = this._selectedSquare + square;
-					this._listener.handleMoveRequest(move);
-				} else {
-					this._clearMoveOptions();
+				if (this._model.playersTurn()) {
+					if (
+						this._model.playersPiece(square) &&
+						this._selectedSquare !== square // otherwise clear options.
+					) {
+						this._clearMoveOptions();
+						this._fillMoveOptions(square);
+					} else if (this._moveOptions.includes(square)) {
+						let move = this._selectedSquare + square;
+						this._listener.handleMoveRequest(move);
+					} else {
+						this._clearMoveOptions();
+					}
+					this._render();
 				}
-				this._render();
 			}
 		}
 	}
@@ -429,6 +444,10 @@ class CanvasBoardViewController {
 			this._setupClickHandlers();
 		}
 		this._render();
+	}
+
+	handlePromotionMove() {
+		this._promoting = true;
 	}
 
 	handleGameOver(winner) {
@@ -528,14 +547,14 @@ class CanvasBoardViewController {
 
 	/* Piece rendering */
 
-	_drawPiece(piece, origin) {
+	_drawPiece(piece, origin, squareWidth) {
 		let center = {
-			x: origin.x + Math.floor(this._squareWidth / 2),
-			y: origin.y + Math.floor(this._squareWidth / 2)
+			x: origin.x + Math.floor(squareWidth / 2),
+			y: origin.y + Math.floor(squareWidth / 2)
 		}
 		this._ctx.fillStyle = 'black';
 		if (piece.type === 'p') { // pawns
-			let rad = Math.floor(this._squareWidth / 4);
+			let rad = Math.floor(squareWidth / 4);
 			this._ctx.beginPath();
 			this._ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
 			if (piece.color === 'b') {
@@ -548,36 +567,36 @@ class CanvasBoardViewController {
 			this._ctx.beginPath();
 			// left ear
 			this._ctx.moveTo(
-				center.x - (this._squareWidth / 4),
-				center.y - (this._squareWidth / 3)
+				center.x - (squareWidth / 4),
+				center.y - (squareWidth / 3)
 			);
 			// central crevice
 			this._ctx.lineTo(
-				center.x, center.y - (this._squareWidth / 6)
+				center.x, center.y - (squareWidth / 6)
 			)
 			// right ear
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 4),
-				center.y - (this._squareWidth / 3)
+				center.x + (squareWidth / 4),
+				center.y - (squareWidth / 3)
 			);
 			// right eye
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 4),
+				center.x + (squareWidth / 4),
 				center.y,
 			);
 			// right mouth
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 8),
-				center.y + (this._squareWidth / 3)
+				center.x + (squareWidth / 8),
+				center.y + (squareWidth / 3)
 			);
 			// left mouth
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 8),
-				center.y + (this._squareWidth / 3)
+				center.x - (squareWidth / 8),
+				center.y + (squareWidth / 3)
 			);
 			// left eye
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 4),
+				center.x - (squareWidth / 4),
 				center.y,
 			);
 			if (piece.color === 'b') {
@@ -588,7 +607,7 @@ class CanvasBoardViewController {
 				this._ctx.stroke();
 			}
 		} else if (piece.type === 'r') { // rooks
-			let length = this._squareWidth / 3;
+			let length = squareWidth / 3;
 			let height = length * 2;
 			if (piece.color === 'b') {
 				this._ctx.fillRect(
@@ -610,15 +629,15 @@ class CanvasBoardViewController {
 			this._ctx.beginPath();
 			this._ctx.moveTo(
 				center.x,
-				center.y - (this._squareWidth / 3)
+				center.y - (squareWidth / 3)
 			);
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 4),
-				center.y + (this._squareWidth / 3)
+				center.x + (squareWidth / 4),
+				center.y + (squareWidth / 3)
 			);
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 4),
-				center.y + (this._squareWidth / 3)
+				center.x - (squareWidth / 4),
+				center.y + (squareWidth / 3)
 			);
 			if (piece.color === 'b') {
 				this._ctx.fill();
@@ -631,25 +650,25 @@ class CanvasBoardViewController {
 			this._ctx.beginPath();
 			// left spike
 			this._ctx.moveTo(
-				center.x - (this._squareWidth / 3),
-				center.y - (this._squareWidth / 3),
+				center.x - (squareWidth / 3),
+				center.y - (squareWidth / 3),
 			);
 			// central crevice
 			this._ctx.lineTo(center.x, center.y);
 			// right spike
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 3),
-				center.y - (this._squareWidth / 3),
+				center.x + (squareWidth / 3),
+				center.y - (squareWidth / 3),
 			);
 			// right base
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 3),
-				center.y + (this._squareWidth / 3)
+				center.x + (squareWidth / 3),
+				center.y + (squareWidth / 3)
 			);
 			// left base
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 3),
-				center.y + (this._squareWidth / 3)
+				center.x - (squareWidth / 3),
+				center.y + (squareWidth / 3)
 			);
 			if (this._model.turn == piece.color) {
 				this._ctx.strokeStyle = 'red';
@@ -666,8 +685,8 @@ class CanvasBoardViewController {
 			this._ctx.beginPath();
 			this._ctx.arc(
 				center.x,
-				center.y - (this._squareWidth / 4),
-				Math.floor(this._squareWidth / 8),
+				center.y - (squareWidth / 4),
+				Math.floor(squareWidth / 8),
 				0,
 				Math.PI * 2
 			);
@@ -683,38 +702,38 @@ class CanvasBoardViewController {
 			this._ctx.beginPath();
 			// left spike
 			this._ctx.moveTo(
-				center.x - (this._squareWidth / 3),
-				center.y - (this._squareWidth / 8),
+				center.x - (squareWidth / 3),
+				center.y - (squareWidth / 8),
 			);
 			// left crevice
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 6),
+				center.x - (squareWidth / 6),
 				center.y
 			);
 			// central spike
 			this._ctx.lineTo(
 				center.x,
-				center.y - (this._squareWidth / 3),
+				center.y - (squareWidth / 3),
 			);
 			// right crevice
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 6),
+				center.x + (squareWidth / 6),
 				center.y
 			);
 			// right spike
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 3),
-				center.y - (this._squareWidth / 8)
+				center.x + (squareWidth / 3),
+				center.y - (squareWidth / 8)
 			);
 			// right base
 			this._ctx.lineTo(
-				center.x + (this._squareWidth / 4),
-				center.y + (this._squareWidth / 3)
+				center.x + (squareWidth / 4),
+				center.y + (squareWidth / 3)
 			);
 			// left base
 			this._ctx.lineTo(
-				center.x - (this._squareWidth / 4),
-				center.y + (this._squareWidth / 3)
+				center.x - (squareWidth / 4),
+				center.y + (squareWidth / 3)
 			)
 			if (piece.color === 'b') {
 				this._ctx.fill();
@@ -750,62 +769,110 @@ class CanvasBoardViewController {
 	_render() {
 		// clear the canvas
 		this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-		// render grid
-		for (let row = 0; row < 10; row++) {
+		this._promoting = true; // debug REMOVE
+		if (this._promoting) {
+			// TODO: Render this on a new canvas layer on top of the original
+			// board?
+			// render cross lines
 			this._helperDrawLine(
-				{x: 0, y: this._squareWidth * row},
-				{x: this._width, y: this._squareWidth * row}
+				{ x: this._width / 2, y: 0 },
+				{ x: this._width / 2, y: this._height }
 			);
-		}
-		for (let col = 0; col < 10; col++) {
 			this._helperDrawLine(
-				{x: this._squareWidth * col, y: 0},
-				{x: this._squareWidth * col, y: this._width}
+				{ x: 0, y: this._height / 2 },
+				{ x: this._width, y: this._height / 2 }
 			);
-		}
-		// render filled in squares
-		this._ctx.fillStyle = '#6aa1c8';
-		for (let row = 0; row < 9; row++) {
-			let offset = row % 2 == 1 ? 0 : 1;
-			for (let col = 0; col < 4; col++) {
-				let unspacedX = col * this._squareWidth + 1;
-				let spacedX = unspacedX + ((col + offset) * this._squareWidth);
-				let xOrigin = spacedX;
-				this._ctx.fillRect(
-					xOrigin,
-					(row * this._squareWidth) + 1,
-					this._squareWidth - 2,
-					this._squareWidth - 2
+			// Fill squares
+			this._ctx.fillStyle = '#6aa1c8';
+			this._ctx.fillRect(
+				(this._width / 2) + 1, 0,
+				(this._width / 2) - 1, (this._height / 2) - 1
+			);
+			this._ctx.fillRect(
+				0, (this._height / 2) + 1,
+				(this._width / 2) - 1, (this._height / 2) - 1
+			);
+			this._ctx.fillStyle = 'black';
+			// render piece options
+			let pieceColor = this._model.playerSide;
+			this._drawPiece(
+				{ type: 'n', color: pieceColor },
+				{ x: 0, y: 0 },
+				this._width / 2 - 1
+			);
+			this._drawPiece(
+				{ type: 'b', color: pieceColor },
+				{ x: this._width / 2, y: 0 },
+				this._width / 2 - 1
+			);
+			this._drawPiece(
+				{ type: 'r', color: pieceColor },
+				{ x: 0, y: this._height / 2 },
+				this._width / 2 - 1
+			);
+			this._drawPiece(
+				{ type: 'q', color: pieceColor },
+				{ x: this._width / 2, y: this._height / 2 },
+				this._width / 2 - 1
+			);
+		} else {
+			// render grid
+			for (let row = 0; row < 10; row++) {
+				this._helperDrawLine(
+					{x: 0, y: this._squareWidth * row},
+					{x: this._width, y: this._squareWidth * row}
 				);
 			}
-		}
-		// render pieces
-		for (let rank = 1; rank <= 8; rank++) {
-			for (let file of 'abcdefgh') {
-				let squareContent = this._model.contentAtSquare(file + rank);
-				if (squareContent != null) {
-					let origin = this._squareToOrigin(file + rank);
-					if (squareContent.type === 'piece') {
-						let piece = {
-							type: squareContent.value,
-							color: squareContent.color 
-						};
-						this._drawPiece(piece, origin);
-					} else if (
-						squareContent.type === 'vision' &&
-						squareContent.value == '?'
-					) {
-						this._drawFog(origin)
+			for (let col = 0; col < 10; col++) {
+				this._helperDrawLine(
+					{x: this._squareWidth * col, y: 0},
+					{x: this._squareWidth * col, y: this._width}
+				);
+			}
+			// render filled in squares
+			this._ctx.fillStyle = '#6aa1c8';
+			for (let row = 0; row < 9; row++) {
+				let offset = row % 2 == 1 ? 0 : 1;
+				for (let col = 0; col < 4; col++) {
+					let unspacedX = col * this._squareWidth + 1;
+					let spacedX = unspacedX + ((col + offset) * this._squareWidth);
+					let xOrigin = spacedX;
+					this._ctx.fillRect(
+						xOrigin,
+						(row * this._squareWidth) + 1,
+						this._squareWidth - 2,
+						this._squareWidth - 2
+					);
+				}
+			}
+			// render pieces
+			for (let rank = 1; rank <= 8; rank++) {
+				for (let file of 'abcdefgh') {
+					let squareContent = this._model.contentAtSquare(file + rank);
+					if (squareContent != null) {
+						let origin = this._squareToOrigin(file + rank);
+						if (squareContent.type === 'piece') {
+							let piece = {
+								type: squareContent.value,
+								color: squareContent.color 
+							};
+							this._drawPiece(piece, origin, this._squareWidth);
+						} else if (
+							squareContent.type === 'vision' &&
+							squareContent.value == '?'
+						) {
+							this._drawFog(origin)
+						}
 					}
 				}
 			}
-		}
-		// render selected square and move options
-		if (this._selectedSquare != null) {
-			this._helperHighlightSquare(this._selectedSquare, 'blue');			
-		}
-		for (const square of this._moveOptions) {
-			this._helperHighlightSquare(square, 'green');
+			// render selected square and move options
+			if (this._selectedSquare != null) {
+				this._helperHighlightSquare(this._selectedSquare, 'blue');			
+			}
+			for (const square of this._moveOptions) {
+				this._helperHighlightSquare(square, 'green');
+			}
 		}
 	}
 
@@ -836,6 +903,12 @@ class Match {
 	/* Board View Controller Listener methods */
 	handleMoveRequest(move) {
 		this._api.requestMove(this._mm, move);
+	}
+
+	// Note this doesn't do any checks for corrupted state...
+	handlePromotionRequest(piece) {
+		let move = this._mm.promotionMove + piece;
+		this._api.requestMove(this._mm, move)
 	}
 
 	/* Websocket Event Listener methods */
