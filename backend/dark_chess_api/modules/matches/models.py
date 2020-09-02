@@ -29,9 +29,9 @@ class DarkBoard(chess.Board):
 		dfen = ''
 		# chess.py conceives of boards as being a1 -> h8 with white on top, but
 		# we use the traditional method of a8 -> h1 with black on top. Because
-		# of this, we iterate in reverse.
+		# of this, we iterate through the ranks in reverse.
 		for rank in range(7, -1, -1):
-			for file in range(7, -1, -1):
+			for file in range(8):
 				square = chess.square(file, rank)
 				piece = self.piece_at(square)
 				if (square in attackable_squares or
