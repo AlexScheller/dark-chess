@@ -432,6 +432,7 @@ class CanvasBoardViewController {
 		this._clearMoveOptions();
 		this._active = this._model.inProgress;
 		if (!this._clickHandlersSetup) {
+			this._clickHandlersSetup = true;
 			this._setupClickHandlers();
 		}
 		this._render();
