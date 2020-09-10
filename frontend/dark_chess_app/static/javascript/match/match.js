@@ -1,3 +1,7 @@
+// TODO, convert instances of move that are represented by a string, to
+// a standardized object, so that wherever "move" is referenced, it is
+// understood what it is (maybe try typescript or something).
+
 /* Utility Functions */
 
 function logDebug(msg, eventType = null) {
@@ -198,7 +202,24 @@ class MatchModel {
 		return this._promoMoveBuffer;
 	}
 
-		// This seems pretty jank...
+	// Note that this assumes the requesting method only requests when it's the
+	// player's turn...It could really use some checks.
+	potentialPromotion(move) {
+		let piece = this.pieceAtSquare(move.from);
+		if (piece === null) return false;
+		if (piece.color == this.playerSide() && piece.value == 'p') {
+			let rank = move.to[1];
+			return piece.color == 'w' ? rank == '8' : rank == '1';
+		}
+		return false
+	}
+
+	// TODO: Rework/Refactor how promotions are handled.
+	bufferPromotion(move) {
+		this._promoMoveBuffer = move;
+	}
+
+	// This seems pretty jank...
 	contentAtSquare(square) {
 		if (this._board) {
 			let value = this._board[square].toLowerCase();
@@ -369,20 +390,20 @@ class CanvasBoardViewController {
 		this._flipBoard();
 	}
 
+	// TODO: Refactor
 	_handleSquareClick(event) {
 		logDebug('Handling square click', 'Input');
 		if (this._active) {
-			let point = {x: event.offsetX, y: event.offsetY};
-			this._promoting = true; // debug REMOVE
+			let clickPoint = {x: event.offsetX, y: event.offsetY};
 			if (this._promoting) {
 				let pieces = ['n', 'b', 'r', 'q'];
-				let rowOffset = Math.floor(point.y / (this._height / 2));
-				let col = Math.floor(point.x / (this._width / 2));
+				let rowOffset = Math.floor(clickPoint.y / (this._height / 2));
+				let col = Math.floor(clickPoint.x / (this._width / 2));
 				let pieceChosen = pieces[(rowOffset * 2) + col];
 				logDebug(`Promotion choice ${pieceChosen}`, 'Click');
 				this._listener.handlePromotionRequest(pieceChosen);
 			} else {
-				let square = this._pointToSquare(point);
+				let square = this._pointToSquare(clickPoint);
 				if (config.debug) {
 					let piece = this._model.pieceAtSquare(square);
 					if (piece != null) {
@@ -401,7 +422,17 @@ class CanvasBoardViewController {
 						this._fillMoveOptions(square);
 					} else if (this._moveOptions.includes(square)) {
 						let move = this._selectedSquare + square;
-						this._listener.handleMoveRequest(move);
+						// TODO: remove this once all moves are standardized.
+						let newFormatMove = {
+							from: this._selectedSquare,
+							to: square
+						}
+						if (this._model.potentialPromotion(newFormatMove)) {
+							this._promoting = true;
+							this._listener.handlePromotionEngagement(move);
+						} else {
+							this._listener.handleMoveRequest(move);							
+						}
 					} else {
 						this._clearMoveOptions();
 					}
@@ -769,7 +800,6 @@ class CanvasBoardViewController {
 	_render() {
 		// clear the canvas
 		this._ctx.clearRect(0, 0, this._canvas.width, this._canvas.height);
-		this._promoting = true; // debug REMOVE
 		if (this._promoting) {
 			// TODO: Render this on a new canvas layer on top of the original
 			// board?
@@ -903,6 +933,11 @@ class Match {
 	/* Board View Controller Listener methods */
 	handleMoveRequest(move) {
 		this._api.requestMove(this._mm, move);
+	}
+
+	handlePromotionEngagement(move) {
+		this._mm.bufferPromotion(move);
+		this._bvc.render();
 	}
 
 	// Note this doesn't do any checks for corrupted state...
