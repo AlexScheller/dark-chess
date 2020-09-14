@@ -18,7 +18,7 @@ def init(app):
 	# Installs from requirements file.
 	@app.cli.command()
 	def requirements():
-		os.system('pip install -r requirements.txt --upgrade')
+		os.system('pip install -r requirements.txt')
 
 	# Runs test suite.
 	@app.cli.command()
@@ -40,25 +40,9 @@ def init(app):
 		else:
 			os.system('python -m unittest discover -s tests -p "*_tests.py" -v')
 
-	# Deletes and rebuild the database from scratch. For now this is about as
-	# naive as things can get, however it's only meant for development.
+	# Clears out the database (by dropping all tables) and rebuilds.
 	@app.cli.command()
-	def rebuilddb():
-		os.system('rm -rf migrations/')
-		if app.config['CHOSEN_DATABASE'] == 'SQLITE':
-			os.system('rm app.db')
-		elif app.config['CHOSEN_DATABASE'] in ['POSTGRESQL', 'MYSQL'] :
-			from sqlalchemy import MetaData, create_engine
-			engine = create_engine(app.config['SQLALCHEMY_DATABASE_URI'])
-			m = MetaData()
-			m.reflect(engine)
-			m.drop_all(engine)
-		os.system('flask db init')
-		os.system('flask db migrate')
-		os.system('flask db upgrade')
-
-	@app.cli.command()
-	def emptydb():
+	def clear():
 		# Note that SQLite doesn't really support a lot of migration commands
 		# anyway (like `alter column`) so this will probably less relevant for
 		# it.
@@ -77,7 +61,7 @@ def init(app):
 	# db commands are created that are garaunteed not to mess with the
 	# migrations folder.
 	@app.cli.group()
-	def migrationsafe():
+	def data():
 		pass
 
-	migrationsafe.add_command(emptydb)
+	data.add_command(clear)
