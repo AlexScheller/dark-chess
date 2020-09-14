@@ -202,14 +202,19 @@ class MatchModel {
 		return this._promoMoveBuffer;
 	}
 
+	get promoting() {
+		return this._promoMoveBuffer !== null;
+	}
+
 	// Note that this assumes the requesting method only requests when it's the
 	// player's turn...It could really use some checks.
 	potentialPromotion(move) {
+		logDebug('Checking potential promotion', 'Game');
 		let piece = this.pieceAtSquare(move.from);
 		if (piece === null) return false;
-		if (piece.color == this.playerSide() && piece.value == 'p') {
+		if (piece.color == this.playerSide && piece.type == 'p') {
 			let rank = move.to[1];
-			return piece.color == 'w' ? rank == '8' : rank == '1';
+			return piece.color === 'w' ? rank === '8' : rank === '1';
 		}
 		return false
 	}
@@ -217,6 +222,10 @@ class MatchModel {
 	// TODO: Rework/Refactor how promotions are handled.
 	bufferPromotion(move) {
 		this._promoMoveBuffer = move;
+	}
+
+	clearPromotion() {
+		this._promoMoveBuffer = null;
 	}
 
 	// This seems pretty jank...
@@ -390,6 +399,10 @@ class CanvasBoardViewController {
 		this._flipBoard();
 	}
 
+	get _promoting() {
+		return this._model.promoting;
+	}
+
 	// TODO: Refactor
 	_handleSquareClick(event) {
 		logDebug('Handling square click', 'Input');
@@ -428,8 +441,8 @@ class CanvasBoardViewController {
 							to: square
 						}
 						if (this._model.potentialPromotion(newFormatMove)) {
-							this._promoting = true;
 							this._listener.handlePromotionEngagement(move);
+							this._render();
 						} else {
 							this._listener.handleMoveRequest(move);							
 						}
@@ -937,7 +950,6 @@ class Match {
 
 	handlePromotionEngagement(move) {
 		this._mm.bufferPromotion(move);
-		this._bvc.render();
 	}
 
 	// Note this doesn't do any checks for corrupted state...
@@ -952,6 +964,9 @@ class Match {
 	}
 
 	handleMoveEvent() {
+		if (this._mm.promoting) {
+			this._mm.clearPromotion();
+		}
 		this.syncModelWithRemote();
 	}
 
