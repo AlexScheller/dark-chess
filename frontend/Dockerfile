@@ -1,25 +1,18 @@
-FROM python:3.7-alpine
+FROM python:3.8-slim-buster
 
-RUN adduser -D u_dark_chess_frontend
+RUN adduser --disabled-password --gecos "" u_dark_chess_frontend
 
 WORKDIR /home/dark_chess_frontend
 
-RUN apk add --no-cache --virtual .build-deps \
-			python3-dev \
-			musl-dev \
-			gcc
-
 COPY requirements.txt requirements.txt
-# Possibly bad practice
+# Copying the python .env, not a docker .env, possibly bad practice.
 COPY .env .env
-RUN python -m venv venv
-RUN venv/bin/pip install -U pip
-RUN venv/bin/pip install -r requirements.txt
-# Temporarily (As of 2019-11-10) install a specific version, as v20 has broken
-# alpine-linux
-RUN venv/bin/pip install 'gunicorn==19.9.0'
 
-RUN apk del .build-deps
+RUN python -m venv venv
+RUN venv/bin/pip install --upgrade pip
+RUN venv/bin/pip install -r requirements.txt
+
+RUN venv/bin/pip install gunicorn
 
 COPY dark_chess_app dark_chess_app
 COPY dark_chess_frontend.py config.py ./
