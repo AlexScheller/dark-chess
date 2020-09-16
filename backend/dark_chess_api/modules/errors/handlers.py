@@ -2,6 +2,7 @@
 # (see README.md)
 
 from flask import jsonify, request
+from dark_chess_api import db
 from dark_chess_api.modules.errors import errors
 from werkzeug.http import HTTP_STATUS_CODES
 
@@ -17,6 +18,7 @@ def error_response(status_code, message=None):
 
 @errors.app_errorhandler(500)
 def internal_server_error(error):
+	db.session.rollback()
 	return error_response(500)
 
 @errors.app_errorhandler(405)

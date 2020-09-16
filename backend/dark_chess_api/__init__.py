@@ -4,7 +4,6 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_talisman import Talisman
-from dark_chess_api.modules.utilities import validation
 from config import Config
 import os
 
@@ -18,6 +17,7 @@ def create_app(config=Config):
 	app = Flask(__name__)
 	app.config.from_object(config)
 
+	from dark_chess_api.modules.utilities import validation
 	app.endpoint_schemas = validation.load_schemas(
 		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
 	)

@@ -3,6 +3,7 @@ from sqlalchemy import or_
 from dark_chess_api import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
+from uuid import uuid4
 import secrets
 import pytz
 
@@ -79,3 +80,27 @@ class User(db.Model):
 		if user is None or user.token_expiration < datetime.utcnow():
 			return None
 		return user
+
+# Facilitiates the invite-only period of the application. This should be removed
+# once that period is over.
+user_beta_code = db.Table('user_beta_code',
+	db.Column('id', db.Integer, primary_key=True),
+	db.Column('user_id', db.Integer, db.ForeignKey('user.id'), nullable=False),
+	db.Column('beta_code_id', db.String(36), db.ForeignKey('beta_code.id'), nullable=False)
+)
+
+# Facilitiates the invite-only period of the application. This should be removed
+# once that period is over. To make that easier, no code dealing with beta codes
+# should be added to the user model directly.
+class BetaCode(db.Model):
+
+	id = db.Column(db.String(36), primary_key=True)
+
+	user = db.relationship('User', secondary=user_beta_code, uselist=False)
+
+	def __init__(self):
+		self.id = str(uuid4())
+
+	@property
+	def code(self):
+		return self.id

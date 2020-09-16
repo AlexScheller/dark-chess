@@ -1,3 +1,4 @@
+import click
 from flask import Blueprint
 
 users = Blueprint('users', __name__)
@@ -32,5 +33,20 @@ def mock():
 	users.append(User('maya', 'maya@examplecom', 'password'))
 	db.session.add_all(users)
 	db.session.commit()
+
+# Gens up a fresh batch of unused beta codes. This should be removed once the
+# invite-only period is over.
+@users.cli.command()
+@click.option('-c', '--count', default=1, help='Number of beta codes to generate.')
+@click.option('-s', '--silent', is_flag=True)
+def betagen(count, silent):
+	from dark_chess_api import db
+	from dark_chess_api.modules.users.models import BetaCode
+	new_codes = [BetaCode() for i in range(count)]
+	db.session.add_all(new_codes)
+	db.session.commit()
+	if not silent:
+		for code in new_codes:
+			print(code.code)
 
 from dark_chess_api.modules.users import endpoints

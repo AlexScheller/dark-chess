@@ -4,7 +4,7 @@
 from flask import g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
 from dark_chess_api.modules.errors.handlers import error_response
-from dark_chess_api.modules.users.models import User
+from dark_chess_api.modules.users.models import User, BetaCode
 
 basic_auth = HTTPBasicAuth()
 
@@ -26,3 +26,13 @@ def verify_token(token):
 @token_auth.error_handler
 def token_auth_error():
 	return error_response(401)
+
+# Temporary, should be removed once the application no longer needs it.
+def check_and_assign_beta_code(code, user):
+	beta_code = BetaCode.query.get(code)
+	if beta_code is None or beta_code.user is not None:
+		return False
+	# Note that it's a bit janky, but 
+	# db.session.flush()
+	beta_code.user = user
+	return True
