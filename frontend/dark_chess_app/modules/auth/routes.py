@@ -17,7 +17,8 @@ def register():
 			json={
 				'username': form.username.data,
 				'email': form.email.data,
-				'password': form.password.data
+				'password': form.password.data,
+				'beta_code': form.beta_code.data
 			}
 		)
 		if reg_res.status_code == 200:

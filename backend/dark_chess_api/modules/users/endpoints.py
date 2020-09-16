@@ -48,7 +48,7 @@ def register_user():
 	)
 	db.session.add(u)
 	# BetaCode specific
-	beta_code = req_json['beta_code']
+	beta_code = registration_json['beta_code']
 	if not check_and_assign_beta_code(beta_code, u):
 		return error_response(400, 'Invalid beta code')
 	db.session.commit()

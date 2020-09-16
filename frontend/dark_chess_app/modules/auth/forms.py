@@ -10,6 +10,8 @@ class RegistrationForm(FlaskForm):
 		Email()
 	])
 	password = PasswordField('password', validators=[InputRequired()])
+	# For invite-only period, should be removed once that's over.
+	beta_code = StringField('Invite Code', validators=[InputRequired()])
 	first_name = StringField('first name') # honey pot
 
 class LoginForm(FlaskForm):

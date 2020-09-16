@@ -54,9 +54,15 @@
 			"password" : {
 				"type" : "string",
 				"description" : "The new user's password"
+			},
+			"beta_code" : {
+				"type": "string",
+				"description": "A code for registerting during the invite-only period",
+				"minLength": 36,
+				"maxLength": 36
 			}
 		},
-		"required" : ["username", "email", "password"],
+		"required" : ["username", "email", "password", "beta_code"],
 		"responses" : [
 			{
 				"code": 200,
@@ -69,6 +75,13 @@
 						},
 						"username": "maya"
 					}
+				}
+			},
+			{
+				"code": 400,
+				"example_json": {
+					"error": "Client Error",
+					"message": "Invalid beta code"
 				}
 			},
 			{
