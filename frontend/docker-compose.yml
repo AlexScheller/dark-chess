@@ -1,7 +1,7 @@
 version: '3'
 services:
     nginx:
-        image: nginx:1.19.2-alpine
+        image: nginx:stable-alpine
         ports:
             - "80:80"
             - "443:443"
@@ -22,4 +22,4 @@ services:
         image: darkchess-client:latest
         ports:
             - 5005:5005
-        command: "/bin/bash -c 'source venv/bin/activate && gunicorn -w 1 -b 0.0.0.0:5005 --access-logfile - --error-logfile - dark_chess_frontend:app'"
+        command: "/bin/bash -c 'source venv/bin/activate && gunicorn -w 1 --worker-class eventlet -b 0.0.0.0:5005 --access-logfile - --error-logfile - dark_chess_frontend:app'"

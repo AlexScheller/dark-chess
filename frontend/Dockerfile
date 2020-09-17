@@ -13,6 +13,7 @@ RUN venv/bin/pip install --upgrade pip
 RUN venv/bin/pip install -r requirements.txt
 
 # Non-Generic Dependencies
+RUN venv/bin/pip install eventlet
 RUN venv/bin/pip install gunicorn
 
 COPY dark_chess_app dark_chess_app
