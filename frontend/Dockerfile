@@ -1,4 +1,4 @@
-FROM python:3.8-slim-buster
+FROM python:3.8-buster
 
 RUN adduser --disabled-password --gecos "" u_dark_chess_frontend
 
