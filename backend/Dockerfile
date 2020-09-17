@@ -5,16 +5,14 @@ RUN adduser --disabled-password --gecos "" u_dark_chess_backend
 WORKDIR /home/dark_chess_backend
 
 COPY requirements.txt requirements.txt
-
-# Copying the python .env, not a docker .env, possibly bad practice.
 COPY .env.flask .env.flask
 
-# Generic Dependancies
+# Generic Dependencies
 RUN python -m venv venv
 RUN venv/bin/pip install -U pip
 RUN venv/bin/pip install -r requirements.txt
 
-# Non-Generic Dependancies
+# Non-Generic Dependencies
 RUN venv/bin/pip install psycopg2
 RUN venv/bin/pip install eventlet
 RUN venv/bin/pip install gunicorn
