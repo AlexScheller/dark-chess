@@ -1,6 +1,7 @@
 # Shared
 
 *.env
+*.env.*
 *.pyc
 # Used as a suffix for flask .env files
 *.flask
