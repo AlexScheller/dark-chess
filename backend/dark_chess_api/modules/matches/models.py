@@ -284,7 +284,7 @@ class Match(db.Model):
 		if self.is_finished:
 			ret.update({
 				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',
-				'current_fen': self.fen,
+				'current_fen': self.current_fen,
 				'winner': self.winning_player.as_dict()
 			})
 		return ret
