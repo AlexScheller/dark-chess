@@ -1,11 +1,25 @@
 from flask import current_app
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
 from dark_chess_api import db
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timedelta
 from uuid import uuid4
+from enum import Enum
 import secrets
 import pytz
+
+class UserRelationshipType(Enum):
+	FRIEND = 1
+	FRIEND_REQUEST = 2
+	BLOCKED = 3
+
+class UserRelationship(db.Model):
+
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+	related_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
+	relationship_type = db.Column(db.Enum(UserRelationshipType), primary_key=True)
+
+	related_user = db.relationship('User', foreign_keys=[related_user_id])
 
 class User(db.Model):
 
@@ -31,6 +45,33 @@ class User(db.Model):
 	)
 
 	stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
+
+	friends = db.relationship('UserRelationship',
+		primaryjoin=and_(
+			UserRelationship.user_id==id,
+			UserRelationship.relationship_type==UserRelationshipType.FRIEND
+		)
+	)
+
+	friends_requested = db.relationship('UserRelationship',
+		primaryjoin=and_(
+			UserRelationship.user_id==id,
+			UserRelationship.relationship_type==UserRelationshipType.FRIEND_REQUEST
+		),
+		secondaryjoin=and_(
+			UserRelationship.related_user_id==id,
+			UserRelationship.relationship_type==UserRelationshipType.FRIEND_REQUEST
+		),
+		backref=db.backref('friend_requests', lazy='dynamic')
+	)
+
+	# friends = db.relationship('User', secondary=user_relationship,
+	# 	primaryjoin=and_(
+	# 		user_relationship.c.relationship_type==UserRelationship.FRIEND,
+	# 		user_relationship.c.user_id==id
+	# 	),
+	# 	secondaryjoin=(user_relationship.c.related_user_id==id)
+	# )
 
 	def __init__(self, username, email, password):
 		self.username = username
@@ -80,6 +121,20 @@ class User(db.Model):
 		if user is None or user.token_expiration < datetime.utcnow():
 			return None
 		return user
+
+	def request_friend(self, user):
+		friend_request = UserRelationship(
+			relationship_type=UserRelationshipType.FRIEND_REQUEST
+		)
+		friend_request.related_user = user
+		self.friends_requested.append(friend_request)
+
+	def add_friend(self, user):
+		friendship = UserRelationship(
+			relationship_type=UserRelationshipType.FRIEND
+		)
+		friendship.related_user = user
+		self.friends.append(friendship)
 
 # Facilitiates the invite-only period of the application. This should be removed
 # once that period is over.
