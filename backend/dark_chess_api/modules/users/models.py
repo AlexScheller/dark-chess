@@ -8,19 +8,22 @@ from enum import Enum
 import secrets
 import pytz
 
-class UserRelationshipType(Enum):
-	FRIEND = 1
-	FRIEND_REQUEST = 2
-	BLOCKED = 3
 
-class UserRelationship(db.Model):
+# Yes these three relationships could be configured to reside in a single table
+# with a discriminant Enum column or something, but that only really saves us
+# time if we plan on adding significantly more relationships. This model is more
+# explicit and likely more performant.
 
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-	related_user_id = db.Column(db.Integer, db.ForeignKey('user.id'), primary_key=True)
-	relationship_type = db.Column(db.Enum(UserRelationshipType), primary_key=True)
+user_friend = db.Table('user_friend',
+	db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+	db.Column('friend_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
 
-	related_user = db.relationship('User', foreign_keys=[related_user_id])
-
+user_friend_invite = db.Table('user_friend_invite',
+	db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+	db.Column('invited_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
+)
+ 
 class User(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
@@ -46,32 +49,16 @@ class User(db.Model):
 
 	stat_block = db.relationship('UserStatBlock', uselist=False, back_populates='user')
 
-	friends = db.relationship('UserRelationship',
-		primaryjoin=and_(
-			UserRelationship.user_id==id,
-			UserRelationship.relationship_type==UserRelationshipType.FRIEND
-		)
+	friends = db.relationship('User', secondary=user_friend,
+		primaryjoin=(user_friend.c.user_id==id),
+		secondaryjoin=(user_friend.c.friend_id==id)
 	)
 
-	friends_requested = db.relationship('UserRelationship',
-		primaryjoin=and_(
-			UserRelationship.user_id==id,
-			UserRelationship.relationship_type==UserRelationshipType.FRIEND_REQUEST
-		),
-		secondaryjoin=and_(
-			UserRelationship.related_user_id==id,
-			UserRelationship.relationship_type==UserRelationshipType.FRIEND_REQUEST
-		),
-		backref=db.backref('friend_requests', lazy='dynamic')
+	friends_invited = db.relationship('User', secondary=user_friend_invite,
+		primaryjoin=(user_friend_invite.c.user_id==id),
+		secondaryjoin=(user_friend_invite.c.invited_id==id),
+		backref=db.backref('friend_invites')
 	)
-
-	# friends = db.relationship('User', secondary=user_relationship,
-	# 	primaryjoin=and_(
-	# 		user_relationship.c.relationship_type==UserRelationship.FRIEND,
-	# 		user_relationship.c.user_id==id
-	# 	),
-	# 	secondaryjoin=(user_relationship.c.related_user_id==id)
-	# )
 
 	def __init__(self, username, email, password):
 		self.username = username
@@ -122,19 +109,11 @@ class User(db.Model):
 			return None
 		return user
 
-	def request_friend(self, user):
-		friend_request = UserRelationship(
-			relationship_type=UserRelationshipType.FRIEND_REQUEST
-		)
-		friend_request.related_user = user
-		self.friends_requested.append(friend_request)
+	def invite_friend(self, user):
+		self.friends_invited.append(user)
 
 	def add_friend(self, user):
-		friendship = UserRelationship(
-			relationship_type=UserRelationshipType.FRIEND
-		)
-		friendship.related_user = user
-		self.friends.append(friendship)
+		self.friends.append(user)
 
 # Facilitiates the invite-only period of the application. This should be removed
 # once that period is over.

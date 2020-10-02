@@ -154,5 +154,40 @@
 				"code" : 500
 			}
 		]
-	}
+	},
+	"invite_friend" : {
+		"$schema": "http://json-schema.org/draft-07/schema#",
+		"title" : "Invite Friend",
+		"description" : "Invite a given user to be your friend.",
+		"endpoint" : "/user/<int:id>/friend-invite",
+		"request_method" : "POST",
+		"additional_headers" : [
+			"Authorization: Basic <username>:<password>"
+		],
+		"type" : "None",
+		"responses" : [
+			{
+				"code": 200,
+				"message": "Successfully invited user to be your friend",
+				"user": { "details": "user details" }
+			},
+			{
+				"code": 201,
+				"message": "User already invited to be your friend",
+				"user": { "details": "user details" }
+			},
+			{
+				"code" : 401
+			},
+			{
+				"code" : 404
+			},
+			{
+				"code" : 405
+			},
+			{
+				"code" : 500
+			}
+		]
+	},
 }

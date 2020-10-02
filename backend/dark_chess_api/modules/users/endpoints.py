@@ -71,3 +71,20 @@ def change_password(id):
 		'message' : 'Successfully changed password',
 		'user' : u.as_dict()
 	}
+
+@users.route('/<int:id>/friend-invite', methods=['POST'])
+@token_auth.login_required
+def invite_friend(id):
+	u = User.query.get_or_404(id)
+	if u in g.current_user.friends_invited:
+		return {
+			'message': 'User already invited to be your friend',
+			'user': u.as_dict()
+		}, 201
+	g.current_user.invite_friend(u)
+	db.session.commit()
+	return {
+		'message': 'Successfully invited user to be your friend',
+		'user': u.as_dict()
+	}
+
