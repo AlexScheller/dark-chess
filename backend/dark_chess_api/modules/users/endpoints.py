@@ -88,3 +88,20 @@ def invite_friend(id):
 		'user': u.as_dict()
 	}
 
+@users.route('/<int:id>/accept-friend-invite', methods=['PATCH'])
+@token_auth.login_required
+def accept_friend_invite(id):
+	u = User.query.get_or_404(id)
+	if u not in g.current_user.friend_invites:
+		return error_response(400, 'You don\'t have a friend invite from this player')
+	if u in g.current_user.friends:
+		return {
+			'message': 'You are already friends with this user',
+			'user': u.as_dict()
+		}, 201
+	g.current_user.accept_friend(u)
+	db.session.commit()
+	return {
+		'message': 'Successfully accepted friend invite',
+		'user': u.as_dict()
+	}

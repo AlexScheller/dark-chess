@@ -112,8 +112,10 @@ class User(db.Model):
 	def invite_friend(self, user):
 		self.friends_invited.append(user)
 
-	def add_friend(self, user):
+	def accept_friend(self, user):
 		self.friends.append(user)
+		user.friends.append(self)
+		user.friends_invited.remove(self)
 
 # Facilitiates the invite-only period of the application. This should be removed
 # once that period is over.

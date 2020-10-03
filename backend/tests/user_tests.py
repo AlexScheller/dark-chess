@@ -1,9 +1,11 @@
+import unittest
 from tests.test_prototype import PrototypeModelTestCase, auth_encode
 from dark_chess_api import db
 from dark_chess_api.modules.users.models import User
 
 class UserTestCases(PrototypeModelTestCase):
 
+	@unittest.skip('Skipped during beta code period, TODO: Remove')
 	def test_registration_route(self):
 		u = User.query.get(1)
 		self.assertIsNone(u)
@@ -104,3 +106,38 @@ class UserTestCases(PrototypeModelTestCase):
 		u = User.query.get(1)
 		self.assertTrue(u.check_password('wordpass'))
 		self.assertFalse(u.check_password('password'))
+
+	def test_invite_friend(self):
+		u1 = User('user', 'user@example.com', 'password')
+		u2 = User('user2', 'user2@example.com', 'password')
+		db.session.add_all([u1, u2])
+		db.session.commit()
+		self.assertNotIn(u2, u1.friends_invited)
+		self.assertNotIn(u1, u2.friend_invites)
+		u1_token = u1.get_token()
+		invite_res = self.client.post('/user/2/friend-invite',
+			headers={'Authorization': f'Bearer {u1_token}'},
+		)
+		self.assertEqual(200, invite_res.status_code)
+		self.assertIn(u2, u1.friends_invited)
+
+	def test_accept_friend_invite(self):
+		u1 = User('user', 'user@example.com', 'password')
+		u2 = User('user2', 'user2@example.com', 'password')
+		db.session.add_all([u1, u2])
+		db.session.commit()
+		u1.friends_invited.append(u2)
+		db.session.commit()
+		self.assertNotIn(u2, u1.friends)
+		self.assertNotIn(u1, u2.friends)
+		self.assertIn(u2, u1.friends_invited)
+		self.assertIn(u1, u2.friend_invites)
+		u2_token = u2.get_token()
+		accept_invite_res = self.client.patch('/user/1/accept-friend-invite',
+			headers={'Authorization': f'Bearer {u2_token}'},
+		)
+		self.assertEqual(200, accept_invite_res.status_code)
+		self.assertIn(u2, u1.friends)
+		self.assertIn(u1, u2.friends)
+		self.assertNotIn(u2, u1.friends_invited)
+		self.assertNotIn(u1, u2.friend_invites)
