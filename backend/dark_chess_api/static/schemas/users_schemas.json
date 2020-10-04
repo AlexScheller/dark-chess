@@ -54,15 +54,9 @@
 			"password" : {
 				"type" : "string",
 				"description" : "The new user's password"
-			},
-			"beta_code" : {
-				"type": "string",
-				"description": "A code for registerting during the invite-only period",
-				"minLength": 36,
-				"maxLength": 36
 			}
 		},
-		"required" : ["username", "email", "password", "beta_code"],
+		"required" : ["username", "email", "password"],
 		"responses" : [
 			{
 				"code": 200,

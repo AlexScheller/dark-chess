@@ -1,11 +1,10 @@
 import unittest
 from tests.test_prototype import PrototypeModelTestCase, auth_encode
 from dark_chess_api import db
-from dark_chess_api.modules.users.models import User
+from dark_chess_api.modules.users.models import User, BetaCode
 
 class UserTestCases(PrototypeModelTestCase):
 
-	@unittest.skip('Skipped during beta code period, TODO: Remove')
 	def test_registration_route(self):
 		u = User.query.get(1)
 		self.assertIsNone(u)
@@ -33,6 +32,55 @@ class UserTestCases(PrototypeModelTestCase):
 		u = User.query.get(2)
 		self.assertIsNone(u)
 
+	def test_beta_code_registration(self):
+		self.app.config['BETA_KEYS_REQUIRED'] = True
+		u = User.query.get(1)
+		self.assertIsNone(u)
+		user_res = self.client.post('/user/auth/register',
+			json={
+				'username' : 'user',
+				'password' : 'password',
+				'email': 'user@example.com'
+			}
+		)
+		self.assertEqual(400, user_res.status_code)
+		u = User.query.get(1)
+		self.assertIsNone(u)
+		user_res = self.client.post('/user/auth/register',
+			json={
+				'username' : 'user',
+				'password' : 'password',
+				'email': 'user@example.com',
+				'beta_code': 'hello'
+			}
+		)
+		self.assertEqual(422, user_res.status_code)
+		u = User.query.get(1)
+		self.assertIsNone(u)
+		bc = BetaCode()
+		db.session.add(bc)
+		db.session.commit()
+		user_res = self.client.post('/user/auth/register',
+			json={
+				'username' : 'user',
+				'password' : 'password',
+				'email': 'user@example.com',
+				'beta_code': bc.code
+			}
+		)
+		u = User.query.get(1)
+		self.assertIsNotNone(u)
+		user2_res = self.client.post('/user/auth/register',
+			json={
+				'username' : 'user2',
+				'password' : 'password',
+				'email': 'user2@example.com',
+				'beta_code': bc.code
+			}
+		)
+		self.assertEqual(422, user2_res.status_code)
+		u2 = User.query.get(2)
+		self.assertIsNone(u2)
 
 	def test_aquire_token(self):
 		db.session.add(User('user', 'user@example.com', 'password'))

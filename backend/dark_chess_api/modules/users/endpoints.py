@@ -1,4 +1,4 @@
-from flask import g, jsonify, request
+from flask import g, jsonify, request, current_app
 from dark_chess_api import db
 from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
@@ -7,6 +7,7 @@ from dark_chess_api.modules.auth.utils import (
 	basic_auth, token_auth, check_and_assign_beta_code
 )
 from dark_chess_api.modules.utilities import validation
+from uuid import UUID
 
 @users.route('/auth/token', methods=['GET'])
 @basic_auth.login_required
@@ -47,10 +48,17 @@ def register_user():
 		password=new_password
 	)
 	db.session.add(u)
-	# BetaCode specific
-	beta_code = registration_json['beta_code']
-	if not check_and_assign_beta_code(beta_code, u):
-		return error_response(400, 'Invalid beta code')
+	# BetaCode specific. Because the requirement to use beta codes is switched
+	# with a config param, the validation must occur in this route, rather than
+	# at the JSON schema level.
+	if current_app.config['BETA_KEYS_REQUIRED']:
+		if 'beta_code' not in registration_json:
+			db.session.rollback()
+			return error_response(400, 'Beta codes are currently required for registration')
+		beta_code = registration_json['beta_code']
+		if not check_and_assign_beta_code(beta_code, u):
+			db.session.rollback()
+			return error_response(422, 'Invalid beta code')
 	db.session.commit()
 	return {
 		'message' : 'Successfully registered user',
