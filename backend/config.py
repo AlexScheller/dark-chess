@@ -10,8 +10,6 @@ class Config:
 
 	FRONTEND_ROOT = os.environ.get('FRONTEND_ROOT') or 'http://localhost:5005'
 
-	MATCH_CONNECTION_HASH_BYTES = 16
-
 	DB_USERNAME = os.environ.get('DB_USERNAME') or 'darkchess'
 	DB_PASSWORD = os.environ.get('DB_PASSWORD') or 'darkchess'
 
@@ -43,3 +41,5 @@ class Config:
 	CHOSEN_DATABASE = os.environ.get('CHOSEN_DATABASE') or 'SQLITE'
 	SQLALCHEMY_TRACK_MODIFICATIONS = False
 	SQLALCHEMY_DATABASE_URI = DATABASE_URIS[CHOSEN_DATABASE]
+
+	BETA_KEYS_REQUIRED = os.environ.get('BETA_KEYS_REQUIRED') or False

@@ -111,7 +111,7 @@ def join_match(id):
 		)
 	match.join(player)
 	db.session.commit()
-	ws_events.broadcast_match_begun(match.connection_hash)
+	ws_events.broadcast_match_begun(match.connection_token)
 	return {
 		'message' : 'Player successfully joined match.',
 		'match' : match.as_dict()
@@ -143,12 +143,12 @@ def make_move(id):
 		player=player,
 		move=req_json['uci_string'],
 		current_fen=match.current_fen,
-		connection_hash=match.connection_hash
+		connection_token=match.connection_token
 	)
 	if match.is_finished:
 		ws_events.broadcast_match_finish(
 			winning_player=player,
-			connection_hash=match.connection_hash
+			connection_token=match.connection_token
 		)
 	return {
 		'message' : 'Move successfully made',

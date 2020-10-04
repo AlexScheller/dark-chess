@@ -3,9 +3,9 @@ from dark_chess_api import db
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import and_, or_
+from uuid import uuid4
 import chess
 import random
-import secrets
 
 # Note that this file is full of inneficient code, most notably many
 # instantiations of board objects for simple functions. In the future this may
@@ -57,19 +57,10 @@ class MatchState(db.Model):
 class Match(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
-	connection_hash = db.Column(db.String(255), index=True, unique=True)
+	connection_token = db.Column(db.String(36), index=True, unique=True)
 
 	def __init__(self):
-		self.connection_hash = secrets.token_hex(
-			current_app.config['MATCH_CONNECTION_HASH_BYTES']
-		)
-		while Match.query.filter_by(
-			connection_hash=self.connection_hash
-		).first() is not None:
-			self.connection_hash = secrets.token_hex(
-				current_app.config['MATCH_CONNECTION_HASH_BYTES']
-			)
-
+		self.connection_token = str(uuid4())
 
 	player_white_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	player_white = db.relationship('User',
@@ -254,7 +245,7 @@ class Match(db.Model):
 		# it or scrape it or whatever. TODO: Think about this one some more.
 		if side is not None or self.open:
 			ret.update({
-				'connection_hash': self.connection_hash
+				'connection_token': self.connection_token
 			})
 		if side == 'spectating':
 			ret.update({

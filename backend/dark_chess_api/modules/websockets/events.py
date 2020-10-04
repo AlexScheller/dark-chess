@@ -34,23 +34,23 @@ def handle_disconnect():
 #  Outgoing Events  #
 #####################
 
-def broadcast_match_begun(connection_hash):
-	socketio.emit('match-begun', room=connection_hash, namespace='/match-moves')
+def broadcast_match_begun(connection_token):
+	socketio.emit('match-begun', room=connection_token, namespace='/match-moves')
 
-def broadcast_move_made(player, move, current_fen, connection_hash):
+def broadcast_move_made(player, move, current_fen, connection_token):
 	socketio.emit('move-made', {
 			'player': player.as_dict(),
 			'current_fen': current_fen,
 			'uci_string': move
 		},
-		room=connection_hash,
+		room=connection_token,
 		namespace='/match-moves'
 	)
 
-def broadcast_match_finish(winning_player, connection_hash):
+def broadcast_match_finish(winning_player, connection_token):
 	socketio.emit('match-finish', {
 			'winning_player': winning_player.as_dict(),
 		},
-		room=connection_hash,
+		room=connection_token,
 		namespace='/match-moves'
 	)
