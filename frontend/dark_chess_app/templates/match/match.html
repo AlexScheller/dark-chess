@@ -5,27 +5,6 @@
 {% endblock %}
 {% block page_content %}
 	<a href="{{ url_for('match.match_history', id=match.id) }}">history</a>
-	{% if player_color %}
-	<div id="promotion-choices" class="hidden">
-		<div id='n-option' class="promo-choice">
-			{{ piece('knight', player_color) }}
-			<input type="radio" name="promo-choices" value="n">
-		</div>
-		<div id='r-option' class="promo-choice">
-			{{ piece('rook', player_color) }}
-			<input type="radio" name="promo-choices" value="r">
-		</div>
-		<div id='b-option' class="promo-choice">
-			{{ piece('bishop', player_color) }}
-			<input type="radio" name="promo-choices" value="b">
-		</div>
-		<div id='q-option' class="promo-choice">
-			{{ piece('queen', player_color) }}
-			<input type="radio" name="promo-choices" value="q" checked>
-		</div>
-		<button id="promotion-button">promote</button>
-	</div>
-	{% endif %}
 	<h2>Match: {{ match.id }}</h2>
 	<button id="flip-board-button">⇅</button>
 	<div id="player-black" class="player-container">
@@ -34,14 +13,6 @@
 		{% endif %}
 	</div>
 	<canvas id="board-canvas"></canvas>
-	<!-- Prefer the canvas, but we can fall back to the div based board -->
-	<div id="board" class="chess-board disabled">
-		{% for number in range(8, 0, -1) %}
-			{% for letter in 'abcdefgh' %}
-		<div id="{{ letter }}{{ number }}" data-rank="{{ number }}" data-file="{{ letter }}" class="board-square"></div>
-			{% endfor %}
-		{% endfor %}
-	</div>
 	<div id="player-white" class="player-container">
 		{% if match.player_white %}
 		<h3 id="player-{{ match.player_white.id }}" class="player-title player-white-title">{{ match.player_white.username }}</h3><i class="far fa-chevron-double-left"></i>
