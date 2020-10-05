@@ -213,8 +213,35 @@ class MatchModel {
 	potentialPromotion(move) {
 		logDebug('Checking potential promotion', 'Game');
 		let piece = this.pieceAtSquare(move.from);
+		let capture = this.pieceAtSquare(move.to);
 		if (piece === null) return false;
-		if (piece.color == this.playerSide && piece.type == 'p') {
+		if (capture !== null) {
+			// If it's capturing the king the pawn shouldn't promote.
+			if (capture.color === this.opponentSide && capture.type === 'k') {
+				return false;
+			}
+		}
+		if (piece.color === this.playerSide && piece.type === 'p') {
+			let rank = move.to[1];
+			return piece.color === 'w' ? rank === '8' : rank === '1';
+		}
+		return false
+	}
+
+	// This is to handle the edge case where a pawn is capturing a king on the
+	// backline. In our varient, this ends the game so a promtion shouldn't be
+	// strictly necessary, but the chess library on the backend doesn't
+	// currently consider this to be a pseudo-legal move. If this returns true,
+	// the caller will append a filler queen promotion to the end of the move to
+	// make the library happy. If the libary is updated this should be removed.
+	// NOTE that this will result in the pawn promoting to a queen. If that's
+	// not desired it will have to be fixed on the backend.
+	pawnCaptureKingPromotion(move) {
+		logDebug('Checking potential pawn capturing king', 'Game');
+		let piece = this.pieceAtSquare(move.from);
+		let capture = this.pieceAtSquare(move.to);
+		if (piece === null) return false;
+		if (piece.color === this.playerSide && piece.type === 'p') {
 			let rank = move.to[1];
 			return piece.color === 'w' ? rank === '8' : rank === '1';
 		}
@@ -459,6 +486,17 @@ class CanvasBoardViewController {
 						if (this._model.potentialPromotion(newFormatMove)) {
 							this._listener.handlePromotionEngagement(move);
 							this._render();
+						// This is a workaround for the fact that the chess
+						// library on the backend doesn't consider a pawn
+						// capturing the king without promoting to be a
+						// pseudo-legal move. An issue has been raised, and if
+						// a pull-request is accepted this workaround should be
+						// removed. All it does is append a queen promotion to
+						// the move.
+						} else if (
+							this._model.pawnCaptureKingPromotion(newFormatMove)
+						) {
+							this._listener.handleMoveRequest(move + 'q');
 						} else {
 							this._listener.handleMoveRequest(move);							
 						}
