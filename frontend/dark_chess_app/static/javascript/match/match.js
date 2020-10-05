@@ -159,6 +159,8 @@ class MatchModel {
 			} else {
 				this._opponentData = matchData.player_black;
 			}
+		} else {
+			this._board = this.loadFromFen(matchData.current_fen);
 		}
 		this._listener.handleModelReload();
 	}
@@ -290,9 +292,13 @@ class MatchModel {
 		this._listener = listener;
 	}
 
-	loadFromDarkFen(darkFen) {
-		let ret = {}
-		let squares = darkFen.split('/').join('')
+	// Currently, there's no difference in board loading between dark and
+	// regular fen. That may not always be the case however, so seperate
+	// functions are kept in case it changes. Until then, both functions simply
+	// call this helper function.
+	_loadFen(fen) {
+		let ret = {};
+		let squares = fen.split('/').join('');
 		let curr = 0;
 		for (let rank of '87654321') {
 			for (let file of 'abcdefgh') {
@@ -300,6 +306,16 @@ class MatchModel {
 			}
 		}
 		return ret;
+	}
+
+	// Used when playing the game.
+	loadFromDarkFen(darkFen) {
+		return this._loadFen(darkFen);
+	}
+
+	// Used when spectating an in progress game, or displaying a finished game.
+	loadFromFen(fen) {
+		return this._loadFen(fen);
 	}
 
 	loadOpponent(opponentData) {
@@ -496,6 +512,7 @@ class CanvasBoardViewController {
 
 	handleGameOver(winner) {
 		this._tearDownClickHandlers();
+		this._render()
 	}
 
 	/* internals */
@@ -971,7 +988,7 @@ class Match {
 	}
 
 	handleMatchFinish(winningPlayerJSON) {
-		this._bvc.handleGameOver(winningPlayerJSON);
+		this.syncModelWithRemote();
 	}
 
 	syncModelWithRemote() {

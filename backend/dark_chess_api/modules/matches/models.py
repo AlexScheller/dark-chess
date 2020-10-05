@@ -122,6 +122,22 @@ class Match(db.Model):
 	def current_fen(self):
 		return self.history[-1].fen
 
+	@property
+	def current_expanded_fen(self):
+		board = chess.Board(fen=self.current_fen)
+		ret = ''
+		# chess.py conceives of boards as being a1 -> h8 with white on top, but
+		# we use the traditional method of a8 -> h1 with black on top. Because
+		# of this, we iterate through the ranks in reverse.
+		for rank in range(7, -1, -1):
+			for file in range(8):
+				square = chess.square(file, rank)
+				piece = board.piece_at(square)
+				ret += piece.symbol() if piece is not None else '_'
+			if rank > 0:
+				ret += '/'
+		return ret
+
 	def current_dark_fen(self, side):
 		if not self.in_progress:
 			return None
@@ -270,12 +286,12 @@ class Match(db.Model):
 					})
 				else:
 					ret.update({
-						'current_fen': self.current_fen,
+						'current_fen': self.current_expanded_fen,
 					})
 		if self.is_finished:
 			ret.update({
 				'winning_side': 'white' if self.winning_player_id == self.player_white_id else 'black',
-				'current_fen': self.current_fen,
+				'current_fen': self.current_expanded_fen,
 				'winner': self.winning_player.as_dict()
 			})
 		return ret
