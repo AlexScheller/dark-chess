@@ -24,9 +24,9 @@ function swapEl(el1, el2) {
 // prompt the API handler to request a new model state.
 class WebsocketHandler {
 
-	constructor(config, connectionHash) {
+	constructor(config, connectionToken) {
 		logDebug('Constructing WebsocketHandler.');
-		this._connectionHash = connectionHash;
+		this._connectionToken = connectionToken;
 		this._conn = this._setupServerConn(config.apiRoot);
 		this._registerEventListeners();
 	}
@@ -47,7 +47,7 @@ class WebsocketHandler {
 			logDebug('Authenticating...', 'Websocket');
 			this._conn.emit('authenticate', {
 				token: config.token,
-				connectionHash: this._connectionHash 
+				connectionToken: this._connectionToken 
 			});
 		});
 		this._conn.on('authenticated', event => {
@@ -929,7 +929,7 @@ class Match {
 		this._bvc = new CanvasBoardViewController(this._mm);
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
-		this._wsh = new WebsocketHandler(config, matchData.connection_hash);
+		this._wsh = new WebsocketHandler(config, matchData.connection_token);
 		this._wsh.setListener(this);
 	}
 

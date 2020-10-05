@@ -18,9 +18,9 @@ def handle_connect():
 @socketio.on('authenticate', namespace='/match-moves')
 def handle_authenticate(json):
 	if current_app.config['DEBUG']:
-		current_app.logger.info(f'(WS) Client successfully authenticated. Connected from match {json["connectionHash"]}')
-		current_app.logger.info(f'(WS) Client joining room: {json["connectionHash"]}')
-	join_room(json['connectionHash'])
+		current_app.logger.info(f'(WS) Client successfully authenticated. Connected from match {json["connectionToken"]}')
+		current_app.logger.info(f'(WS) Client joining room: {json["connectionToken"]}')
+	join_room(json['connectionToken'])
 	# emit('authenticated', {
 	# 	'msg': f'user ({g.current_user.username}:{g.current_user.id}) authenticated'
 	# })
