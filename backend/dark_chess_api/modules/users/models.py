@@ -78,7 +78,13 @@ class User(db.Model):
 				'formatted' : str(self.registration_date),
 				'timestamp' : int(self.registration_date.replace(tzinfo=pytz.utc).timestamp())
 			},
-			'stats': self.stat_block.as_dict()
+			'stats': self.stat_block.as_dict(),
+			'friends': [
+				{
+					'username': f.username,
+					'id': f.id
+				} for f in self.friends
+			]
 		}
 
 	### auth methods ###

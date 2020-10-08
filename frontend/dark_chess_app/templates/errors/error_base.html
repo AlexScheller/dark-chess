@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Dark Chess Error - {{ code }}</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
+	</head>
+	<body>
+		<h1>Error: {{ code }}</h1>
+		<h2>{{ message }}</h2>
+		<a href="{{ url_for('main.index') }}">Go to the main page</a>
+	</body>
+</html>

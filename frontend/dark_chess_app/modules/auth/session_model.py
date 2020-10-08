@@ -22,6 +22,7 @@ class User(UserMixin):
 		self.username = user_data['username']
 		self.email_confirmed = user_data['email_confirmed']
 		self.registration_timestamp = user_data['registration_date']['timestamp']
+		self.friends = user_data['friends']
 
 	def get_id(self):
 		return self.token
