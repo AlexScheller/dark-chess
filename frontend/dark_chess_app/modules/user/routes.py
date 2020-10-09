@@ -1,10 +1,8 @@
 import requests
-from flask import render_template, redirect, url_for, jsonify, request, flash
+from flask import render_template, request
 from flask_login import current_user, login_required
-from dark_chess_app.modules.match import match
-from dark_chess_app.utilities.api_utilities import (
-	api_request, api_token_request
-)
+from dark_chess_app.modules.user import user
+from dark_chess_app.utilities.api_utilities import api_token_request
 
 @user.route('/profile')
 @login_required

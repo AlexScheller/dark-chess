@@ -1,4 +1,4 @@
-from flask import redirect, url_for, jsonify, request
+from flask import redirect, url_for, jsonify, request, render_template
 from functools import wraps
 from dark_chess_app.modules.errors import errors
 from werkzeug.http import HTTP_STATUS_CODES
@@ -27,7 +27,6 @@ def api_error_response(status_code, message=None):
 	response.status_code = status_code
 	return response
 
-# TODO see if this is even called from proxy routes.
 @errors.app_errorhandler(401)
 @json_handler(401)
 def unauthorized_error(error):
@@ -36,7 +35,7 @@ def unauthorized_error(error):
 @errors.app_errorhandler(404)
 @json_handler(404)
 def not_found_error(error):
-	return render_template('errors/not_found.html',
+	return render_template('errors/404.html',
 		code=404,
 		message=HTTP_STATUS_CODES.get(404)
 	), 404
