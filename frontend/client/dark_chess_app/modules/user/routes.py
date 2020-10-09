@@ -22,6 +22,9 @@ def user_profile(id):
 	if user_res.status_code != 200:
 		abort(user_res.status_code)
 	user_data = user_res.json()
+	is_friend = current_user.id in [f.id for f in user_data['friends']]
 	return render_template('user/user_profile.html',
-		user=user_data
+		user=user_data,
+		is_friend=is_friend,
+		is_user=(user_data['id']==current_user.id)
 	)

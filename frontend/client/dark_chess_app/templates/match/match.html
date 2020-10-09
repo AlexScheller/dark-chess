@@ -1,5 +1,5 @@
 {% extends "shared/base.html" %}
-{% from "shared/macros.jinja" import piece %}
+{% from "shared/macros.jinja" import user_link %}
 {% block css %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
 {% endblock %}
@@ -10,12 +10,14 @@
 	<div id="player-black" class="player-container">
 		{% if match.player_black %}
 		<h3 id="player-{{ match.player_black.id }}" class="player-title player-black-title">{{ match.player_black.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{{ user_link(match.player_black) }}
 		{% endif %}
 	</div>
 	<canvas id="board-canvas"></canvas>
 	<div id="player-white" class="player-container">
 		{% if match.player_white %}
 		<h3 id="player-{{ match.player_white.id }}" class="player-title player-white-title">{{ match.player_white.username }}</h3><i class="far fa-chevron-double-left"></i>
+		{{ user_link(match.player_white) }}
 		{% endif %}
 	</div>
 {% endblock %}

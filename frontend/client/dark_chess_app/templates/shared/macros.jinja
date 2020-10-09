@@ -144,6 +144,14 @@
 </div>
 {% endmacro %}
 
+{##########################}
+{#  Links/Represenations  #}
+{##########################}
+
+{% macro user_link(user) %}
+<a href="{{ url_for('user.user_profile', id=user.id) }}">{{ user.username | e }}</a>
+{% endmacro %}
+
 {##########}
 {#  Misc  #}
 {##########}

@@ -1,0 +1,16 @@
+{% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import user_link %}
+{% block page_content %}
+<h2>{{ user.username | e }}</h2>
+<h4>Friends:</h4>
+{% if user.friends %}
+<li>
+	{% for friend in user.friends %}
+	{{ user_link(friend) }}
+	{% endfor %}
+</li>
+{% else %}
+<p>None yet</p>
+{% endif %}
+{% endif %}
+{% endblock %}

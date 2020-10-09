@@ -1,0 +1,7 @@
+{% extends "shared/base.html" %}
+{% block page_content %}
+<h2>{{ user.username | e }}</h2>
+{% if not is_friend and not is_user %}
+<button data-user-id="{{ user.id }}">Invite Friend</button>
+{% endif %}
+{% endblock %}
