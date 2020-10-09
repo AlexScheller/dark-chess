@@ -52,11 +52,11 @@
 		{%- endif %}
 	</div>
 	<div class="card-actions">
-		<a class="button button-navigation" href="{{ url_for('match.match_page', id=match_data.id) }}">Go to match</a>
-		<a class="button button-navigation" href="{{ url_for('match.match_history', id=match_data.id) }}">history</a>
+		<a class="button" href="{{ url_for('match.match_page', id=match_data.id) }}">View</a>
+		<a class="button" href="{{ url_for('match.match_history', id=match_data.id) }}">history</a>
 		{%- if match_data.open %}
 		{%- if not (('player_white' in match_data and match_data.player_white.id == current_user.id) or ('player_black' in match_data and match_data.player_black.id == current_user.id)) %}
-		<a class="button button-navigation" class="button-link" href="{{ url_for('match.join_match', id=match_data.id) }}">Join Match</a>
+		<a class="button" class="button-link" href="{{ url_for('match.join_match', id=match_data.id) }}">Join</a>
 		{%- endif %}
 		{%- endif %}
 	</div>

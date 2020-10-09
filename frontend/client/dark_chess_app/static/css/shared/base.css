@@ -29,7 +29,7 @@ button {
  **************************/
 
 body {
-	width: 720px;
+	width: 1100px;
 	margin: 10px auto;
 	padding: 10px;
 }
@@ -97,10 +97,29 @@ nav a {
 	color: var(--warning-red);
 }
 
+/*
 .match-list .match-card:not(:last-child) {
 	margin-bottom: 15px;
 }
+*/
 
+.match-card {
+	border: solid black 1px;
+	width: 250px;
+	padding: 5px;
+}
+
+.match-card .card-header {
+	text-align: center;
+	margin-bottom: 10px;
+}
+
+.match-card .card-actions {
+	display: flex;
+	justify-content: space-around;
+}
+
+/*
 .match-card {
 	border-left: 5px solid var(--dark-square);
 	padding: 10px;
@@ -126,9 +145,21 @@ nav a {
 	margin-right: 10px;
 	margin-bottom: 10px;
 }
+*/
 
 .page-action-bar {
 	margin-bottom: 20px;
+}
+
+/***********************
+ *  Common Containers  *
+ ***********************/
+
+.wrap-list {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: flex-start;
+	gap: 10px;
 }
 
 /******************
@@ -281,7 +312,7 @@ input[type=text]:focus, input[type=password]:focus {
  *  Responsive  *
  ****************/
 
-@media only screen and (max-width: 700px) {
+@media only screen and (max-width: 1050px) {
 	body {
 		width: 100%;
 		padding: 10px;
@@ -302,5 +333,12 @@ input[type=text]:focus, input[type=password]:focus {
 	}
 	.form-input-wrapper label {
 		font-size: 1.5rem;
+	}
+}
+
+@media only screen and (max-width: 400px) {
+	.match-card {
+		width: 100%;
+		min-width: 250px;
 	}
 }

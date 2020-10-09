@@ -4,7 +4,7 @@
 <div class="page-action-bar">
 	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>	
 </div>
-<ul class="match-list">
+<ul class="match-list wrap-list">
 	{% for match_data in matches -%}
 	{{ match_card(match_data) }}
 	{%- endfor %}
