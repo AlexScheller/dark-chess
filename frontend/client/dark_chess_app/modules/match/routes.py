@@ -80,7 +80,7 @@ def match_history(id):
 				simple_fen.append(p) if p.isalpha() else simple_fen.extend('_' * int(p))
 			simple_grid_fen.append(simple_fen)
 		simple_history.append(simple_grid_fen)
-	return render_template('match/history.html',
+	return render_template('match/match_history.html',
 		title=f'{match_json["id"]} history',
 		history=simple_history,
 		match=match_json

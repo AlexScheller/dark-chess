@@ -4,11 +4,9 @@
 <link rel="stylesheet" href="{{ url_for('static', filename='css/match/board.css') }}">
 {% endblock %}
 {% block page_content %}
-{% if history %}
-{% for simple_fen in history %}
-{{ board(simple_fen) }}
-{% endfor %}
-{% else %}
-<h2>No moves seem to have been made yet in this match. Come back later.</h2>
-{% endif %}
+<canvas id="board-canvas"></canvas>
+{% endblock %}
+{% block js %}
+<div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>
+<script src="{{ url_for('static', filename='javascript/match/matchHistory.js') }}"></script>
 {% endblock %}
