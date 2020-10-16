@@ -1,5 +1,8 @@
+from uuid import UUID
+
 from flask import g, jsonify, request, current_app
-from dark_chess_api import db
+
+from dark_chess_api import db, schema
 from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
@@ -7,7 +10,6 @@ from dark_chess_api.modules.auth.utils import (
 	basic_auth, token_auth, check_and_assign_beta_code
 )
 from dark_chess_api.modules.utilities import validation
-from uuid import UUID
 
 @users.route('/auth/token', methods=['GET'])
 @basic_auth.login_required
@@ -28,41 +30,39 @@ def user_info(id):
 # Currently this requires a beta code. Once that period is over, this code
 # should be removed.
 @users.route('/auth/register', methods=['POST'])
-@validation.validate_json_payload
-def register_user():
-	registration_json = request.get_json()
-	new_username = registration_json['username']
-	# Note: emails are blindly accepted, no assumption is even
-	# made that the frontend validated them. Email validation
-	# is a difficult task that I've decided not to bother
-	# attempting on the back end, opting instead for the
-	# confirmation pattern to ensure valid emails.
-	new_email = registration_json['email']
-	new_password = registration_json['password']
-	u = User.query.filter_by(username=new_username).first()
-	if u is not None:
-		return error_response(409, 'Username taken')
-	u = User(
-		username=new_username,
-		email=new_email,
-		password=new_password
-	)
-	db.session.add(u)
+@schema.accepts({
+	'username': { 'type': 'string' },
+	'email': { 'type': 'string', 'format': 'email' },
+	'password': { 'type': 'string'}
+}, required=['username', 'email', 'password'])
+def register_user(username, email, password):
+	# Note: emails are blindly accepted, no assumption is even made that the
+	# frontend validated them. Emails are validated with the confirmation
+	# pattern rather than some attempt at a regex or something.
+	u_check = User.query.filter_by(username=username).first()
+	if u_check is not None:
+		return error_response(409, 'Username in use')
+	u_check = User.query.filter_by(email=email).first()
+	if u_check is not None:
+		return error_response(409, 'Email is use')
+	new_user = User(username=username, email=email, password=password)
+	db.session.add(new_user)
 	# BetaCode specific. Because the requirement to use beta codes is switched
 	# with a config param, the validation must occur in this route, rather than
 	# at the JSON schema level.
+	registration_json = request.get_json()
 	if current_app.config['BETA_KEYS_REQUIRED']:
 		if 'beta_code' not in registration_json:
 			db.session.rollback()
 			return error_response(400, 'Beta codes are currently required for registration')
 		beta_code = registration_json['beta_code']
-		if not check_and_assign_beta_code(beta_code, u):
+		if not check_and_assign_beta_code(beta_code, new_user):
 			db.session.rollback()
 			return error_response(422, 'Invalid beta code')
 	db.session.commit()
 	return {
 		'message' : 'Successfully registered user',
-		'user' : u.as_dict()
+		'user' : new_user.as_dict()
 	}
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])

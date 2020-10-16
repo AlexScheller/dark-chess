@@ -7,10 +7,13 @@ from flask_talisman import Talisman
 from config import Config
 import os
 
+from dark_chess_api.schema_handler import SchemaHandler
+
 db = SQLAlchemy()
 migrate = Migrate()
 socketio = SocketIO()
 talisman = Talisman()
+schema = SchemaHandler() 
 
 def create_app(config=Config):
 
@@ -21,6 +24,9 @@ def create_app(config=Config):
 	app.endpoint_schemas = validation.load_schemas(
 		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
 	)
+
+	from dark_chess_api.modules.errors.handlers import error_response
+	schema.init_app(app, error_handler=error_response)
 
 	CORS(app, resources={'/socket.io/': {'origins': app.config['FRONTEND_ROOT']}})
 	db.init_app(app)

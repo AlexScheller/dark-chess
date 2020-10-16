@@ -32,3 +32,7 @@ def not_found_error(error):
 @errors.app_errorhandler(401)
 def unauthorized_error(error):
 	return error_response(401)
+
+@errors.app_errorhandler(400)
+def unauthorized_error(error):
+	return error_response(400)
