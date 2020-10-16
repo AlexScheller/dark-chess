@@ -67,13 +67,15 @@ def register_user(username, email, password):
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])
 @token_auth.login_required
-@validation.validate_json_payload
-def change_password(id):
+@schema.accepts({
+	'current_password': { 'type': 'string' },
+	'new_password': { 'type': 'string'}
+}, required=['current_password', 'new_password'])
+def change_password(id, current_password, new_password):
 	u = User.query.get_or_404(id)
-	change_password_json = request.get_json()
-	if not u.check_password(change_password_json['current_password']):
+	if not u.check_password(current_password):
 		return error_response(403, 'Current password incorrect')
-	u.set_password(change_password_json['new_password'])
+	u.set_password(new_password)
 	db.session.commit()
 	return {
 		'message' : 'Successfully changed password',
