@@ -7,7 +7,6 @@ from copy import deepcopy
 
 from flask import request, jsonify, abort
 
-# from dark_chess_api.modules.errors.handlers import error_response
 
 # Custom middleware used to both validate and pass on payload arguments directly
 # to routes.
@@ -19,15 +18,16 @@ class Schema:
 	# How should required be handled? Basically should providing None mean everything
 	# is required or nothing is required? Probably the most idiomatic to make it mean
 	# nothing is required, but this will put more burdon on the syntax of the decorators...
-	def __init__(self, name, value_schema=None, required=[], methods=['GET']):
+	def __init__(self, name, value_schema=None, optional=[], methods=['GET']):
 		self.name = name
 		self.methods = methods
 		self.value_schema = value_schema
-		self.reference_schema = self._generate_reference_schema(value_schema, required)
+		self.required = [key for key in value_schema if key not in optional]
+		self.reference_schema = self._generate_reference_schema(value_schema, self.required)
 		self.validation_schema = {
 			'type': 'object',
 			'properties': deepcopy(self.value_schema),
-			'required': required
+			'required': self.required
 		}
 
 	def _generate_reference_schema(self, value_schema, required):

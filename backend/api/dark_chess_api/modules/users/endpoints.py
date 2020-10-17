@@ -34,7 +34,7 @@ def user_info(id):
 	'username': { 'type': 'string' },
 	'email': { 'type': 'string', 'format': 'email' },
 	'password': { 'type': 'string'}
-}, required=['username', 'email', 'password'])
+})
 def register_user(username, email, password):
 	# Note: emails are blindly accepted, no assumption is even made that the
 	# frontend validated them. Emails are validated with the confirmation
@@ -70,7 +70,7 @@ def register_user(username, email, password):
 @schema.accepts({
 	'current_password': { 'type': 'string' },
 	'new_password': { 'type': 'string'}
-}, required=['current_password', 'new_password'])
+})
 def change_password(id, current_password, new_password):
 	u = User.query.get_or_404(id)
 	if not u.check_password(current_password):
