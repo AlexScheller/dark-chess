@@ -1,6 +1,7 @@
 from flask import jsonify, g, request
 from sqlalchemy import or_
-from dark_chess_api import db
+
+from dark_chess_api import db, schema
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
@@ -59,26 +60,29 @@ def get_open_matches():
 # account.
 @matches.route('/query', methods=['POST'])
 @token_auth.login_required
-def query_matches():
-	params = request.get_json()
+@schema.accepts({
+	'user_id': { 'type': 'integer' },
+	'in_progress': { 'type': 'boolean' },
+	'is_open': { 'type' : 'boolean' }
+}, optional=['user_id', 'in_progress', 'is_open'])
+def query_matches(user_id=None, in_progress=None, is_open=None):
 	# maybe this should result in different behavior?
-	if params is None:
+	if (user_id is None and in_progress is None and is_open is None):
 		return jsonify([])
 	matches = db.session.query(Match)
-	if 'user_id' in params:
-		uid = params['user_id']
+	if user_id is not None:
 		matches = matches.filter(
 			or_(
-				Match.player_black_id==uid,
-				Match.player_white_id==uid
+				Match.player_black_id==user_id,
+				Match.player_white_id==user_id
 			)
 		)
-	if 'in_progress' in params:
+	if in_progress is not None:
 		matches = matches.filter(
-			Match.in_progress==params['in_progress']
+			Match.in_progress==in_progress
 		)
-	if 'open' in params:
-		matches = matches.filter(Match.open==True)
+	if is_open is not None:
+		matches = matches.filter(Match.open==is_open)
 	return jsonify([m.as_dict() for m in matches.all()])
 
 ### Match Actions ###

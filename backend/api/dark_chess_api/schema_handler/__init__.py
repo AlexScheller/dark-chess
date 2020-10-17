@@ -36,6 +36,10 @@ class Schema:
 			value['required'] = (key in required)
 		return ret
 
+	@property
+	def fully_optional(self):
+		return len(self.required) == 0
+
 	def __str__(self):
 		return f'<{self.name} {self.method}>'
 
@@ -62,17 +66,19 @@ class SchemaHandler:
 			return self._error_handler(code, message)
 		return abort(code)
 
-	def accepts(self, schema, required=[]):
+	def accepts(self, schema, optional=[]):
 		def decorated(func):
 			# This check might be unnecessary since this is only called "once"
 			# on application creation/startup.
 			if func.__name__ not in self.schemas:
-				self.schemas[func.__name__] = Schema(func.__name__, schema, required)
+				self.schemas[func.__name__] = Schema(func.__name__, schema, optional)
 			working_schema = self.schemas[func.__name__]
 			@wraps(func)
 			def wrapped(*args, **kwargs):
 				payload = request.get_json()
 				if payload is None:
+					if working_schema.fully_optional:
+						return func(*args, **kwargs)
 					return self.handle_error_response(400, 'No JSON payload.')
 				# Basically a help message
 				if 'schema' in payload:
