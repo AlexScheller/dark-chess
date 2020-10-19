@@ -2,7 +2,7 @@ from uuid import UUID
 
 from flask import g, jsonify, request, current_app
 
-from dark_chess_api import db, schema
+from dark_chess_api import db, endpoint
 from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
@@ -30,7 +30,7 @@ def user_info(id):
 # Currently this requires a beta code. Once that period is over, this code
 # should be removed.
 @users.route('/auth/register', methods=['POST'])
-@schema.accepts({
+@endpoint.accepts({
 	'username': { 'type': 'string' },
 	'email': { 'type': 'string', 'format': 'email' },
 	'password': { 'type': 'string'}
@@ -67,9 +67,13 @@ def register_user(username, email, password):
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])
 @token_auth.login_required
-@schema.accepts({
+@endpoint.accepts({
 	'current_password': { 'type': 'string' },
 	'new_password': { 'type': 'string'}
+})
+@endpoint.responds({
+	403: 'Current password incorrect',
+	404: 
 })
 def change_password(id, current_password, new_password):
 	u = User.query.get_or_404(id)

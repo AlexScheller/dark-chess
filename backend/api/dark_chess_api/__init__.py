@@ -7,13 +7,13 @@ from flask_talisman import Talisman
 from config import Config
 import os
 
-from dark_chess_api.schema_handler import SchemaHandler
+from dark_chess_api.endpoint_handler import EndpointHandler
 
 db = SQLAlchemy()
 migrate = Migrate()
 socketio = SocketIO()
 talisman = Talisman()
-schema = SchemaHandler() 
+endpoint = EndpointHandler() 
 
 def create_app(config=Config):
 

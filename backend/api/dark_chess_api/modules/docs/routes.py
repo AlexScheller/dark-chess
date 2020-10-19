@@ -1,4 +1,4 @@
-from flask import current_app, render_template
+from flask import current_app, render_template, abort
 from dark_chess_api.modules.docs import docs
 
 @docs.route('/')
