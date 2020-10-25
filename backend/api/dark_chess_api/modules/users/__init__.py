@@ -8,10 +8,8 @@ users = Blueprint('users', __name__)
 # Appends mock users to an empty database.
 @users.cli.command()
 def mock():
-	from faker import Faker
-	from dark_chess_api import db
+	from dark_chess_api import db, mocker
 	from dark_chess_api.modules.users.models import User
-	mocker = Faker()
 	# users
 	users = []
 	seen_name_counts = {}

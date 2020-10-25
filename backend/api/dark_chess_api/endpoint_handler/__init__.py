@@ -18,9 +18,15 @@ class Endpoint:
 	# How should required be handled? Basically should providing None mean everything
 	# is required or nothing is required? Probably the most idiomatic to make it mean
 	# nothing is required, but this will put more burdon on the syntax of the decorators...
-	def __init__(self, name, responses=None, acceptance_schema=None, optional=[], methods=['GET']):
+	def __init__(self, name,
+		responses=None,
+		acceptance_schema=None,
+		optional=[],
+		methods=['GET']
+	):
 		self.name = name
 		self.methods = methods
+		self.optional = optional
 		if responses is not None:
 			self.init_responds(responses)
 		if acceptance_schema is not None:
@@ -28,18 +34,20 @@ class Endpoint:
 
 	def init_accepts(self, acceptance_schema):
 		self.schema_base = acceptance_schema
-		self.required = [key for key in schema_base if key not in optional]
+		self.required = [
+			key for key in self.schema_base if key not in self.optional
+		]
 		self.reference_schema = deepcopy(self.schema_base)
 		for key, value in self.reference_schema.items():
-			value['required'] = (key in required)
+			value['required'] = (key in self.required)
 		self.validation_schema = {
 			'type': 'object',
 			'properties': deepcopy(self.schema_base),
 			'required': self.required
 		}
 
-	def init_responds(self, codes):
-		self.responses = codes
+	def init_responds(self, responses):
+		self.responses = responses
 
 	@property
 	def payload_fully_optional(self):
@@ -75,7 +83,7 @@ class EndpointHandler:
 		def decorated(func):
 			if func.__name__ not in self.endpoints:
 				self.endpoints[func.__name__] = Endpoint(
-					func.__name__, schema=schema, optional=optional
+					func.__name__, acceptance_schema=schema, optional=optional
 				)
 			else:
 				self.endpoints[func.__name__].init_accepts(schema)
@@ -114,7 +122,7 @@ class EndpointHandler:
 		def decorated(func):
 			if func.__name__ not in self.endpoints:
 				self.endpoints[func.__name__] = Endpoint(
-					func.__name__, codes=codes
+					func.__name__, responses=codes
 				)
 			else:
 				self.endpoints[func.__name__].init_responds(codes)

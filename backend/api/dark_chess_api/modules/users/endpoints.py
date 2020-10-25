@@ -72,8 +72,9 @@ def register_user(username, email, password):
 	'new_password': { 'type': 'string'}
 })
 @endpoint.responds({
-	403: 'Current password incorrect',
-	404: 
+	200: { 'message': 'Successfully changed password', 'user': User.mock_dict() },
+	403: { 'message': 'Current password incorrect' },
+	404: None
 })
 def change_password(id, current_password, new_password):
 	u = User.query.get_or_404(id)

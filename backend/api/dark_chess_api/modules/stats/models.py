@@ -1,3 +1,5 @@
+import random
+
 from dark_chess_api import db
 
 class UserStatBlock(db.Model):
@@ -14,6 +16,24 @@ class UserStatBlock(db.Model):
 	### relationship ###
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	user = db.relationship('User', back_populates='stat_block')
+
+	@staticmethod
+	def mock_dict():
+		games = random.randint(0, 1000)
+		if games > 0:
+			won = random.randint(0, games)
+			lost = games - won
+		else:
+			won, lost = 0, 0
+		return {
+			'games': {
+				'played': games,
+				'won': won,
+				'lost': lost,
+				'tied': 0 # lazy of me yeah
+			},
+			'rating': random.randint(500, 2000)
+		}
 
 	def as_dict(self):
 		return {

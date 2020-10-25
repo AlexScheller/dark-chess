@@ -1,13 +1,16 @@
-from flask import current_app
-from sqlalchemy import or_, and_
-from dark_chess_api import db
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime, timedelta
+import pytz
+import random
+import secrets
 from uuid import uuid4
 from enum import Enum
-import secrets
-import pytz
+from datetime import datetime, timedelta, timezone
 
+from flask import current_app
+from sqlalchemy import or_, and_
+from werkzeug.security import generate_password_hash, check_password_hash
+
+from dark_chess_api import db, mocker
+from dark_chess_api.modules.stats.models import UserStatBlock
 
 # Yes these three relationships could be configured to reside in a single table
 # with a discriminant Enum column or something, but that only really saves us
@@ -64,8 +67,32 @@ class User(db.Model):
 		self.username = username
 		self.email = email
 		self.set_password(password)
-		from dark_chess_api.modules.stats.models import UserStatBlock
+		# from dark_chess_api.modules.stats.models import UserStatBlock
 		self.stat_block = UserStatBlock()
+
+	# In the future this 
+	@staticmethod
+	def mock_dict():
+		username = username = mocker.name().replace(' ', '')
+		registration_date = datetime.now(timezone.utc)
+		# from dark_chess_api.modules.stats.models import UserStatBlock
+		return {
+			'id': random.randint(1, 100),
+			'username': username,
+			'email': f'{username.lower()}@example.com',
+			'email_confirmed': random.choice([True, False]),
+			'registration_date': {
+				'formatted': str(registration_date),
+				'timestamp': int(registration_date.timestamp())
+			},
+			'stats': UserStatBlock.mock_dict(),
+			'friends': [
+				{
+					'username': mocker.name().replace(' ', ''),
+					'id': random.randint(1, 100)
+				} for i in range(random.randint(0, 4))
+			]
+		}
 
 	### account information methods ###
 	def as_dict(self):

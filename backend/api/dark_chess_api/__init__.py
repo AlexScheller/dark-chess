@@ -1,19 +1,26 @@
+import os
+from faker import Faker
+
 from flask import Flask
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_socketio import SocketIO
 from flask_talisman import Talisman
-from config import Config
-import os
 
+from config import Config
 from dark_chess_api.endpoint_handler import EndpointHandler
 
-db = SQLAlchemy()
-migrate = Migrate()
-socketio = SocketIO()
-talisman = Talisman()
-endpoint = EndpointHandler() 
+##############
+#  Services  #
+##############
+
+db = SQLAlchemy() # database
+migrate = Migrate() # database migrations
+socketio = SocketIO() # web-sockets
+talisman = Talisman() # security-defaults
+mocker = Faker() # mocking service
+endpoint = EndpointHandler() # endpoint validation and documentation
 
 def create_app(config=Config):
 
@@ -26,7 +33,7 @@ def create_app(config=Config):
 	)
 
 	from dark_chess_api.modules.errors.handlers import error_response
-	schema.init_app(app, error_handler=error_response)
+	endpoint.init_app(app, error_handler=error_response)
 
 	CORS(app, resources={'/socket.io/': {'origins': app.config['FRONTEND_ROOT']}})
 	db.init_app(app)

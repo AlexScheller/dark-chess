@@ -3,7 +3,6 @@
 
 import os
 import click
-from faker import Faker
 
 def init(app):
 

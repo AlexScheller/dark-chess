@@ -1,7 +1,7 @@
 from flask import jsonify, g, request
 from sqlalchemy import or_
 
-from dark_chess_api import db, schema
+from dark_chess_api import db, endpoint
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
@@ -60,7 +60,7 @@ def get_open_matches():
 # account.
 @matches.route('/query', methods=['POST'])
 @token_auth.login_required
-@schema.accepts({
+@endpoint.accepts({
 	'user_id': { 'type': 'integer' },
 	'in_progress': { 'type': 'boolean' },
 	'is_open': { 'type' : 'boolean' }
