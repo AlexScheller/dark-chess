@@ -1,3 +1,7 @@
+# With the inclusion of the `Endpoint` class in the `endpoint_handler` module,
+# this file is considered deprecated, and should be deleted once it's
+# functionality has been fully replicated.
+
 import os
 import jsonschema
 from functools import wraps

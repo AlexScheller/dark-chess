@@ -7,9 +7,9 @@ from copy import deepcopy
 
 from flask import request, jsonify, abort
 
-
 # Custom middleware used to both validate and pass on payload arguments directly
-# to routes.
+# to routes. This is it's own module a level above the app specific modules as
+# I'd like to make it as application agnostic as possible for future reuse.
 
 class Endpoint:
 

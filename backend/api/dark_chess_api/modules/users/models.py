@@ -10,7 +10,6 @@ from sqlalchemy import or_, and_
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from dark_chess_api import db, mocker
-from dark_chess_api.modules.stats.models import UserStatBlock
 
 # Yes these three relationships could be configured to reside in a single table
 # with a discriminant Enum column or something, but that only really saves us
@@ -67,7 +66,8 @@ class User(db.Model):
 		self.username = username
 		self.email = email
 		self.set_password(password)
-		# from dark_chess_api.modules.stats.models import UserStatBlock
+		# Avoids circular import issue.
+		from dark_chess_api.modules.stats.models import UserStatBlock
 		self.stat_block = UserStatBlock()
 
 	# In the future this 
@@ -75,7 +75,8 @@ class User(db.Model):
 	def mock_dict():
 		username = username = mocker.name().replace(' ', '')
 		registration_date = datetime.now(timezone.utc)
-		# from dark_chess_api.modules.stats.models import UserStatBlock
+		# Avoids circular import issue.
+		from dark_chess_api.modules.stats.models import UserStatBlock
 		return {
 			'id': random.randint(1, 100),
 			'username': username,

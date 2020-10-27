@@ -5,7 +5,7 @@ from dark_chess_api import db, endpoint
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
-from dark_chess_api.modules.auth.utils import token_auth
+from dark_chess_api.modules.users.auth import token_auth
 from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.websockets import events as ws_events
 

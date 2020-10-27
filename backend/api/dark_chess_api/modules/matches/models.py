@@ -1,11 +1,13 @@
-from flask import current_app
-from dark_chess_api import db
+import chess
+import random
+from uuid import uuid4
+
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.sql import and_, or_
-from uuid import uuid4
-import chess
-import random
+from flask import current_app
+
+from dark_chess_api import db
 
 # Note that this file is full of inneficient code, most notably many
 # instantiations of board objects for simple functions. In the future this may

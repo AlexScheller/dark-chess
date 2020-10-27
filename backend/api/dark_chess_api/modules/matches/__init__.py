@@ -18,4 +18,4 @@ def mock():
 		db.session.flush()
 	db.session.commit()
 
-from dark_chess_api.modules.matches import endpoints
+from dark_chess_api.modules.matches import models, endpoints

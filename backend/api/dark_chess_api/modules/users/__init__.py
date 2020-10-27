@@ -47,4 +47,4 @@ def betagen(count, silent):
 		for code in new_codes:
 			print(code.code)
 
-from dark_chess_api.modules.users import endpoints
+from dark_chess_api.modules.users import models, endpoints, auth

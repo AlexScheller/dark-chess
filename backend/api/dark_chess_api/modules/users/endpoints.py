@@ -6,7 +6,7 @@ from dark_chess_api import db, endpoint
 from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
-from dark_chess_api.modules.auth.utils import (
+from dark_chess_api.modules.users.auth import (
 	basic_auth, token_auth, check_and_assign_beta_code
 )
 from dark_chess_api.modules.utilities import validation

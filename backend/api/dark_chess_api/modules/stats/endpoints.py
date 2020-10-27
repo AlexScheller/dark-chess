@@ -1,6 +1,6 @@
 from dark_chess_api.modules.stats import stats
 from dark_chess_api.modules.stats.models import UserStatBlock
-from dark_chess_api.modules.auth.utils import token_auth
+from dark_chess_api.modules.users.auth import token_auth
 
 @stats.route('/statblock/<int:id>', methods=['GET'])
 @token_auth.login_required

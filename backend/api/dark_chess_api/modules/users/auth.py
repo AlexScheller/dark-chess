@@ -3,10 +3,12 @@
 
 from flask import g
 from flask_httpauth import HTTPBasicAuth, HTTPTokenAuth
+
 from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.users.models import User, BetaCode
 
 basic_auth = HTTPBasicAuth()
+token_auth = HTTPTokenAuth()
 
 @basic_auth.verify_password
 def verify_password(username, password):
@@ -15,8 +17,6 @@ def verify_password(username, password):
 		return False
 	g.current_user = user
 	return user.check_password(password)
-
-token_auth = HTTPTokenAuth()
 
 @token_auth.verify_token
 def verify_token(token):
