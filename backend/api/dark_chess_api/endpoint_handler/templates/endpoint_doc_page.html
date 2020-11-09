@@ -1,0 +1,94 @@
+{% from "macros.jinja" import response_tab_content %}
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Documentation Page - {{ resource | replace('_', ' ') | title }}</title>
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/endpoints.css') }}">
+		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+	</head>
+	<body>
+		<div id="page-content">
+			<header>
+				<nav>
+					<a href="{{ url_for('docs.index') }}">/index</a>
+					{% for resource in resources %}
+						{% if resource != current_resource %}
+					<a href="{{ url_for('docs.doc_page', resource=resource) }}">/{{ resource }}</a>
+						{% endif %}
+					{% endfor %}
+				</nav>
+			</header>
+			<div id="page-navigation">
+				<ul>
+					{% for schema in endpoint_schemas %}
+					<li class="nav-link"><a href="#{{schema}}" data-nav-target="{{schema}}">{{ schema | replace('_', ' ') | title }}</a></li>
+					{% endfor %}
+				</ul>
+			</div>
+			<div id="schemas">
+				{% for schema_title, schema in endpoint_schemas.items() %}
+				<div id="{{ schema_title }}" class="schema">
+					<div class="schema-header">
+						<div class="method method-{{schema.request_method | lower}}">
+							<span>{{ schema.request_method }}</span>
+						</div>
+						<!-- <h2>{{ schema.title }}</h2> -->
+						<h3 class="endpoint code">{{ schema.endpoint }}</h3>
+					</div>
+					<div class="schema-body hidden">
+						<div class="title-and-description">
+							<h3 class="schema-title">{{ schema.title }}</h3>
+							<p class="schema-description">{{ schema.description }}</p>
+						</div>
+						{% if schema.additional_headers %}
+						<div class="headers">
+							<h4 class="subtitle">Headers</h4>
+							<ul class="list-block">
+								{% for header in schema.additional_headers %}
+								<li class="header code">{{ header }}</li>
+								{% endfor %}
+							</ul>
+						</div>
+						{% endif %}
+						{% if schema.type == 'object' %}
+						<div class="parameters">
+							<h4 class="subtitle">JSON Parameters</h4>
+							<ul class="list-block">
+								{% for param_title, param in schema.properties.items() %}
+								<li class="param code">
+									<div>
+										<span>{{ param_title }}</span>
+										<span>({{ param.type }})</span>
+										{% if param_title in schema.required %}
+										<span class="required">required</span>
+										{% endif %}
+									</div>
+									<p class="param-description">{{ param.description }}</p>
+								</li>
+								{% endfor %}
+							</ul>
+						</div>
+						{% endif %}
+						<div id="{{ schema_title }}-responses" class="responses">
+							<h4 class="subtitle">Responses</h4>
+							<div class="tab-headers">
+								{% for response in schema.responses %}
+								<div class="tab-header {% if loop.first %}selected{% endif %}" data-schema-id="{{ schema_title }}-responses" data-response-code="{{ response.code }}">{{ response.code }}</div>
+								{% endfor %}
+							</div>
+							{% for response in schema.responses %}
+							{{ response_tab_content(loop.first, schema_title, response.code, response.example_json) }}
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+				{% endfor %}
+			</div>
+		</div>
+	<script src="{{ url_for('static', filename='javascript/prism.js') }}"></script>
+	<script src="{{ url_for('static', filename='javascript/endpoints.js') }}"></script>
+	</body>
+</html>

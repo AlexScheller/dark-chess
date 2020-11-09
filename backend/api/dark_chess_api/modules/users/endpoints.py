@@ -13,7 +13,7 @@ from dark_chess_api.modules.utilities import validation
 
 @users.route('/auth/token', methods=['GET'])
 @basic_auth.login_required
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'token': '<token>', 'user': User.mock_dict() },
 	404: None
 })
@@ -27,7 +27,7 @@ def aquire_token():
 
 @users.route('/<int:id>', methods=['GET'])
 @token_auth.login_required
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'user': User.mock_dict() },
 	404: None
 })
@@ -38,12 +38,12 @@ def user_info(id):
 # Currently this requires a beta code. Once that period is over, this code
 # should be removed.
 @users.route('/auth/register', methods=['POST'])
-@endpoint.accepts({
+@endpoint.users.accepts({
 	'username': { 'type': 'string' },
 	'email': { 'type': 'string', 'format': 'email' },
 	'password': { 'type': 'string'}
 })
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'message' : 'Successfully registered user', 'user': User.mock_dict() },
 	404: None
 })
@@ -79,11 +79,11 @@ def register_user(username, email, password):
 
 @users.route('/<int:id>/auth/change-password', methods=['PATCH'])
 @token_auth.login_required
-@endpoint.accepts({
+@endpoint.users.accepts({
 	'current_password': { 'type': 'string' },
 	'new_password': { 'type': 'string'}
 })
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'message': 'Successfully changed password', 'user': User.mock_dict() },
 	403: { 'message': 'Current password incorrect' },
 	404: None
@@ -101,7 +101,7 @@ def change_password(id, current_password, new_password):
 
 @users.route('/<int:id>/friend-invite', methods=['POST'])
 @token_auth.login_required
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'message': 'Successfully invited user to be your friend', 'user': User.mock_dict() },
 	201: { 'message': 'User already invited to be your friend', 'user': User.mock_dict() },
 	403: { 'message': 'Current password incorrect' },
@@ -123,7 +123,7 @@ def invite_friend(id):
 
 @users.route('/<int:id>/accept-friend-invite', methods=['PATCH'])
 @token_auth.login_required
-@endpoint.responds({
+@endpoint.users.responds({
 	200: { 'message': 'Successfully accepted friend invite', 'user': User.mock_dict() },
 	201: { 'message': 'You are already friends with this user', 'user': User.mock_dict() },
 	400: { 'message': 'You don\'t have a friend invite from this player' },
