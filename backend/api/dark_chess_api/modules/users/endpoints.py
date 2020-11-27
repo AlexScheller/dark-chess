@@ -2,7 +2,7 @@ from uuid import UUID
 
 from flask import g, jsonify, request, current_app
 
-from dark_chess_api import db, endpoint
+from dark_chess_api import db, endpointer
 from dark_chess_api.modules.users import users
 from dark_chess_api.modules.users.models import User
 from dark_chess_api.modules.errors.handlers import error_response
@@ -11,12 +11,13 @@ from dark_chess_api.modules.users.auth import (
 )
 from dark_chess_api.modules.utilities import validation
 
-@users.route('/auth/token', methods=['GET'])
+@endpointer.route('/auth/token', methods=['GET'], bp=users,
+	responds={
+		200: { 'token': '<token>', 'user': User.mock_dict() },
+		404: None
+	}
+)
 @basic_auth.login_required
-@endpoint.users.responds({
-	200: { 'token': '<token>', 'user': User.mock_dict() },
-	404: None
-})
 def aquire_token():
 	token = g.current_user.get_token()
 	db.session.commit()
@@ -25,28 +26,30 @@ def aquire_token():
 		'user' : g.current_user.as_dict()
 	}
 
-@users.route('/<int:id>', methods=['GET'])
+@endpointer.route('/<int:id>', methods=['GET'], bp=users,
+	responds={
+		200: { 'user': User.mock_dict() },
+		404: None
+	}
+)
 @token_auth.login_required
-@endpoint.users.responds({
-	200: { 'user': User.mock_dict() },
-	404: None
-})
 def user_info(id):
 	u = User.query.get_or_404(id)
 	return u.as_dict()
 
 # Currently this requires a beta code. Once that period is over, this code
 # should be removed.
-@users.route('/auth/register', methods=['POST'])
-@endpoint.users.accepts({
-	'username': { 'type': 'string' },
-	'email': { 'type': 'string', 'format': 'email' },
-	'password': { 'type': 'string'}
-})
-@endpoint.users.responds({
-	200: { 'message' : 'Successfully registered user', 'user': User.mock_dict() },
-	404: None
-})
+@endpointer.route('/auth/register', methods=['POST'], bp=users,
+	accepts={
+		'username': { 'type': 'string' },
+		'email': { 'type': 'string', 'format': 'email' },
+		'password': { 'type': 'string'}
+	},
+	responds={
+		200: { 'message' : 'Successfully registered user', 'user': User.mock_dict() },
+		404: None
+	}
+)
 def register_user(username, email, password):
 	# Note: emails are blindly accepted, no assumption is even made that the
 	# frontend validated them. Emails are validated with the confirmation
@@ -77,17 +80,18 @@ def register_user(username, email, password):
 		'user' : new_user.as_dict()
 	}
 
-@users.route('/<int:id>/auth/change-password', methods=['PATCH'])
+@endpointer.route('/<int:id>/auth/change-password', methods=['PATCH'], bp=users,
+	accepts={
+		'current_password': { 'type': 'string' },
+		'new_password': { 'type': 'string'}
+	},
+	responds={
+		200: { 'message': 'Successfully changed password', 'user': User.mock_dict() },
+		403: { 'message': 'Current password incorrect' },
+		404: None
+	}
+)
 @token_auth.login_required
-@endpoint.users.accepts({
-	'current_password': { 'type': 'string' },
-	'new_password': { 'type': 'string'}
-})
-@endpoint.users.responds({
-	200: { 'message': 'Successfully changed password', 'user': User.mock_dict() },
-	403: { 'message': 'Current password incorrect' },
-	404: None
-})
 def change_password(id, current_password, new_password):
 	u = User.query.get_or_404(id)
 	if not u.check_password(current_password):
@@ -99,14 +103,15 @@ def change_password(id, current_password, new_password):
 		'user' : u.as_dict()
 	}
 
-@users.route('/<int:id>/friend-invite', methods=['POST'])
+@endpointer.route('/<int:id>/friend-invite', methods=['POST'], bp=users,
+	responds={
+		200: { 'message': 'Successfully invited user to be your friend', 'user': User.mock_dict() },
+		201: { 'message': 'User already invited to be your friend', 'user': User.mock_dict() },
+		403: { 'message': 'Current password incorrect' },
+		404: None
+	}
+)
 @token_auth.login_required
-@endpoint.users.responds({
-	200: { 'message': 'Successfully invited user to be your friend', 'user': User.mock_dict() },
-	201: { 'message': 'User already invited to be your friend', 'user': User.mock_dict() },
-	403: { 'message': 'Current password incorrect' },
-	404: None
-})
 def invite_friend(id):
 	u = User.query.get_or_404(id)
 	if u in g.current_user.friends_invited:
@@ -121,14 +126,15 @@ def invite_friend(id):
 		'user': u.as_dict()
 	}
 
-@users.route('/<int:id>/accept-friend-invite', methods=['PATCH'])
+@endpointer.route('/<int:id>/accept-friend-invite', methods=['PATCH'], bp=users,
+	responds={
+		200: { 'message': 'Successfully accepted friend invite', 'user': User.mock_dict() },
+		201: { 'message': 'You are already friends with this user', 'user': User.mock_dict() },
+		400: { 'message': 'You don\'t have a friend invite from this player' },
+		404: None
+	}
+)
 @token_auth.login_required
-@endpoint.users.responds({
-	200: { 'message': 'Successfully accepted friend invite', 'user': User.mock_dict() },
-	201: { 'message': 'You are already friends with this user', 'user': User.mock_dict() },
-	400: { 'message': 'You don\'t have a friend invite from this player' },
-	404: None
-})
 def accept_friend_invite(id):
 	u = User.query.get_or_404(id)
 	if u not in g.current_user.friend_invites:

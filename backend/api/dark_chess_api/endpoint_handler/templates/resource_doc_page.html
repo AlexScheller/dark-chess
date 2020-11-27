@@ -4,7 +4,7 @@
 	<head>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Documentation Page - {{ resource | replace('_', ' ') | title }}</title>
+		<title>Documentation Page - {{ current_resource.name | replace('_', ' ') | title }}</title>
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/reset.css') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/endpoints.css') }}">
 		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
@@ -13,30 +13,30 @@
 		<div id="page-content">
 			<header>
 				<nav>
-					<a href="{{ url_for('docs.index') }}">/index</a>
-					{% for resource in resources %}
-						{% if resource != current_resource %}
-					<a href="{{ url_for('docs.doc_page', resource=resource) }}">/{{ resource }}</a>
+					<a href="{{ url_for('endpoint_handler.doc_hub') }}">/index</a>
+					{% for resource in all_resources %}
+						{% if resource != current_resource.name %}
+					<a href="{{ url_for('endpoint_handler.doc_page', resource=resource) }}">/{{ resource }}</a>
 						{% endif %}
 					{% endfor %}
 				</nav>
 			</header>
 			<div id="page-navigation">
 				<ul>
-					{% for schema in endpoint_schemas %}
-					<li class="nav-link"><a href="#{{schema}}" data-nav-target="{{schema}}">{{ schema | replace('_', ' ') | title }}</a></li>
+					{% for endpoint in current_resource.endpoints %}
+					<li class="nav-link"><a href="#{{endpoint}}" data-nav-target="{{endpoint}}">{{ endpoint | replace('_', ' ') | title }}</a></li>
 					{% endfor %}
 				</ul>
 			</div>
 			<div id="schemas">
-				{% for schema_title, schema in endpoint_schemas.items() %}
+				{% for endpoint in current_resource.endpoints %}
 				<div id="{{ schema_title }}" class="schema">
 					<div class="schema-header">
-						<div class="method method-{{schema.request_method | lower}}">
-							<span>{{ schema.request_method }}</span>
+						<div class="method method-{{endpoint.method | lower}}">
+							<span>{{ endpoint.method }}</span>
 						</div>
 						<!-- <h2>{{ schema.title }}</h2> -->
-						<h3 class="endpoint code">{{ schema.endpoint }}</h3>
+						<h3 class="endpoint code">{{ endpoint.name }}</h3>
 					</div>
 					<div class="schema-body hidden">
 						<div class="title-and-description">

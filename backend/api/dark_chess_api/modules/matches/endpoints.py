@@ -1,7 +1,7 @@
 from flask import jsonify, g, request
 from sqlalchemy import or_
 
-from dark_chess_api import db, endpoint
+from dark_chess_api import db, endpointer
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
 from dark_chess_api.modules.utilities import validation
@@ -58,13 +58,15 @@ def get_open_matches():
 # were both open and in progress, they would get nothing in return.
 # This endpoint leaves it up to the requestor to take that into
 # account.
-@matches.route('/query', methods=['POST'])
+@endpointer.route('/query', methods=['POST'], bp=matches,
+	accepts={
+		'user_id': { 'type': 'integer' },
+		'in_progress': { 'type': 'boolean' },
+		'is_open': { 'type' : 'boolean' }
+	},
+	optional=['user_id', 'in_progress', 'is_open']
+)
 @token_auth.login_required
-@endpoint.accepts({
-	'user_id': { 'type': 'integer' },
-	'in_progress': { 'type': 'boolean' },
-	'is_open': { 'type' : 'boolean' }
-}, optional=['user_id', 'in_progress', 'is_open'])
 def query_matches(user_id=None, in_progress=None, is_open=None):
 	# maybe this should result in different behavior?
 	if (user_id is None and in_progress is None and is_open is None):

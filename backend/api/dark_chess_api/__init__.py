@@ -9,7 +9,7 @@ from flask_socketio import SocketIO
 from flask_talisman import Talisman
 
 from config import Config
-from dark_chess_api.endpoint_handler import EndpointHandler
+from dark_chess_api.endpoint_handler import Endpointer
 
 ##############
 #  Services  #
@@ -20,7 +20,7 @@ migrate = Migrate() # database migrations
 socketio = SocketIO() # web-sockets
 talisman = Talisman() # security-defaults
 mocker = Faker() # mocking service
-endpoint = EndpointHandler() # endpoint validation and documentation
+endpointer = Endpointer() # endpoint validation and documentation
 
 def create_app(config=Config):
 
@@ -33,7 +33,7 @@ def create_app(config=Config):
 	)
 
 	from dark_chess_api.modules.errors.handlers import error_response
-	endpoint.init_app(app, error_handler=error_response)
+	endpointer.init_app(app, error_handler=error_response)
 
 	CORS(app, resources={'/socket.io/': {'origins': app.config['FRONTEND_ROOT']}})
 	db.init_app(app)
@@ -59,7 +59,7 @@ def create_app(config=Config):
 	from dark_chess_api.modules.matches import matches
 	app.register_blueprint(matches, url_prefix='/match')
 
-	from dark_chess_api.modules.docs import docs
-	app.register_blueprint(docs, url_prefix='/docs')
+	# from dark_chess_api.modules.docs import docs
+	# app.register_blueprint(docs, url_prefix='/docs')
 
 	return app

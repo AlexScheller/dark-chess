@@ -12,7 +12,7 @@
 		<h3>Documentation pages:</h3>
 		<ul id="resource-links">
 			{% for resource in resources %}
-			<li><a href="{{url_for('docs.doc_page', resource=resource)}}">{{ resource }}</a></li>
+			<li><a href="{{url_for('endpoint_handler.doc_page', resource=resource)}}">{{ resource }}</a></li>
 			{% endfor %}
 		</ul>
 		<h4>Notes regarding documentation</h4>
