@@ -37,10 +37,6 @@ class Endpointer:
 		self.app = app
 		self._error_handler = error_handler
 
-		# for name in app.blueprints:
-		# 	self._blueprints[name] = Resource(name, self._error_handler)
-		# 	setattr(self, name, self._blueprints[name])
-
 		bp = Blueprint('endpoint_handler', __name__, template_folder='templates')
 
 		# Browser based documentation pages. Request-based documentation is
@@ -85,7 +81,7 @@ class Endpointer:
 				if len(kwargs['methods']) > 1:
 					raise ValueError(f'Flask-Endpointer requires routes to consist of a single method, {endpoint.__name__} was passed {kwargs["methods"]}.')
 				method = kwargs['methods'][0]
-			new_endpoint = Endpoint(endpoint, method=method)
+			new_endpoint = Endpoint(rule, endpoint.__name__, method=method)
 			if accepts is not None:
 				new_endpoint.init_accepts(accepts, optional)
 			if responds is not None:
@@ -141,9 +137,10 @@ class Resource:
 
 	def as_dict(self):
 		return {
+			'name': self.name,
 			'endpoints': [
-				endpoint.as_dict()
-			] for endpoint in self.endpoints.values()
+				endpoint.as_dict() for endpoint in self.endpoints.values()
+			]
 		}
 
 class Endpoint:
@@ -151,24 +148,28 @@ class Endpoint:
 	# Note that currently only one method is allowed to be specified. This fits
 	# with my style of creating routes, where I would create two separate routes
 	# for two separate methods, but not everyone does things that way.
-	def __init__(self, name,
+	def __init__(self, rule, function_name,
 		responses=None,
 		acceptance_schema=None,
 		optional=[],
-		method='GET'
+		method='GET',
+		description=None
 	):
-		self.name = name
+		self.rule = rule
+		self._function_name = function_name
 		self.method = method
 		self.optional = optional
 		# Hopefully it's not to much of an assumption on my part that every
 		# route can respond with 200?
 		self.responses = { 200: { 'message': '[Successful response]' } }
+		self.accepts = False
 		if responses is not None:
 			self.init_responds(responses)
 		if acceptance_schema is not None:
 			self.init_accepts(acceptance_schema)
 
 	def init_accepts(self, acceptance_schema, optional):
+		self.accepts = True
 		self.schema_base = acceptance_schema
 		self.required = [
 			key for key in self.schema_base if key not in self.optional
@@ -194,18 +195,32 @@ class Endpoint:
 	def init_responds(self, responses):
 		self.responses.update(responses)
 		for code in self.responses:
-			if self.responses[code] is None:
-				self.responses[code] = {
-					'error': HTTP_STATUS_CODES.get(code, 'Unknown error'),
-					'message': '[Error message content]'
-				}
+			# TODO: Handle inflating successful responses as well?
+			if 400 <= code <= 600:
+				if self.responses[code] is None:
+					self.responses[code] = {
+						'error': HTTP_STATUS_CODES.get(code, 'Unknown error'),
+						'message': '[Error message content]'
+					}
+				elif 'error' not in self.responses[code]:
+					self.responses[code]['error'] = HTTP_STATUS_CODES.get(
+						code, 'Unknown error'
+					)
 
 	@property
 	def payload_fully_optional(self):
 		return len(self.required) == 0
 
+	@property
+	def title(self):
+		return self._function_name.replace('_', ' ').title()
+
+	@property
+	def name(self):
+		return self._function_name
+
 	def __str__(self):
-		return f'<{self.name} {self.method}>'
+		return f'<{self.rule} {self.method}>'
 
 	@property
 	def help_dict(self):
@@ -215,7 +230,17 @@ class Endpoint:
 		}
 
 	def as_dict(self):
-		return {
+		ret = {
 			'name': self.name,
-			'method': self.method
+			'title': self.title,
+			'rule': self.rule,
+			'method': self.method,
+			'responses': self.responses,
+			'accepts': self.accepts
 		}
+		if self.accepts:
+			ret.update({
+				'schema_base': self.schema_base,
+				'reference_schema': self.reference_schema
+			})
+		return ret
