@@ -62,9 +62,10 @@ def get_open_matches():
 	accepts={
 		'user_id': { 'type': 'integer' },
 		'in_progress': { 'type': 'boolean' },
-		'is_open': { 'type' : 'boolean' }
+		'is_open': { 'type' : 'boolean', 'description': 'Whether or not the match can be joined' }
 	},
-	optional=['user_id', 'in_progress', 'is_open']
+	optional=['user_id', 'in_progress', 'is_open'],
+	description='Query a list of matches'
 )
 @token_auth.login_required
 def query_matches(user_id=None, in_progress=None, is_open=None):

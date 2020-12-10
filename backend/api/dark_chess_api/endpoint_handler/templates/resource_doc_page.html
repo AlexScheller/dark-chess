@@ -40,7 +40,9 @@
 					<div class="schema-body hidden">
 						<div class="title-and-description">
 							<h3 class="schema-title">{{ endpoint.title }}</h3>
+							{% if endpoint.description %}
 							<p class="schema-description">{{ endpoint.description }}</p>
+							{% endif %}
 						</div>
 						{# TODO: Handle header information again? #}
 						{#{% if schema.additional_headers %}

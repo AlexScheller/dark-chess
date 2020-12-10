@@ -48,7 +48,8 @@ def user_info(id):
 	responds={
 		200: { 'message' : 'Successfully registered user', 'user': User.mock_dict() },
 		404: None
-	}
+	},
+	description='Register a new user'
 )
 def register_user(username, email, password):
 	# Note: emails are blindly accepted, no assumption is even made that the
@@ -109,7 +110,8 @@ def change_password(id, current_password, new_password):
 		201: { 'message': 'User already invited to be your friend', 'user': User.mock_dict() },
 		403: { 'message': 'Current password incorrect' },
 		404: None
-	}
+	},
+	description='Invite a user to be the requesting user\'s friend'
 )
 @token_auth.login_required
 def invite_friend(id):

@@ -66,7 +66,7 @@ class Endpointer:
 			return self._error_handler(code, message)
 		return abort(code)
 
-	def route(self, rule, *args, bp=None, accepts=None, optional=[], responds=None, **kwargs):
+	def route(self, rule, *args, bp=None, accepts=None, optional=[], responds=None, description=None, **kwargs):
 		# Resource bookkeeping
 		resource_name = bp.name if bp is not None else '__root__'
 		if resource_name not in self.resources:
@@ -81,7 +81,7 @@ class Endpointer:
 				if len(kwargs['methods']) > 1:
 					raise ValueError(f'Flask-Endpointer requires routes to consist of a single method, {endpoint.__name__} was passed {kwargs["methods"]}.')
 				method = kwargs['methods'][0]
-			new_endpoint = Endpoint(rule, endpoint.__name__, method=method)
+			new_endpoint = Endpoint(rule, endpoint.__name__, method=method, description=description)
 			if accepts is not None:
 				new_endpoint.init_accepts(accepts, optional)
 			if responds is not None:
@@ -157,6 +157,7 @@ class Endpoint:
 	):
 		self.rule = rule
 		self._function_name = function_name
+		self.description = description
 		self.method = method
 		self.optional = optional
 		# Hopefully it's not to much of an assumption on my part that every
@@ -236,7 +237,8 @@ class Endpoint:
 			'rule': self.rule,
 			'method': self.method,
 			'responses': self.responses,
-			'accepts': self.accepts
+			'accepts': self.accepts,
+			'description': self.description
 		}
 		if self.accepts:
 			ret.update({
