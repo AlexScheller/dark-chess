@@ -36,6 +36,9 @@
 							<span>{{ endpoint.method }}</span>
 						</div>
 						<h3 class="endpoint code">{{ endpoint.rule }}</h3>
+						{% if endpoint.auth %}
+						<span>&nbsp;🔒</span>
+						{% endif %}
 					</div>
 					<div class="schema-body hidden">
 						<div class="title-and-description">
@@ -55,6 +58,12 @@
 							</ul>
 						</div>
 						{% endif %}#}
+						{% if endpoint.auth %}
+						<div class="auth-requirements">
+							<h4 class="subtitle">Authorization</h4>
+							<p class="list-block">{{ endpoint.auth }}</p>
+						</div>
+						{% endif %}
 						{% if endpoint.accepts %}
 						<div class="parameters">
 							<h4 class="subtitle">JSON Parameters</h4>

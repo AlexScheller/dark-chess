@@ -239,6 +239,95 @@ class Match(db.Model):
 			return True
 		return False
 
+	@staticmethod
+	def mock_dict(side=None, game_state=None):
+		# Avoids circular import issue.
+		from dark_chess_api.modules.users.models import User
+
+		mock_player_black = None
+		mock_player_white = None
+		mock_open = False
+		mock_finished = False
+		mock_in_progress = False
+
+		if game_state is not None and game_state in ['open', 'in_progress', 'finished']:
+			if game_state == 'open':
+				mock_open = True
+				if random.choice([True, False]):
+					mock_player_black = User.mock_dict()
+				else:
+					mock_player_white = User.mock_dict()
+			elif game_state == 'in_progress':
+				mock_in_progress = True
+			elif game_state == 'finished':
+				mock_finished = True
+		else:
+			mock_open = random.choice([True, False, False, False])
+			mock_in_progress = False if mock_open else random.choice([True, False])
+			mock_finished = not (mock_in_progress or mock_open)
+		if mock_in_progress or mock_finished:
+			mock_player_black = User.mock_dict()
+			mock_player_white = User.mock_dict()
+			if side is None:
+				side = random.choice(['white', 'black', 'spectating'])
+		ret = {
+			'id' : random.randint(1, 100),
+			'is_finished' : mock_finished,
+			'in_progress' : mock_in_progress,
+			'open' : mock_open,
+			'player_black': {
+				'id': mock_player_black['id'],
+				'username': mock_player_black['username']
+			} if mock_player_black is not None else None,
+			'player_white': {
+				'id': mock_player_white['id'],
+				'username': mock_player_white['username']
+			} if mock_player_white is not None else None
+		}
+		if side is not None or mock_open:
+			ret.update({
+				'connection_token': '[connection hash/token]'
+			})
+		if side == 'spectating':
+			ret.update({
+				'transparent_history': '[An array of fens representing the history of the match.]'
+			})
+		else:
+			ret.update({
+				f'{side}_vision_history': '[An array of dark fens representing the history of the match]'
+			})
+		if mock_in_progress:
+			# Hard code the current player so that we can hard code the fen.
+			# Not gunna spend time yet randomly generating a game. The fen
+			# selected comes from https://www.chess.com/terms/fen-chess
+			ret.update({
+				'current_side': 'black',
+				'current_player_id': mock_player_black['id']
+			})
+			if side is not None:
+				if side != 'spectating':
+					mock_dark_fen = None
+					if side == 'white':
+						mock_dark_fen = '?_??k_??/??_?_?N?/?_?B__?_/_p?NP__P/?_?___P?/_?_P_Q__/P?P_K__?/???___?_'
+					else:
+						mock_dark_fen = 'r_b_k_nr/p__p_p?p/n_???_?_/?p_?P???/?_?_????/??_?_???/?_???_?_/q_____b?'
+					ret.update({
+						'current_dark_fen': mock_dark_fen,
+						'possible_moves': '[An object with origin squares as keys, and arrays of subsequent destination squares as values.]'
+					})
+				else:
+					ret.update({
+						'current_fen': 'r_b_k_nr/p__p_pNp/n__B____/_p_NP__P/______P_/___P_Q__/P_P_K___/q_____b_',
+					})
+		elif mock_finished:
+			# Same deal as the in progress game with a Fool's mate.
+			ret.update({
+				'winning_side': 'black',
+				'current_fen': 'rnb_kbnr/pppp_ppp/________/____p___/______Pq/_____P__/PPPPP__P/RNBQKBNR',
+				'winner': mock_player_black
+			})
+		return ret
+
 	# Some of the initial properties are mutually exclusive, and could
 	# therefore be inferred from eachother, but they are all left in for
 	# convienience of questioning. This whole method probably should be

@@ -27,11 +27,6 @@ def create_app(config=Config):
 	app = Flask(__name__)
 	app.config.from_object(config)
 
-	from dark_chess_api.modules.utilities import validation
-	app.endpoint_schemas = validation.load_schemas(
-		os.path.abspath(os.path.dirname(__file__)) + '/static/schemas/'
-	)
-
 	from dark_chess_api.modules.errors.handlers import error_response
 	endpointer.init_app(app, error_handler=error_response)
 

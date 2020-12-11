@@ -9,13 +9,13 @@ from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.users.auth import (
 	basic_auth, token_auth, check_and_assign_beta_code
 )
-from dark_chess_api.modules.utilities import validation
 
 @endpointer.route('/auth/token', methods=['GET'], bp=users,
 	responds={
 		200: { 'token': '<token>', 'user': User.mock_dict() },
 		404: None
-	}
+	},
+	auth='basic'
 )
 @basic_auth.login_required
 def aquire_token():
@@ -30,7 +30,8 @@ def aquire_token():
 	responds={
 		200: { 'user': User.mock_dict() },
 		404: None
-	}
+	},
+	auth='token (bearer)'
 )
 @token_auth.login_required
 def user_info(id):
@@ -90,7 +91,8 @@ def register_user(username, email, password):
 		200: { 'message': 'Successfully changed password', 'user': User.mock_dict() },
 		403: { 'message': 'Current password incorrect' },
 		404: None
-	}
+	},
+	auth='token (bearer)'
 )
 @token_auth.login_required
 def change_password(id, current_password, new_password):
@@ -111,6 +113,7 @@ def change_password(id, current_password, new_password):
 		403: { 'message': 'Current password incorrect' },
 		404: None
 	},
+	auth='token (bearer)',
 	description='Invite a user to be the requesting user\'s friend'
 )
 @token_auth.login_required
@@ -134,7 +137,8 @@ def invite_friend(id):
 		201: { 'message': 'You are already friends with this user', 'user': User.mock_dict() },
 		400: { 'message': 'You don\'t have a friend invite from this player' },
 		404: None
-	}
+	},
+	auth='token (bearer)'
 )
 @token_auth.login_required
 def accept_friend_invite(id):

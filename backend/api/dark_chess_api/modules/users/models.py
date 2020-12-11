@@ -70,7 +70,6 @@ class User(db.Model):
 		from dark_chess_api.modules.stats.models import UserStatBlock
 		self.stat_block = UserStatBlock()
 
-	# In the future this 
 	@staticmethod
 	def mock_dict():
 		username = username = mocker.name().replace(' ', '')

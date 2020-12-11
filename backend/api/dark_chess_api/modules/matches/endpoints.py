@@ -4,7 +4,6 @@ from sqlalchemy import or_
 from dark_chess_api import db, endpointer
 from dark_chess_api.modules.matches import matches
 from dark_chess_api.modules.matches.models import Match
-from dark_chess_api.modules.utilities import validation
 from dark_chess_api.modules.users.auth import token_auth
 from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.websockets import events as ws_events
@@ -34,7 +33,18 @@ from dark_chess_api.modules.websockets import events as ws_events
 # 		return match.as_dict('black')
 # 	return error_response(403, 'You are not currently playing this match.')
 
-@matches.route('/<int:id>', methods=['GET'])
+@endpointer.route('/<int:id>', methods=['GET'], bp=matches,
+	responds={
+		200: { 'match': Match.mock_dict(game_state='finished') },
+		404: None
+	},
+	auth='token (bearer)',
+	description=(
+		'Get details for a given match. The exact data returned can vary in '
+		'shape considerably depending on the state of the game, and who is '
+		'requesting the data.'
+	)
+)
 @token_auth.login_required
 def get_match(id):
 	match = Match.query.get_or_404(id)
@@ -45,7 +55,10 @@ def get_match(id):
 	# if spectating: return match.as_dict(side='spectator')
 	return match.as_dict(side=None)
 
-@matches.route('/open-matches', methods=['GET'])
+@endpointer.route('/open-matches', methods=['GET'], bp=matches,
+	responds={ 200: '[An array of open matches]' },
+	auth='token (bearer)'
+)
 @token_auth.login_required
 def get_open_matches():
 	matches = Match.query.filter_by(open=True).all()
@@ -64,7 +77,9 @@ def get_open_matches():
 		'in_progress': { 'type': 'boolean' },
 		'is_open': { 'type' : 'boolean', 'description': 'Whether or not the match can be joined' }
 	},
+	responds={ 200: '[An array of matches]' },
 	optional=['user_id', 'in_progress', 'is_open'],
+	auth='token (bearer)',
 	description='Query a list of matches'
 )
 @token_auth.login_required
@@ -90,7 +105,12 @@ def query_matches(user_id=None, in_progress=None, is_open=None):
 
 ### Match Actions ###
 
-@matches.route('/create', methods=['POST'])
+@endpointer.route('/create', methods=['POST'], bp=matches,
+	responds={
+		200: { 'message': 'Successfully created match', 'match': Match.mock_dict(game_state='open') }
+	},
+	auth='token (bearer)'
+)
 @token_auth.login_required
 def create_match():
 	player = g.current_user
@@ -103,7 +123,15 @@ def create_match():
 		'match' : new_match.as_dict()
 	}
 
-@matches.route('/<int:id>/join', methods=['PATCH'])
+@endpointer.route('/<int:id>/join', methods=['PATCH'], bp=matches,
+	responds={
+		200: { 'message': 'Player successfully joined match.', 'match': Match.mock_dict(game_state='in_progress') },
+		404: None,
+		403: { 'message': 'Match is full' },
+		409: { 'message': 'Player is already in match' }
+	},
+	auth='token (bearer)'
+)
 @token_auth.login_required
 def join_match(id):
 	match = Match.query.get_or_404(id)
@@ -120,16 +148,31 @@ def join_match(id):
 	db.session.commit()
 	ws_events.broadcast_match_begun(match.connection_token)
 	return {
-		'message' : 'Player successfully joined match.',
+		'message' : 'Player successfully joined match',
 		'match' : match.as_dict()
 	}
 
 ### In Game Actions ###
 
-@matches.route('/<int:id>/make-move', methods=['POST'])
+@endpointer.route('/<int:id>/make-move', methods=['POST'], bp=matches,
+	accepts={
+		'uci_string': { 
+			'type': 'string',
+			'description': 'The attempted move in uci format',
+			'pattern': '^[a-h][1-8][a-h][1-8][r|n|b|q]?$'
+		},
+	},
+	responds={
+		200: { 'message': 'Move successfully made', 'match': Match.mock_dict(game_state='finished') },
+		403: { 'message': 'Player not playing this match' },
+		404: None,
+		409: { 'message': 'Not your turn' },
+		422: { 'message': 'Move not possible' },
+	},
+	auth='token, (bearer)'
+)
 @token_auth.login_required
-@validation.validate_json_payload
-def make_move(id):
+def make_move(uci_string, id):
 	match = Match.query.get_or_404(id)
 	player = g.current_user
 	if not match.playing(player):
@@ -141,14 +184,14 @@ def make_move(id):
 			'Not your turn'
 		)
 	req_json = request.get_json()
-	if not match.attempt_move(player, req_json['uci_string']):
+	if not match.attempt_move(player, uci_string):
 		return error_response(422,
 			'Move not possible'
 		)
 	db.session.commit()
 	ws_events.broadcast_move_made(
 		player=player,
-		move=req_json['uci_string'],
+		move=uci_string,
 		current_fen=match.current_fen,
 		connection_token=match.connection_token
 	)
