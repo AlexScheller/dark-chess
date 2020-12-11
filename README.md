@@ -3,14 +3,6 @@
 This is the repo for Dark Chess, a web implementation of the eponymous variant,
 in which you only have vision of what you can attack.
 
-Technically speaking this is a variant of that variant. This is cliffhanger
-dark, where your vision only updates on your turn.
-
-## Course of the Project
-
-To begin with, this project will reproduce regular chess, switching to
-cliffhanger dark after the normal chess api is stable.
-
 ## Attributions/Citations/Etc.
 
 In several places this application makes use of snippets of code from Miguel
@@ -26,8 +18,3 @@ error handling, Miguel has done a good enough job of that himself,
 Additionally, the "microblog" application and the "Flask Mega Tutorial" is
 where I first learned how to build a practical application with Flask, so it
 stands to reason that I would make use of some of the same patterns.
-
-## Major TODOs
-
-1. Once python 3.9 is released, switch from using pytz for timezones to the
-standard library's `ZoneInfo` class.
