@@ -4,6 +4,16 @@ from dotenv import load_dotenv
 basedir = os.path.abspath(os.path.dirname(__file__))
 load_dotenv(os.path.join(basedir, '.env.flask'))
 
+def env_to_bool(value, default=False):
+	if value is None:
+		return default
+	val = value.lower()
+	if val in ['false', 'f', 'no', 'n', '1']:
+		return False
+	elif val in ['true', 't', 'yes', 'y', '0']:
+		return True
+	return default
+
 class Config:
 
 	SECRET_KEY = os.environ.get('SECRET_KEY') or 'f82hy8bqk4qbl0g43gb9uq4fqvdjk904j3'
@@ -18,7 +28,7 @@ class Config:
 	DB_HOST = os.environ.get('DB_HOST') or 'localhost'
 	DB_NAME = os.environ.get('DB_NAME') or 'darkchess'
 
-	DB_SSL = os.environ.get('DB_SSL') or False
+	DB_SSL = env_to_bool(os.environ.get('DB_SSL'), False)
 	DB_SSL_CA_LOC = os.environ.get('DB_SSL_CA_LOC') or None
 	DB_SSL_CLIENT_CERT_LOC = os.environ.get('DB_SSL_CLIENT_CERT_LOC') or None
 	DB_SSL_CLIENT_KEY_LOC = os.environ.get('DB_SSL_CLIENT_KEY_LOC') or None
@@ -42,4 +52,11 @@ class Config:
 	SQLALCHEMY_TRACK_MODIFICATIONS = False
 	SQLALCHEMY_DATABASE_URI = DATABASE_URIS[CHOSEN_DATABASE]
 
-	BETA_KEYS_REQUIRED = os.environ.get('BETA_KEYS_REQUIRED') or False
+	MAIL_SERVER = os.environ.get('MAIL_SERVER')
+	MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
+	MAIL_USE_TLS = env_to_bool(os.environ.get('MAIL_USE_TLS'), False)
+	MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
+	MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
+	ERROR_REPORT_EMAIL = os.environ.get('ERROR_REPORT_EMAIL')
+
+	BETA_KEYS_REQUIRED = env_to_bool(os.environ.get('BETA_KEYS_REQUIRED'), False)

@@ -1,4 +1,6 @@
 import os
+import logging
+from logging.handlers import SMTPHandler
 from faker import Faker
 
 from flask import Flask
@@ -54,7 +56,19 @@ def create_app(config=Config):
 	from dark_chess_api.modules.matches import matches
 	app.register_blueprint(matches, url_prefix='/match')
 
-	# from dark_chess_api.modules.docs import docs
-	# app.register_blueprint(docs, url_prefix='/docs')
+	if not app.debug and app.config['MAIL_SERVER'] and app.config['ERROR_REPORT_EMAIL']:
+		auth = None
+		if app.config['MAIL_USERNAME'] or app.config['MAIL_PASSWORD']:
+			auth = (app.config['MAIL_USERNAME'], app.config['MAIL_PASSWORD'])
+		secure = () if app.config['MAIL_USE_TLS'] else None
+		mail_handler = SMTPHandler(
+			mailhost=(app.config['MAIL_SERVER'], app.config['MAIL_PORT']),
+			fromaddr=app.config['MAIL_USERNAME'], # this is kinda specific to mailgun...
+			toaddrs=app.config['ERROR_REPORT_EMAIL'],
+			subject='Darkchess Backend Error',
+			credentials=auth, secure=secure
+		)
+		mail_handler.setLevel(logging.ERROR)
+		app.logger.addHandler(mail_handler)
 
 	return app
