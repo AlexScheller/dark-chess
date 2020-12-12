@@ -16,7 +16,7 @@ def env_to_bool(value, default=False):
 
 class Config:
 
-	SECRET_KEY = os.environ.get('SECRET_KEY') or 'nf7tqg4io4uqF$#bvyipw323qb43buf$@Q'
+	SECRET_KEY = os.environ.get('SECRET_KEY')
 
 	API_SCHEMA = os.environ.get('API_SCHEMA') or 'http'
 	API_DOMAIN = os.environ.get('API_DOMAIN') or 'localhost'

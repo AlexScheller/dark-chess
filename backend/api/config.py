@@ -16,7 +16,7 @@ def env_to_bool(value, default=False):
 
 class Config:
 
-	SECRET_KEY = os.environ.get('SECRET_KEY') or 'f82hy8bqk4qbl0g43gb9uq4fqvdjk904j3'
+	SECRET_KEY = os.environ.get('SECRET_KEY')
 
 	FRONTEND_ROOT = os.environ.get('FRONTEND_ROOT') or 'http://localhost:5005'
 
