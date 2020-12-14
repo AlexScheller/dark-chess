@@ -1,6 +1,8 @@
 import requests
+
 from flask import render_template, flash, url_for, redirect
 from flask_login import current_user, login_user, logout_user
+
 from dark_chess_app.modules.auth import auth
 from dark_chess_app.modules.auth.session_model import User
 from dark_chess_app.modules.auth.forms import RegistrationForm, LoginForm

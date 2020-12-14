@@ -18,6 +18,7 @@
 			{{ navigation_link(url_for('auth.logout'), 'Log Out') }}
 			{{ navigation_link(url_for('match.open_matches'), 'Open Matches') }}
 			{{ navigation_link(url_for('match.users_active_matches'), 'My Active Matches') }}
+			{{ navigation_link(url_for('user.user_search'), 'User Search') }}
 			{% else %}
 			{{ navigation_link(url_for('auth.login'), 'Log In') }}
 			{{ navigation_link(url_for('auth.register'), 'Sign Up') }}

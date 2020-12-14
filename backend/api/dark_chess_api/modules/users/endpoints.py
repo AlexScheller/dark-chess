@@ -38,6 +38,31 @@ def user_info(id):
 	u = User.query.get_or_404(id)
 	return u.as_dict()
 
+@endpointer.route('/all', methods=['GET'], bp=users,
+	responds={
+		200: ['...', User.mock_dict(), '...']
+	},
+	auth='token (bearer)'
+)
+@token_auth.login_required
+def user_list():
+	us = User.query.all()
+	return jsonify([u.as_dict() for u in us])
+
+@endpointer.route('/search', methods=['POST'], bp=users,
+	accepts={
+		'username': { 'type': 'string' }
+	},
+	responds={
+		200: ['...', User.mock_dict(), '...']
+	},
+	auth='token (bearer)'
+)
+@token_auth.login_required
+def user_search(username):
+	us = User.query.filter(User.username.ilike(f'%{username}%')).all()
+	return jsonify([u.as_dict() for u in us])
+
 # Currently this requires a beta code. Once that period is over, this code
 # should be removed.
 @endpointer.route('/auth/register', methods=['POST'], bp=users,
