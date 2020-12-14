@@ -18,6 +18,7 @@ def register():
 				'username': form.username.data,
 				'email': form.email.data,
 				'password': form.password.data,
+				'password_confirmed': form.password_confirmation.data,
 				'beta_code': form.beta_code.data
 			}
 		)

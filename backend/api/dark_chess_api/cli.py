@@ -1,5 +1,5 @@
-# This file contains a helpful set of cli commands. Generally speaking
-# they simply wrap various shell utilities.
+# This file contains a helpful set of cli commands. Generally speaking they
+# simply wrap various shell utilities.
 
 import os
 import click

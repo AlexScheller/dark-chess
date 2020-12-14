@@ -44,15 +44,17 @@ def user_info(id):
 	accepts={
 		'username': { 'type': 'string' },
 		'email': { 'type': 'string', 'format': 'email' },
-		'password': { 'type': 'string'}
+		'password': { 'type': 'string' },
+		'password_confirmed': { 'type': 'string' }
 	},
 	responds={
 		200: { 'message' : 'Successfully registered user', 'user': User.mock_dict() },
-		404: None
+		404: None,
+		422: { 'message' : 'Passwords do not match' }
 	},
 	description='Register a new user'
 )
-def register_user(username, email, password):
+def register_user(username, email, password, password_confirmed):
 	# Note: emails are blindly accepted, no assumption is even made that the
 	# frontend validated them. Emails are validated with the confirmation
 	# pattern rather than some attempt at a regex or something.
@@ -62,6 +64,8 @@ def register_user(username, email, password):
 	u_check = User.query.filter_by(email=email).first()
 	if u_check is not None:
 		return error_response(409, 'Email is use')
+	if password != password_confirmed:
+		return error_response(422, 'Passwords do not match')
 	new_user = User(username=username, email=email, password=password)
 	db.session.add(new_user)
 	# BetaCode specific. Because the requirement to use beta codes is switched
