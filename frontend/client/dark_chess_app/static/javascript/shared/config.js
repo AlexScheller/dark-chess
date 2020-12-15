@@ -13,6 +13,10 @@ class Config {
 		}
 	}
 
+	get clientRoot() {
+		return `${window.location.protocol}//${window.location.host}`;
+	}
+
 	static optionsFromHTML() {
 		const configParams = document.getElementById('config-params');
 		let options = {

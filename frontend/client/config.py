@@ -14,6 +14,13 @@ def env_to_bool(value, default=False):
 		return True
 	return default
 
+def env_to_int(value, default):
+	try:
+		return int(value)
+	except Error:
+		return default
+	return default
+
 class Config:
 
 	SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -31,7 +38,7 @@ class Config:
 		API_ROOT = f'{API_SCHEMA}://{API_DOMAIN}'
 
 	MAIL_SERVER = os.environ.get('MAIL_SERVER')
-	MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
+	MAIL_PORT = env_to_int(os.environ.get('MAIL_PORT'), 25)
 	MAIL_USE_TLS = env_to_bool(os.environ.get('MAIL_USE_TLS'), False)
 	MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
 	MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')

@@ -371,7 +371,8 @@ class MatchModel {
 }
 
 // Like the class name implies, this controls the board view. It handles all
-// player actions. This implementation relies on the Canvas API.
+// player actions. This implementation relies on the Canvas API. There are a few
+// non-canvas elements that are also controlled here.
 class CanvasBoardViewController {
 
 	constructor(model, squareWidth = 60) {
@@ -970,6 +971,11 @@ class CanvasBoardViewController {
 			}
 			for (const square of this._moveOptions) {
 				this._helperHighlightSquare(square, 'green');
+			}
+			if (this._model.playersTurn()) {
+				utilities.changeFavicon('favicon_player_turn.ico');
+			} else {
+				utilities.changeFavicon('favicon.ico');
 			}
 		}
 	}

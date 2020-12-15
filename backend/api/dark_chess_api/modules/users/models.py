@@ -121,13 +121,13 @@ class User(db.Model):
 	def check_password(self, password):
 		return check_password_hash(self.password_hash, password)
 
-	def get_token(self, lifespan_seconds=7200):
+	def get_token(self, lifespan_minutes=120):
 		now = datetime.utcnow()
-		# if there is no token, or if the token is less than a minute from
+		# if there is no token, or if the token is fewer than 5 minutes from
 		# expiring, generate a new one.
-		if not self.token or self.token_expiration < now + timedelta(seconds=60):
+		if not self.token or self.token_expiration < now + timedelta(minutes=5):
 			self.token = secrets.token_hex(32)
-			self.token_expiration = now + timedelta(seconds=lifespan_seconds)
+			self.token_expiration = now + timedelta(minutes=lifespan_minutes)
 			db.session.add(self)
 			db.session.commit()
 		return self.token

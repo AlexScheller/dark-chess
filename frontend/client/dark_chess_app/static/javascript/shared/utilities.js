@@ -5,14 +5,28 @@ class Utilities {
 		window.location = '/auth/logout';
 	}
 
-	changeFavicon(iconSrc) {
-		let ico = document.createElement('link');
+	changeFavicon(iconFile) {
 		let old = document.getElementById('dynamic-favicon');
-		ico.id = 'dynamic-favicon';
-		ico.rel = 'shortcut icon';
-		ico.href = iconSrc;
-		if (old) old.remove();
-		document.head.appendChild(ico);
+		if (old) {
+			// No reason to change the favicon if the same one is being
+			// requested.
+			let currentIcon = old.href.split("/").pop();
+			if (currentIcon !== iconFile) {
+				console.log('changing icon');
+				let ico = document.createElement('link');
+				ico.id = 'dynamic-favicon';
+				ico.rel = 'shortcut icon';
+				ico.href = `${config.clientRoot}/static/images/${iconFile}`;
+				if (old) old.remove();
+				document.head.appendChild(ico);
+			}
+		} else {
+			let ico = document.createElement('link');
+			ico.id = 'dynamic-favicon';
+			ico.rel = 'shortcut icon';
+			ico.href = `${config.clientRoot}/static/images/${iconFile}`;
+			document.head.appendChild(ico);
+		}
 	}
 
 }

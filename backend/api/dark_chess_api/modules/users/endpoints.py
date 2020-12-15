@@ -19,7 +19,9 @@ from dark_chess_api.modules.users.auth import (
 )
 @basic_auth.login_required
 def aquire_token():
-	token = g.current_user.get_token()
+	token = g.current_user.get_token(
+		lifespan_minutes=current_app.config['TOKEN_LIFESPAN_MINUTES']
+	)
 	db.session.commit()
 	return {
 		'token' : token,

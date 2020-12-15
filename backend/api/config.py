@@ -14,6 +14,13 @@ def env_to_bool(value, default=False):
 		return True
 	return default
 
+def env_to_int(value, default):
+	try:
+		return int(value)
+	except Error:
+		return default
+	return default
+
 class Config:
 
 	SECRET_KEY = os.environ.get('SECRET_KEY')
@@ -53,10 +60,12 @@ class Config:
 	SQLALCHEMY_DATABASE_URI = DATABASE_URIS[CHOSEN_DATABASE]
 
 	MAIL_SERVER = os.environ.get('MAIL_SERVER')
-	MAIL_PORT = int(os.environ.get('MAIL_PORT') or 25)
+	MAIL_PORT = env_to_int(os.environ.get('MAIL_PORT'), 25)
 	MAIL_USE_TLS = env_to_bool(os.environ.get('MAIL_USE_TLS'), False)
 	MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
 	MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
 	ERROR_REPORT_EMAIL = os.environ.get('ERROR_REPORT_EMAIL')
+
+	TOKEN_LIFESPAN_MINUTES = env_to_int(os.environ.get('TOKEN_LIFESPAN_MINUTES'), 120)
 
 	BETA_KEYS_REQUIRED = env_to_bool(os.environ.get('BETA_KEYS_REQUIRED'), False)

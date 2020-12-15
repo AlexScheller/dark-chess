@@ -8,7 +8,7 @@
 	<button class="button">Search</button>
 </form>
 {% if results %}
-<h3>Results:</h3>
+<h3 class="subtitle">Results:</h3>
 <ul>
 	{% for user in results %}
 	<li>{{ user_link(user) }}</li>

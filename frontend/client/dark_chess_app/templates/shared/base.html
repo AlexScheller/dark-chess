@@ -5,7 +5,7 @@
 		<title>{% if title %}DarkChess - {{ title }}{% else %}DarkChess{% endif %}</title>
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
+		<link id="dynamic-favicon" rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.ico') }}">
 		<!-- <link rel="stylesheet" href="{{ url_for('static', filename='css/shared/normalize.css') }}"> -->
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/reset.css') }}">
 		<link rel="stylesheet" href="{{ url_for('static', filename='css/shared/base.css') }}">
@@ -19,6 +19,7 @@
 			{{ navigation_link(url_for('match.open_matches'), 'Open Matches') }}
 			{{ navigation_link(url_for('match.users_active_matches'), 'My Active Matches') }}
 			{{ navigation_link(url_for('user.user_search'), 'User Search') }}
+			{{ navigation_link(url_for('user.user_profile', id=current_user.id), 'My Profile') }}
 			{% else %}
 			{{ navigation_link(url_for('auth.login'), 'Log In') }}
 			{{ navigation_link(url_for('auth.register'), 'Sign Up') }}

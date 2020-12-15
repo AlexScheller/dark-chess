@@ -184,6 +184,7 @@ class Endpoint:
 	def init_accepts(self, acceptance_schema, optional):
 		self.accepts = True
 		self.schema_base = acceptance_schema
+		self.optional = optional
 		self.required = [
 			key for key in self.schema_base if key not in self.optional
 		]
