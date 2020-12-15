@@ -1,7 +1,8 @@
 import requests
 
-from flask import render_template, flash, url_for, redirect
+from flask import render_template, flash, url_for, redirect, request
 from flask_login import current_user, login_user, logout_user
+from werkzeug.urls import url_parse
 
 from dark_chess_app.modules.auth import auth
 from dark_chess_app.modules.auth.session_model import User
@@ -51,6 +52,11 @@ def login():
 			)
 			login_user(user, remember=form.remember_me.data)
 			flash('Successfully logged in', 'success')
+			# Inserted by `@login_required` for redirection.
+			next_page = request.args.get('next')
+			# Handle attempts to redirect outside the application
+			if next_page is not None and url_parse(next_page).netloc == '':
+				return redirect(next_page)
 			return redirect(url_for('main.index'))
 		flash('Login unsuccessful', 'error')
 		return redirect(url_for('auth.login'))
