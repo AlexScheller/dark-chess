@@ -30,7 +30,7 @@ class Config:
 	API_PORT = os.environ.get('API_PORT') or '5000'
 	USING_API_PORT = env_to_bool(os.environ.get('USING_API_PORT'), True)
 	API_DOMAIN_AND_PORT = ''
-	if USING_API_PORT != 'False':
+	if USING_API_PORT:
 		API_DOMAIN_AND_PORT = f'{API_DOMAIN}:{API_PORT}'
 		API_ROOT = f'{API_SCHEMA}://{API_DOMAIN}:{API_PORT}'
 	else:
