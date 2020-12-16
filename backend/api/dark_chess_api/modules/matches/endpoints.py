@@ -3,7 +3,7 @@ from sqlalchemy import or_
 
 from dark_chess_api import db, endpointer
 from dark_chess_api.modules.matches import matches
-from dark_chess_api.modules.matches.models import Match
+from dark_chess_api.modules.matches.models import Match, MatchInvite
 from dark_chess_api.modules.users.auth import token_auth
 from dark_chess_api.modules.errors.handlers import error_response
 from dark_chess_api.modules.websockets import events as ws_events
@@ -77,8 +77,8 @@ def get_open_matches():
 		'in_progress': { 'type': 'boolean' },
 		'is_open': { 'type' : 'boolean', 'description': 'Whether or not the match can be joined' }
 	},
-	responds={ 200: '[An array of matches]' },
 	optional=['user_id', 'in_progress', 'is_open'],
+	responds={ 200: '[An array of matches]' },
 	auth='token (bearer)',
 	description='Query a list of matches'
 )
@@ -105,52 +105,102 @@ def query_matches(user_id=None, in_progress=None, is_open=None):
 
 ### Match Actions ###
 
-@endpointer.route('/create', methods=['POST'], bp=matches,
+# TODO: Restrict these to one invite of each type per user
+@endpointer.route('/create-invite', methods=['POST'], bp=matches,
+	accepts={
+		'invited_id': { 'type': 'integer' }
+	},
+	optional=['invited_id'],
 	responds={
-		200: { 'message': 'Successfully created match', 'match': Match.mock_dict(game_state='open') }
+		200: {
+			'message': 'Successfully created match invite',
+			'match_invite': MatchInvite.mock_dict()
+		},
+		404: { 'message': 'No such invited player' }
 	},
 	auth='token (bearer)'
 )
 @token_auth.login_required
-def create_match():
-	player = g.current_user
-	new_match = Match()
-	db.session.add(new_match)
-	new_match.join(player)
+def create_match_invite(invited_id=None):
+	inviter = g.current_user
+	invited = None
+	if invited_id is not None:
+		invited = Player.query.get(invited_id)
+		if invited is None:
+			return errors(404, 'No such invited player')
+	new_match_invite = MatchInvite(inviter, invited)
+	db.session.add(new_match_invite)
 	db.session.commit()
 	return {
-		'message' : 'Successfully created match',
-		'match' : new_match.as_dict()
+		'message' : 'Successfully created match invite',
+		'match_invite' : new_match_invite.as_dict()
 	}
 
-@endpointer.route('/<int:id>/join', methods=['PATCH'], bp=matches,
+@endpointer.route('/match-invite/<int:id>/accept', methods=['PATCH'], bp=matches,
 	responds={
-		200: { 'message': 'Player successfully joined match.', 'match': Match.mock_dict(game_state='in_progress') },
+		200: {
+			'message': 'Successfully accepted invite',
+			'match_invite': MatchInvite.mock_dict(force_direct=True, force_accepted=True),
+			'match': Match.mock_dict(game_state='in_progress')
+		},
 		404: None,
-		403: { 'message': 'Match is full' },
-		409: { 'message': 'Player is already in match' }
+		403: { 'message': 'Player not invited to match' },
+		409: { 'message': 'Match has already been accepted' }
 	},
 	auth='token (bearer)'
 )
 @token_auth.login_required
-def join_match(id):
-	match = Match.query.get_or_404(id)
-	if not match.open:
-		return error_response(403,
-			'Match is full'
-		)
-	player = g.current_user
-	if match.playing(player):
-		return error_response(409,
-			'Player is already in match'
-		)
-	match.join(player)
+def accept_match_invite(id):
+	invite = MatchInvite.get_or_404(id)
+	if invite.accepted:
+		return error_response(409, 'Match invite has already been accepted')
+	acceptor = g.current_user
+	if invite.invited_id != acceptor.id and not invite.open:
+		return error_response(403, 'Invite not open, and not for player')
+	if invite.open:
+		invite.invited = acceptor
+	new_match = Match()
+	db.session.add(new_match)
+	new_match.join(invite.inviter)
+	new_match.join(acceptor)
 	db.session.commit()
-	ws_events.broadcast_match_begun(match.connection_token)
 	return {
-		'message' : 'Player successfully joined match',
-		'match' : match.as_dict()
+		'message': 'Successfully accepted invite',
+		'match_invite': invite.as_dict(),
+		'match': new_match.as_dict()
 	}
+
+# Kept for posterity until a route for joining a match as a spectator is
+# realized.
+#
+# @endpointer.route('/<int:id>/join', methods=['PATCH'], bp=matches,
+# 	responds={
+# 		200: { 'message': 'Player successfully joined match.', 'match': Match.mock_dict(game_state='in_progress') },
+# 		404: None,
+# 		403: { 'message': 'Match is full' },
+# 		409: { 'message': 'Player is already in match' }
+# 	},
+# 	auth='token (bearer)'
+# )
+# @token_auth.login_required
+# def join_match(id):
+# 	match = Match.query.get_or_404(id)
+# 	if not match.open:
+# 		return error_response(403,
+# 			'Match is full'
+# 		)
+# 	player = g.current_user
+# 	if match.playing(player):
+# 		return error_response(409,
+# 			'Player is already in match'
+# 		)
+# 	match.join(player)
+# 	db.session.commit()
+# 	ws_events.broadcast_match_begun(match.connection_token)
+# 	return {
+# 		'message' : 'Player successfully joined match',
+# 		'match' : match.as_dict()
+# 	}
 
 ### In Game Actions ###
 

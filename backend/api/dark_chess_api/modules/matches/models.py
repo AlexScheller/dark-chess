@@ -1,6 +1,7 @@
 import chess
 import random
 from uuid import uuid4
+from datetime import datetime, timezone
 
 from sqlalchemy import and_
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -48,18 +49,104 @@ class DarkBoard(chess.Board):
 	def king_captured(self):
 		return self.king(self.turn) is None
 
+class MatchInvite(db.Model):
+	
+	id = db.Column(db.Integer, primary_key=True)
+
+	inviter_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+	inviter = db.relationship('User', foreign_keys='MatchInvite.inviter_id')
+
+	invited_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	invited = db.relationship('User', foreign_keys='MatchInvite.invited_id')
+
+	match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
+	match = db.relationship('Match')
+
+	created_on = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+	def __init__(inviter, invited=None):
+		self.inviter = inviter
+		self.invited = invited
+
+	@hybrid_property
+	def open(self):
+		return self.invited_id is None
+
+	@open.expression
+	def open(cls):
+		return cls.invited_id == None
+
+	@hybrid_property
+	def accepted(self):
+		return self.match_id is not None
+
+	@accepted.expression
+	def accepted(cls):
+		return self._match_id != None
+
+	@staticmethod
+	def mock_dict(force_direct=False, force_accepted=False):
+		creation_date = datetime.now(timezone.utc)
+		inviter_id = random.randint(1, 100)
+		invited_id = None
+		if force_direct or random.choice([True, False]):
+			invited_id = inviter_id + random.randint(1, 20)
+		match_id = None
+		if (force_accepted or random.choice([True, False])) and invited_id is not None:
+			match_id = random.randint(1, 100)
+		ret = {
+			'id': random.randint(1, 100),
+			'inviter_id': inviter_id,
+			'open': inviter_id is None,
+			'accepted': match_id is not None,
+			'created_on': {
+				'formatted': str(creation_date),
+				'timestamp': int(creation_date.timestamp())
+			}
+		}
+		if invited_id is not None:
+			ret.update({
+				'invited_id': invited_id,
+			})
+		if match_id is not None:
+			ret.update({
+				'match_id': match_id 
+			})
+		return ret
+
+	def as_dict(self):
+		ret = {
+			'id': self.id,
+			'inviter_id': self.inviter_id,
+			'open': self.open,
+			'accepted': self.accepted,
+			'created_on': {
+				'formatted': str(self.creation_date),
+				'timestamp': int(self.creation_date.timestamp())
+			}
+		}
+		if self.invited_id is not None:
+			ret.update({
+				'invited_id': invited_id,
+			})
+		if self.match_id is not None:
+			ret.update({
+				'match_id': match_id 
+			})
+		return ret
+
 class MatchState(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
 
-	fen = db.Column(db.String(256))
+	fen = db.Column(db.String(256), nullable=False)
 
-	match_id = db.Column(db.Integer, db.ForeignKey('match.id'))
+	match_id = db.Column(db.Integer, db.ForeignKey('match.id'), nullable=False)
 
 class Match(db.Model):
 
 	id = db.Column(db.Integer, primary_key=True)
-	connection_token = db.Column(db.String(36), index=True, unique=True)
+	connection_token = db.Column(db.String(36), index=True, unique=True, nullable=False)
 
 	def __init__(self):
 		self.connection_token = str(uuid4())

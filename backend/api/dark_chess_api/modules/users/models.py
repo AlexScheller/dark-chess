@@ -31,13 +31,13 @@ class User(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 
 	### account information data ###
-	username = db.Column(db.String(255), index=True, unique=True)
-	email = db.Column(db.String(255), index=True, unique=True)
-	email_confirmed = db.Column(db.Boolean, default=False)
-	registration_date = db.Column(db.DateTime, default=datetime.utcnow)
+	username = db.Column(db.String(255), index=True, unique=True, nullable=False)
+	email = db.Column(db.String(255), index=True, unique=True, nullable=False)
+	email_confirmed = db.Column(db.Boolean, default=False, nullable=False)
+	registration_date = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 	### auth data ###
-	password_hash = db.Column(db.String(255))
+	password_hash = db.Column(db.String(255), nullable=False)
 	# token auth model taken from "microblog" (see README.md)
 	token = db.Column(db.String(64), index=True, unique=True)
 	token_expiration = db.Column(db.DateTime)

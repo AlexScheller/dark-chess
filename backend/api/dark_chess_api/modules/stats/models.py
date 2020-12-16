@@ -7,14 +7,16 @@ class UserStatBlock(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 
 	### intrinsic ###
-	games_played = db.Column(db.Integer, default=0)
-	games_won = db.Column(db.Integer, default=0)
-	games_lost = db.Column(db.Integer, default=0)
-	games_tied = db.Column(db.Integer, default=0)
-	rating = db.Column(db.Integer)
+	games_played = db.Column(db.Integer, default=0, nullable=False)
+	games_won = db.Column(db.Integer, default=0, nullable=False)
+	games_lost = db.Column(db.Integer, default=0, nullable=False)
+	games_tied = db.Column(db.Integer, default=0, nullable=False)
+	# Does rating even need to be stored in the db, or can it just always be
+	# calculated?
+	rating = db.Column(db.Integer, default=0, nullable=False)
 
 	### relationship ###
-	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	user = db.relationship('User', back_populates='stat_block')
 
 	@staticmethod
