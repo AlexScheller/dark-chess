@@ -196,10 +196,11 @@ class Match(db.Model):
 	# may be wrewritten to be a bit less gaurded.                             #
 	###########################################################################
 
+	def has_player(self, player):
+		return self.player_black_id == player.id or self.player_white_id == player.id
+
 	def playing(self, player):
-		if self.is_finished:
-			return False
-		return self.player_white_id == player.id or self.player_black_id == player.id
+		return False if self.is_finished else self.has_player(player)
 
 	def players_turn(self, player):
 		if not self.playing(player):

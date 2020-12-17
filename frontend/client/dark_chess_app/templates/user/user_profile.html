@@ -4,4 +4,12 @@
 {% if not is_friend and not is_user %}
 <button data-user-id="{{ user.id }}">Invite Friend</button>
 {% endif %}
+<div class="card stat-block">
+	<ul>
+		{% for stat, value in user.stats.games.items() %}
+		<li>{{ stat }}: {{ value }}</li>
+		{% endfor %}
+	</ul>
+	<p>Rating: {{ user.stats.rating }}</p>
+</div>
 {% endblock %}

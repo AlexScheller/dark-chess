@@ -195,6 +195,11 @@ def make_move(uci_string, id):
 		connection_token=match.connection_token
 	)
 	if match.is_finished:
+		# Should this be handled by the match?
+		# match.update_stats()
+		match.player_white.stat_block.add_match(match)
+		match.player_black.stat_block.add_match(match)
+		db.session.commit()
 		ws_events.broadcast_match_finish(
 			winning_player=player,
 			connection_token=match.connection_token

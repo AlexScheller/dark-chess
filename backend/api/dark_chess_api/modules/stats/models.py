@@ -10,12 +10,26 @@ class UserStatBlock(db.Model):
 	games_played = db.Column(db.Integer, default=0)
 	games_won = db.Column(db.Integer, default=0)
 	games_lost = db.Column(db.Integer, default=0)
+	# Is this really even possible?
 	games_tied = db.Column(db.Integer, default=0)
 	rating = db.Column(db.Integer)
 
 	### relationship ###
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
 	user = db.relationship('User', back_populates='stat_block')
+
+	# TODO: Perhaps this should extend the __add__ method?
+	def add_match(self, match):
+		# These two checks may be an unnecessary performance burden.
+		if not match.is_finished:
+			raise ValueError('Match not finished')
+		if not match.has_player(self.user):
+			raise ValueError('Player not in match')
+		self.games_played += 1
+		if match.winning_player_id == self.user.id:
+			self.games_won += 1
+		else:
+			self.games_lost += 1
 
 	@staticmethod
 	def mock_dict():
