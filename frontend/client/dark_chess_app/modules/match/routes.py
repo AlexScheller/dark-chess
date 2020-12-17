@@ -71,17 +71,18 @@ def match_history(id):
 		flash('No such match')
 		return redirect(url_for('match.open_matches'))
 	match_json = match_res.json()
-	simple_history = []
-	for fen in match_json['history']:
-		simple_grid_fen = []
-		for row in fen.split(' ')[0].split('/'):
-			simple_fen = []
-			for p in row:
-				simple_fen.append(p) if p.isalpha() else simple_fen.extend('_' * int(p))
-			simple_grid_fen.append(simple_fen)
-		simple_history.append(simple_grid_fen)
+	history = []
+	if 'white_vision_history' in match_json:
+		history = match_json['white_vision_history']
+	elif 'black_vision_history' in match_json:
+		history = match_json['black_vision_history']
+	elif 'transparent_history' in match_json:
+		history = match_json['transparent_history']
+	expanded_history = []
+	for fen in history:
+		expanded_history.append([row for row in fen.split('/')])
 	return render_template('match/history.html',
 		title=f'{match_json["id"]} history',
-		history=simple_history,
+		history=expanded_history,
 		match=match_json
 	)

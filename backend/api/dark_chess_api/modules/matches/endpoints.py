@@ -52,8 +52,7 @@ def get_match(id):
 		return match.as_dict(side='white')
 	elif g.current_user.id == match.player_black_id:
 		return match.as_dict(side='black')
-	# if spectating: return match.as_dict(side='spectator')
-	return match.as_dict(side=None)
+	return match.as_dict(side='spectating')
 
 @endpointer.route('/open-matches', methods=['GET'], bp=matches,
 	responds={ 200: '[An array of open matches]' },
