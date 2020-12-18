@@ -12,5 +12,12 @@
 {% else %}
 <p>None yet</p>
 {% endif %}
-{% endif %}
+<div class="card stat-block">
+	<ul>
+		{% for stat, value in user.stats['games'] %}
+		<li>{{stat}}: {{ value }}</li>
+		{% endfor %}
+	</ul>
+	<p>Rating: {{ user.stats['rating'] }}</p>
+</div>
 {% endblock %}

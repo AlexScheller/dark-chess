@@ -5,9 +5,11 @@
 {% endblock %}
 {% block page_content %}
 {% if history %}
-{% for simple_fen in history %}
-{{ board(simple_fen) }}
-{% endfor %}
+<ol>
+	{% for move in history %}
+	<li>{{ move }}</li>
+	{% endfor %}
+</ol>
 {% else %}
 <h2>No moves seem to have been made yet in this match. Come back later.</h2>
 {% endif %}

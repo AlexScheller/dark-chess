@@ -211,6 +211,18 @@ class Match(db.Model):
 	def current_fen(self):
 		return self.history[-1].fen
 
+	@staticmethod
+	def expand_fen(fen):
+		ret = []
+		positions = fen.split(' ')[0].split('/')
+		for row in positions:
+			new_row = [
+				square if square.isalpha() else '_' * int(square)
+				for square in row
+			]
+			ret.append(''.join(new_row))
+		return '/'.join(ret)
+
 	@property
 	def current_expanded_fen(self):
 		board = chess.Board(fen=self.current_fen)
@@ -271,10 +283,11 @@ class Match(db.Model):
 	# may be wrewritten to be a bit less gaurded.                             #
 	###########################################################################
 
+	def has_player(self, player):
+		return self.player_black_id == player.id or self.player_white_id == player.id
+
 	def playing(self, player):
-		if self.is_finished:
-			return False
-		return self.player_white_id == player.id or self.player_black_id == player.id
+		return False if self.is_finished else self.has_player(player)
 
 	def players_turn(self, player):
 		if not self.playing(player):
@@ -443,7 +456,7 @@ class Match(db.Model):
 			})
 		if side == 'spectating':
 			ret.update({
-				'transparent_history': [ms.fen for ms in self.history]
+				'transparent_history': [Match.expand_fen(ms.fen) for ms in self.history]
 			})
 		else:
 			ret.update({

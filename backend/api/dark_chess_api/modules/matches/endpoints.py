@@ -52,8 +52,7 @@ def get_match(id):
 		return match.as_dict(side='white')
 	elif g.current_user.id == match.player_black_id:
 		return match.as_dict(side='black')
-	# if spectating: return match.as_dict(side='spectator')
-	return match.as_dict(side=None)
+	return match.as_dict(side='spectating')
 
 @endpointer.route('/open-matches', methods=['GET'], bp=matches,
 	responds={ 200: '[An array of open matches]' },
@@ -246,6 +245,11 @@ def make_move(uci_string, id):
 		connection_token=match.connection_token
 	)
 	if match.is_finished:
+		# Should this be handled by the match?
+		# match.update_stats()
+		match.player_white.stat_block.add_match(match)
+		match.player_black.stat_block.add_match(match)
+		db.session.commit()
 		ws_events.broadcast_match_finish(
 			winning_player=player,
 			connection_token=match.connection_token

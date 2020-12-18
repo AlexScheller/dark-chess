@@ -7,17 +7,31 @@ class UserStatBlock(db.Model):
 	id = db.Column(db.Integer, primary_key=True)
 
 	### intrinsic ###
-	games_played = db.Column(db.Integer, default=0, nullable=False)
-	games_won = db.Column(db.Integer, default=0, nullable=False)
-	games_lost = db.Column(db.Integer, default=0, nullable=False)
-	games_tied = db.Column(db.Integer, default=0, nullable=False)
+	games_played = db.Column(db.Integer, default=0)
+	games_won = db.Column(db.Integer, default=0)
+	games_lost = db.Column(db.Integer, default=0)
+	# Is this really even possible?
+	games_tied = db.Column(db.Integer, default=0)
 	# Does rating even need to be stored in the db, or can it just always be
 	# calculated?
-	rating = db.Column(db.Integer, default=0, nullable=False)
+	rating = db.Column(db.Integer)
 
 	### relationship ###
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	user = db.relationship('User', back_populates='stat_block')
+
+	# TODO: Perhaps this should extend the __add__ method?
+	def add_match(self, match):
+		# These two checks may be an unnecessary performance burden.
+		if not match.is_finished:
+			raise ValueError('Match not finished')
+		if not match.has_player(self.user):
+			raise ValueError('Player not in match')
+		self.games_played += 1
+		if match.winning_player_id == self.user.id:
+			self.games_won += 1
+		else:
+			self.games_lost += 1
 
 	@staticmethod
 	def mock_dict():
