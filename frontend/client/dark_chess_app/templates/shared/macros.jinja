@@ -63,6 +63,14 @@
 </div>
 {% endmacro %}
 
+{% macro invite_card(invite) %}
+<div class="card match-invite-card">
+	<div class="card-header">
+		<h3 class="card-title">{{ invite.inviter.username }}</h3>
+	</div>
+</div>
+{% endmacro %}
+
 {############}
 {#  inputs  #}
 {############}

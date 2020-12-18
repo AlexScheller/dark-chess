@@ -20,6 +20,13 @@ class UserStatBlock(db.Model):
 	user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 	user = db.relationship('User', back_populates='stat_block')
 
+	def __init__(self):
+		self.games_played = 0
+		self.games_won = 0
+		self.games_lost = 0
+		self.games_tied = 0
+		self.rating = 1500 # placeholder
+
 	# TODO: Perhaps this should extend the __add__ method?
 	def add_match(self, match):
 		# These two checks may be an unnecessary performance burden.

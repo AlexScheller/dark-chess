@@ -9,12 +9,15 @@ from dark_chess_app.utilities.api_utilities import (
 @match.route('/create')
 @login_required
 def create_match():
-	create_match_res = api_token_request('/match/create', requests.post)
-	match_json = create_match_res.json()['match']
+	create_match_res = api_token_request('/match/invite/create', requests.post)
+	invite_json = create_match_res.json()['match_invite']
 	# TODO handle errors
 	return redirect(
-		url_for('match.match_page', id=match_json['id'])
-	)
+		url_for('main.index')
+	)	
+	# return redirect(
+	# 	url_for('match.match_page', id=match_json['id'])
+	# )
 
 @match.route('/<int:id>/join')
 @login_required
@@ -26,10 +29,10 @@ def join_match(id):
 @match.route('/open-matches')
 @login_required
 def open_matches():
-	open_matches_res = api_token_request(f'/match/open-matches')
-	return render_template('match/match_list.html',
+	open_matches_res = api_token_request(f'/match/invite/open')
+	return render_template('match/open_match_list.html',
 		title='Match List',
-		matches=open_matches_res.json()
+		open_matches=open_matches_res.json()
 	)
 
 @match.route('/my-active-matches')
@@ -41,7 +44,7 @@ def users_active_matches():
 			'in_progress': True,
 		}
 	)
-	return render_template('match/match_list.html',
+	return render_template('match/active_match_list.html',
 		title='My Active Matches',
 		matches=matches_res.json()
 	)

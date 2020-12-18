@@ -54,15 +54,6 @@ def get_match(id):
 		return match.as_dict(side='black')
 	return match.as_dict(side='spectating')
 
-@endpointer.route('/open-matches', methods=['GET'], bp=matches,
-	responds={ 200: '[An array of open matches]' },
-	auth='token (bearer)'
-)
-@token_auth.login_required
-def get_open_matches():
-	matches = Match.query.filter_by(open=True).all()
-	return jsonify([m.as_dict() for m in matches])
-
 # Master query endpoint
 
 # Note that this endpoint allows potentially conflicting parameters.
@@ -102,10 +93,19 @@ def query_matches(user_id=None, in_progress=None, is_open=None):
 		matches = matches.filter(Match.open==is_open)
 	return jsonify([m.as_dict() for m in matches.all()])
 
-### Match Actions ###
+###  Match Invites  ###
 
-# TODO: Restrict these to one invite of each type per user
-@endpointer.route('/create-invite', methods=['POST'], bp=matches,
+@endpointer.route('/invite/open', methods=['GET'], bp=matches,
+	responds={ 200: '[An array of open match invites]' },
+	auth='token (bearer)'
+)
+@token_auth.login_required
+def get_open_match_invites():
+	match_invites = MatchInvite.query.filter_by(open=True).all()
+	return jsonify([m.as_dict() for m in match_invites])
+
+# TODO: Test
+@endpointer.route('/invite/create', methods=['POST'], bp=matches,
 	accepts={
 		'invited_id': { 'type': 'integer' }
 	},
@@ -127,15 +127,33 @@ def create_match_invite(invited_id=None):
 		invited = Player.query.get(invited_id)
 		if invited is None:
 			return errors(404, 'No such invited player')
-	new_match_invite = MatchInvite(inviter, invited)
-	db.session.add(new_match_invite)
-	db.session.commit()
+	# Double check player's extant unnaccepted match invites to prevent dups.
+	extant_invite = None
+	if invited_id is None:
+		extant_invite = MatchInvite.query.filter(
+			MatchInvite.inviter_id==inviter.id,
+			MatchInvite.invited_id==invited_id,
+			MatchInvite.accepted==False
+		).first()
+	else:
+		extant_invite = MatchInvite.query.filter(
+			MatchInvite.inviter_id==inviter.id,
+			MatchInvite.open==True,
+			MatchInvite.accepted==False
+		).first()
+	match_invite = None
+	if extant_invite is not None:
+		match_invite = extant_invite
+	else:
+		match_invite = MatchInvite(inviter, invited)
+		db.session.add(match_invite)
+		db.session.commit()
 	return {
 		'message' : 'Successfully created match invite',
-		'match_invite' : new_match_invite.as_dict()
+		'match_invite' : match_invite.as_dict()
 	}
 
-@endpointer.route('/match-invite/<int:id>/accept', methods=['PATCH'], bp=matches,
+@endpointer.route('/invite/<int:id>/accept', methods=['PATCH'], bp=matches,
 	responds={
 		200: {
 			'message': 'Successfully accepted invite',
@@ -168,6 +186,8 @@ def accept_match_invite(id):
 		'match_invite': invite.as_dict(),
 		'match': new_match.as_dict()
 	}
+
+### Match Actions ###
 
 # Kept for posterity until a route for joining a match as a spectator is
 # realized.

@@ -49,6 +49,7 @@ class DarkBoard(chess.Board):
 	def king_captured(self):
 		return self.king(self.turn) is None
 
+# TODO: Configure the join to load eagerly
 class MatchInvite(db.Model):
 	
 	id = db.Column(db.Integer, primary_key=True)
@@ -64,7 +65,7 @@ class MatchInvite(db.Model):
 
 	created_on = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-	def __init__(inviter, invited=None):
+	def __init__(self, inviter, invited=None):
 		self.inviter = inviter
 		self.invited = invited
 
@@ -82,31 +83,39 @@ class MatchInvite(db.Model):
 
 	@accepted.expression
 	def accepted(cls):
-		return self._match_id != None
+		return cls.match_id != None
 
 	@staticmethod
 	def mock_dict(force_direct=False, force_accepted=False):
-		creation_date = datetime.now(timezone.utc)
-		inviter_id = random.randint(1, 100)
-		invited_id = None
+		created_on = datetime.now(timezone.utc)
+		from dark_chess_api.modules.users.models import User
+
+		mock_inviter = User.mock_dict()
+		mock_invited = None
 		if force_direct or random.choice([True, False]):
-			invited_id = inviter_id + random.randint(1, 20)
+			mock_invited = User.mock_dict()
 		match_id = None
-		if (force_accepted or random.choice([True, False])) and invited_id is not None:
+		if (force_accepted or random.choice([True, False])) and mock_invited is not None:
 			match_id = random.randint(1, 100)
 		ret = {
 			'id': random.randint(1, 100),
-			'inviter_id': inviter_id,
-			'open': inviter_id is None,
+			'inviter': {
+				'id': mock_inviter['id'],
+				'username': mock_inviter['username']
+			},
+			'open': mock_invited is None,
 			'accepted': match_id is not None,
 			'created_on': {
-				'formatted': str(creation_date),
-				'timestamp': int(creation_date.timestamp())
+				'formatted': str(created_on),
+				'timestamp': int(created_on.timestamp())
 			}
 		}
-		if invited_id is not None:
+		if mock_invited is not None:
 			ret.update({
-				'invited_id': invited_id,
+				'invited': {
+					'id': mock_invited['id'],
+					'username': mock_invited['username']
+				}
 			})
 		if match_id is not None:
 			ret.update({
@@ -117,17 +126,23 @@ class MatchInvite(db.Model):
 	def as_dict(self):
 		ret = {
 			'id': self.id,
-			'inviter_id': self.inviter_id,
+			'inviter': {
+				'id': self.inviter.id,
+				'username': self.inviter.username
+			},
 			'open': self.open,
 			'accepted': self.accepted,
 			'created_on': {
-				'formatted': str(self.creation_date),
-				'timestamp': int(self.creation_date.timestamp())
+				'formatted': str(self.created_on),
+				'timestamp': int(self.created_on.timestamp())
 			}
 		}
 		if self.invited_id is not None:
 			ret.update({
-				'invited_id': invited_id,
+				'invited': {
+					'id': self.invited.id,
+					'username': self.invited.username
+				}
 			})
 		if self.match_id is not None:
 			ret.update({

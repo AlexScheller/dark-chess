@@ -2,7 +2,7 @@
 {% from "shared/macros.jinja" import match_card with context %}
 {% block page_content %}
 <div class="page-action-bar">
-	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>	
+	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>
 </div>
 <ul class="match-list wrap-list">
 	{% for match_data in matches -%}
