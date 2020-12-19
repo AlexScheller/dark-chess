@@ -1,0 +1,35 @@
+{% extends "shared/base.html" %}
+{% block css %}
+	<link rel="stylesheet" href="{{ url_for('static', filename='css/main/version_history.css') }}">
+{% endblock %}
+{% block page_content %}
+<h1 class="title">Version History</h1>
+<div class="header">
+	<p>The first number in the numbering system, is the year, the second number is for the introduction of new (generally major) features, the third number is for small changes and bugfixes. Earlier versions also have either an 'a' or a 'cb', or 'ob', for 'Alpha', 'Closed Beta' and 'Open Beta' respectively. The date next to each version marks the last time a change was made under that version number.</p>
+</div>
+<article>
+	{#
+	<section>
+		<h2>2020.1.0a (current)</h2>
+		<div class="version-subsection">
+			<h3>New Features</h3>
+		</div>
+		<div class="version-subsection">
+			<h3>Changes</h3>
+		</div>
+		<div class="version-subsection">
+			<h3>Bugfixes</h3>
+		</div>
+	</section>
+	#}
+	<section>
+		<h2 class="section-title">2020.1.0a (current): 2020-12-18</h2>
+		<div class="version-subsection">
+			<h3 class="subsection-title">New Features</h3>
+			<ul>
+				<li>(api) Matches are now created through invites.</li>
+			</ul>
+		</div>
+	</section>
+</article>
+{% endblock %}
