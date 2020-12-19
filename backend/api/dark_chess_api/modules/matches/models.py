@@ -146,7 +146,7 @@ class MatchInvite(db.Model):
 			})
 		if self.match_id is not None:
 			ret.update({
-				'match_id': match_id 
+				'match_id': self.match_id 
 			})
 		return ret
 

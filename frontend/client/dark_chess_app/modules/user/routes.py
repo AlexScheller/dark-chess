@@ -5,12 +5,12 @@ from flask_login import current_user, login_required
 
 from dark_chess_app.modules.user import user
 from dark_chess_app.modules.user.forms import UserSearchForm
-from dark_chess_app.utilities.api_utilities import api_token_request
+from dark_chess_app.utilities.api_utilities import authorized_api_request
 
 @user.route('/profile')
 @login_required
 def current_user_profile():
-	user_res = api_token_request(f'/user/{current_user.id}')
+	user_res = authorized_api_request(f'/user/{current_user.id}')
 	if user_res.status_code != 200:
 		abort(user_res.status_code)
 	user_data = user_res.json()
@@ -22,7 +22,7 @@ def current_user_profile():
 @user.route('/<int:id>/profile')
 @login_required
 def user_profile(id):
-	user_res = api_token_request(f'/user/{id}')
+	user_res = authorized_api_request(f'/user/{id}')
 	if user_res.status_code != 200:
 		abort(user_res.status_code)
 	user_data = user_res.json()
@@ -40,7 +40,7 @@ def user_search():
 	form = UserSearchForm()
 	results = None
 	if form.validate_on_submit():
-		search_request = api_token_request('/user/search',
+		search_request = authorized_api_request('/user/search',
 			method=requests.post,
 			json={ 'username': form.username.data }
 		)

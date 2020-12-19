@@ -1,0 +1,27 @@
+{% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import match_invite_card with context %}
+{% block page_content %}
+<div class="page-action-bar">
+	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>
+</div>
+<h3 class="title">Your Invites</h3>
+{% if user_invited %}
+<ul class="card-list match-invite-list wrap-list">
+	{% for invite in user_invited -%}
+	{{ match_invite_card(invite) }}
+	{% endfor -%}
+</ul>
+{% else %}
+<p>It looks live you don't have any invites right now.</p>
+{% endif %}
+<h3 class="title">Your Invites To Others</h3>
+{% if users_invites %}
+<ul class="card-list match-invite-list wrap-list">
+	{% for invite in users_invites -%}
+	{{ match_invite_card(invite) }}
+	{% endfor -%}
+</ul>
+{% else %}
+<p>It looks like you haven't invited anyone to a match right now.</p>
+{% endif %}
+{% endblock %}

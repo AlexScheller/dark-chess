@@ -3,13 +3,13 @@ from flask import render_template, redirect, url_for, jsonify, request, flash
 from flask_login import current_user, login_required
 from dark_chess_app.modules.match import match
 from dark_chess_app.utilities.api_utilities import (
-	api_request, api_token_request
+	api_request, authorized_api_request
 )
 
 @match.route('/create')
 @login_required
 def create_match():
-	create_match_res = api_token_request('/match/invite/create', requests.post)
+	create_match_res = authorized_api_request('/match/invite/create', requests.post)
 	invite_json = create_match_res.json()['match_invite']
 	# TODO handle errors
 	return redirect(
@@ -19,31 +19,100 @@ def create_match():
 	# 	url_for('match.match_page', id=match_json['id'])
 	# )
 
-@match.route('/<int:id>/join')
+@match.route('/invite/<int:id>/accept')
 @login_required
-def join_match(id):
-	join_res = api_token_request(f'/match/{id}/join', requests.patch)
-	# TODO handle errors
-	return redirect(url_for('match.match_page', id=id))
+def accept_match_invite(id):
+	accept_invite_res = authorized_api_request(
+		f'/match/invite/{id}/accept', requests.patch
+	)
+	if accept_invite_res.status_code == 200:
+		match_json = accept_invite_res.json()['match']
+		return redirect(url_for('match.match_page', id=match_json['id']))
+	elif accept_invite_res.status_code == 403:
+		flash('This match invite wasn\'t for you.', 'error')
+	elif accept_invite_res.status_code == 410:
+		flash('This match invite has already been accepted.', 'error')
+	elif accept_invite_res.status_code == 404:
+		flash('There\'s no such match invite.', 'error')
+	else:
+		flash('Unable to accept match invite.', 'error')
+	return redirect(url_for('main.index'))
+
+# Kept for when spectating becomes a thing
+
+# @match.route('/<int:id>/join')
+# @login_required
+# def join_match(id):
+# 	join_res = authorized_api_request(f'/match/{id}/join', requests.patch)
+# 	# TODO handle errors
+# 	return redirect(url_for('match.match_page', id=id))
 
 @match.route('/open-matches')
 @login_required
 def open_matches():
-	open_matches_res = api_token_request(f'/match/invite/open')
-	return render_template('match/open_match_list.html',
+	open_matches_res = authorized_api_request(f'/match/invite/query', requests.post,
+		json={
+			'is_open': True,
+			'accepted': False
+		}
+	)
+	open_matches = [
+		m for m in open_matches_res.json()
+		if m['inviter']['id'] != current_user.id
+	]
+	return render_template('match/open_match_invite_list.html',
 		title='Match List',
-		open_matches=open_matches_res.json()
+		open_matches=open_matches
+	)
+
+# @match.route('/my-unnaccepted-invites')
+# @login_required
+# def users_unnaccepted_invites():
+# 	invites_res = authorized_api_request('/match/invites/query', requests.post,
+# 		json={
+# 			'user_id': current_user.id,
+# 			'accepted': False
+# 		}
+# 	)
+# 	# TODO: Handle errors
+# 	return render_template('match/active_match_invite_list.html',
+# 		title='My Active Invites',
+# 		invites=invites_res.json()
+# 	)
+
+@match.route('/my-match-invites')
+@login_required
+def users_match_invites():
+	invites_res = authorized_api_request('/match/invite/query', requests.post,
+		json={
+			'involved_id': current_user.id,
+			'accepted': False
+		}
+	)
+	# TODO: Handle errors
+	users_invites = []
+	user_invited = []
+	for invite in invites_res.json():
+		if invite['inviter']['id'] == current_user.id:
+			users_invites.append(invite)
+		else:
+			user_invited.append(invite)
+	return render_template('match/users_match_invites.html',
+		title='My Match Invites',
+		users_invites=users_invites,
+		user_invited=user_invited
 	)
 
 @match.route('/my-active-matches')
 @login_required
 def users_active_matches():
-	matches_res = api_token_request(f'/match/query', requests.post,
+	matches_res = authorized_api_request(f'/match/query', requests.post,
 		json={
 			'user_id': current_user.id,
 			'in_progress': True,
 		}
 	)
+	# TODO: Handle errors
 	return render_template('match/active_match_list.html',
 		title='My Active Matches',
 		matches=matches_res.json()
@@ -51,7 +120,7 @@ def users_active_matches():
 
 @match.route('/<int:id>')
 def match_page(id):
-	match_res = api_token_request(f'/match/{id}')
+	match_res = authorized_api_request(f'/match/{id}')
 	if match_res.status_code == 404:
 		flash('No such match')
 		return redirect(url_for('match.open_matches'))
@@ -69,7 +138,7 @@ def match_page(id):
 
 @match.route('/<int:id>/history')
 def match_history(id):
-	match_res = api_token_request(f'/match/{id}')
+	match_res = authorized_api_request(f'/match/{id}')
 	if match_res.status_code == 404:
 		flash('No such match')
 		return redirect(url_for('match.open_matches'))

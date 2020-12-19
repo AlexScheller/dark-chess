@@ -1,0 +1,16 @@
+{% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import match_invite_card with context %}
+{% block page_content %}
+<div class="page-action-bar">
+	<a class="button button-navigation" href="{{ url_for('match.create_match') }}">Create</a>
+</div>
+{% if open_matches %}
+<ul class="card-list match-invite-list wrap-list">
+	{% for invite in open_matches -%}
+	{{ match_invite_card(invite) }}
+	{% endfor -%}
+</ul>
+{% else %}
+<p>It doesn't look like there are any matches yet, why not create one?</p>
+{% endif %}
+{% endblock %}

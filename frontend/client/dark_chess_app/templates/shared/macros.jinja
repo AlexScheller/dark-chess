@@ -63,10 +63,26 @@
 </div>
 {% endmacro %}
 
-{% macro invite_card(invite) %}
+{% macro match_invite_card(invite) %}
 <div class="card match-invite-card">
 	<div class="card-header">
-		<h3 class="card-title">{{ invite.inviter.username }}</h3>
+		{% if current_user.id == invite.inviter.id %}
+		<h3 class="card-title">{% if invite.open %}Open Invite{% else %}To: {{ invite.invited.username }}{% endif %}</h3>
+		{% else %}
+		<h3 class="card-title">From: {{ invite.inviter.username }}</h3>
+		{% endif %}
+	</div>
+	<div class="card-actions">
+		{% if current_user.id == invite.inviter.id %}
+		<!-- TODO: Implement -->
+		<a class="button" href="{{ url_for('main.index') }}">Cancel</a>
+		{% elif invite.open %}
+		<a class="button" href="{{ url_for('match.accept_match_invite', id=invite.id) }}">Accept</a>
+		{% elif current_user.id == invite.invited.id %}
+		<a class="button" href="{{ url_for('match.accept_match_invite', id=invite.id) }}">Accept</a>
+		{% else %}
+		<p>Hmm... I'm not sure you should be seeing this. Maybe tell the developer.</p>
+		{% endif %}
 	</div>
 </div>
 {% endmacro %}

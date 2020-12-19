@@ -102,19 +102,15 @@ nav a {
 	color: var(--warning-red);
 }
 
-/*
-.match-list .match-card:not(:last-child) {
-	margin-bottom: 15px;
-}
-*/
-
-.match-card {
-	border: solid black 1px;
-	width: 250px;
-	padding: 5px;
+.page-action-bar {
+	margin-bottom: 20px;
 }
 
-.match-card .card-header {
+/***********************
+ *  Common Containers  *
+ ***********************/
+
+/*.match-card .card-header {
 	text-align: center;
 	margin-bottom: 10px;
 }
@@ -122,6 +118,20 @@ nav a {
 .match-card .card-actions {
 	display: flex;
 	justify-content: space-around;
+}*/
+
+.card {
+	border: solid black 1px;
+	width: 250px;
+	padding: 5px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.card-list {
+	display: flex;
+	flex-wrap: wrap;
 }
 
 /*
@@ -152,13 +162,17 @@ nav a {
 }
 */
 
-.page-action-bar {
-	margin-bottom: 20px;
+/*
+.match-list .match-card:not(:last-child) {
+	margin-bottom: 15px;
 }
+*/
 
-/***********************
- *  Common Containers  *
- ***********************/
+.match-card {
+	border: solid black 1px;
+	width: 250px;
+	padding: 5px;
+}
 
 .wrap-list {
 	display: flex;

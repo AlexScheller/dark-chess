@@ -10,7 +10,7 @@ def api_route(endpoint, **kwargs):
 def api_request(endpoint, method=requests.get, **kwargs):
 	return method(api_route(endpoint), **kwargs)
 
-def api_token_request(endpoint, method=requests.get, **kwargs):
+def authorized_api_request(endpoint, method=requests.get, **kwargs):
 	if 'headers' in kwargs:
 		kwargs['headers']['Authorization'] = f'Bearer {current_user.token}'
 	else:

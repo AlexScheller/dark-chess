@@ -95,14 +95,53 @@ def query_matches(user_id=None, in_progress=None, is_open=None):
 
 ###  Match Invites  ###
 
-@endpointer.route('/invite/open', methods=['GET'], bp=matches,
-	responds={ 200: '[An array of open match invites]' },
-	auth='token (bearer)'
+@endpointer.route('/invite/query', methods=['POST'], bp=matches,
+	accepts={
+		'inviter_id': { 'type': 'integer' },
+		'invited_id': { 'type': 'integer' },
+		'involved_id': { 'type': 'integer', 'description': 'Queries matches where this id is either the inviter OR the invited.' },
+		'accepted': { 'type': 'boolean' },
+		'is_open': { 'type' : 'boolean', 'description': 'Whether or not the invite can be accepted by anyone.' }
+	},
+	optional=['inviter_id', 'invited_id', 'involved_id', 'accepted', 'is_open'],
+	responds={ 200: '[An array of match invites]' },
+	auth='token (bearer)',
+	description='Query a list of match invites.'
 )
 @token_auth.login_required
-def get_open_match_invites():
-	match_invites = MatchInvite.query.filter_by(open=True).all()
-	return jsonify([m.as_dict() for m in match_invites])
+def query_match_invites(
+	inviter_id=None,
+	invited_id=None,
+	involved_id=None,
+	accepted=None,
+	is_open=None
+):
+	# maybe this should result in different behavior?
+	if (
+		inviter_id is None and
+		invited_id is None and
+		involved_id is None and
+		accepted is None and 
+		is_open is None
+	):
+		return jsonify([])
+	invites = db.session.query(MatchInvite)
+	if inviter_id is not None:
+		invites = invites.filter(MatchInvite.inviter_id==inviter_id)
+	if invited_id is not None:
+		invites = invites.filter(MatchInvite.invited_id==invited_id)
+	if involved_id is not None:
+		invites = invites.filter(
+			or_(
+				MatchInvite.inviter_id==involved_id,
+				MatchInvite.invited_id==involved_id
+			)
+		)
+	if accepted is not None:
+		invites = invites.filter(MatchInvite.accepted==accepted)
+	if is_open is not None:
+		invites = invites.filter(MatchInvite.open==is_open)
+	return jsonify([i.as_dict() for i in invites.all()])
 
 # TODO: Test
 @endpointer.route('/invite/create', methods=['POST'], bp=matches,
@@ -160,17 +199,20 @@ def create_match_invite(invited_id=None):
 			'match_invite': MatchInvite.mock_dict(force_direct=True, force_accepted=True),
 			'match': Match.mock_dict(game_state='in_progress')
 		},
+		400: { 'message': 'Player cannot accept own invite' },
 		404: None,
-		403: { 'message': 'Player not invited to match' },
-		409: { 'message': 'Match has already been accepted' }
+		403: { 'message': 'Invite not open, and not for player' },
+		410: { 'message': 'Match invite has already been accepted' }
 	},
 	auth='token (bearer)'
 )
 @token_auth.login_required
 def accept_match_invite(id):
-	invite = MatchInvite.get_or_404(id)
+	invite = MatchInvite.query.get_or_404(id)
+	if invite.inviter_id == g.current_user.id:
+		return error_response(400, 'Player cannot accept own invite')
 	if invite.accepted:
-		return error_response(409, 'Match invite has already been accepted')
+		return error_response(410, 'Match invite has already been accepted')
 	acceptor = g.current_user
 	if invite.invited_id != acceptor.id and not invite.open:
 		return error_response(403, 'Invite not open, and not for player')
@@ -180,6 +222,8 @@ def accept_match_invite(id):
 	db.session.add(new_match)
 	new_match.join(invite.inviter)
 	new_match.join(acceptor)
+	db.session.flush()
+	invite.match = new_match
 	db.session.commit()
 	return {
 		'message': 'Successfully accepted invite',
