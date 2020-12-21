@@ -1,4 +1,5 @@
 {% extends "shared/base.html" %}
+{% from "shared/macros.jinja" import user_link %}
 {% block page_content %}
 <h2>{{ user.username | e }}</h2>
 {% if not is_friend and not is_user %}
@@ -11,5 +12,16 @@
 		{% endfor %}
 	</ul>
 	<p>Rating: {{ user.stats.rating }}</p>
+</div>
+<div>
+	{% if user.friends  %}
+	<ul>
+		{% for friend in user.friends %}
+		<li>{{ user_link(friend) }}: <a href="{{ url_for('match.create_match', invited_id=friend.id) }}">create match</a></li>
+		{% endfor %}
+	</ul>
+	{% else %}
+	<p><a href="{{ url_for('user.user_search') }}">Search for some friends!</a></p>
+	{% endif %}
 </div>
 {% endblock %}

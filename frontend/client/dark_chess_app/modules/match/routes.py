@@ -9,15 +9,19 @@ from dark_chess_app.utilities.api_utilities import (
 @match.route('/create')
 @login_required
 def create_match():
-	create_match_res = authorized_api_request('/match/invite/create', requests.post)
-	invite_json = create_match_res.json()['match_invite']
-	# TODO handle errors
-	return redirect(
-		url_for('main.index')
-	)	
-	# return redirect(
-	# 	url_for('match.match_page', id=match_json['id'])
-	# )
+	invited_id = request.args.get('invited_id', None)
+	json = { 'invited_id': invited_id } if invited_id is not None else None
+	create_match_res = authorized_api_request('/match/invite/create',
+		requests.post,
+		json=json
+	)
+	if create_match.status_code == 200:
+		# invite_json = create_match_res.json()['match_invite']
+		# redirect to match lobby
+		flash('Created match.')
+	elif create_match_res.status_code == 404:
+		flash('No such opponent found, Unable to create match.')
+	return redirect(url_for('main.index'))
 
 @match.route('/invite/<int:id>/accept')
 @login_required

@@ -53,3 +53,11 @@ def user_search():
 		form=form,
 		results=results
 	)
+
+@user.route('/<int:id>/invite-friend')
+@login_required
+def invite_friend():
+	
+
+@user.route('/<int:id>/accept-friend-invite')
+def accept_friend_invite():
