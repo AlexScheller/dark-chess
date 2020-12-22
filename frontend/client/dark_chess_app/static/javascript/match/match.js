@@ -370,6 +370,230 @@ class MatchModel {
 
 }
 
+class KonvaBoardViewController {
+
+	constructor(model, squareWidth = 64) {
+		logDebug('Constructing KonvaBoardViewController.');
+
+		this._model = model;
+
+		this._squareWidth = squareWidth;
+		this._height = this._squareWidth * 8;
+		this._width = this._height;
+		this._darkSquareColor = '#6aa1c8'
+		this._lightSquareColor = 'white';
+		this._darkPieceColor = 'black';
+
+		this._stage = new Konva.Stage({
+			container: 'board',
+			width: this._width,
+			height: this._height
+		});
+		this._boardLayer = this._setupBoardLayer();
+		this._pieceLayer = this._setupPieceLayer();
+		this._stage.add(this._boardLayer);
+		this._stage.add(this._pieceLayer);
+
+		this._render();
+	}
+
+	/* Setup */
+
+	setListener(listener) {
+		this._listener = listener;
+	}
+
+	// Helpers
+
+	_squareToOrigin(square) {
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		// if (this._boardFlipped) {
+		// 	ranks.reverse();
+		// 	files.reverse();
+		// }
+		let x = files.indexOf(square[0]) * this._squareWidth;
+		let y = ranks.indexOf(square[1]) * this._squareWidth;
+		return {x, y};
+	}
+
+	// Board Management
+
+	_setupBoardLayer() {
+		let ret = new Konva.Layer();
+		// render grid
+		for (let rank = 0; rank < 8; rank++) {
+			for (let file = 0; file < 8; file++) {
+				let darkFill = (rank % 2 == 0) ? (file % 2 == 0) : (file % 2 == 1);
+				ret.add(
+					new Konva.Rect({
+						x: rank * this._squareWidth, y: file * this._squareWidth,
+						width: this._squareWidth, height: this._squareWidth,
+						fill: darkFill ? this._darkSquareColor : this._lightSquareColor
+					})
+				);
+			}
+		}
+		// Border (maybe use a dropshadow instead?)
+		// ret.add(
+		// 	new Konva.Rect({
+		// 		x: 0, y: 0, width: this._width, height: this._height, stroke: 'black'
+		// 	})
+		// );
+		return ret;
+	}
+
+	_drawFog(location) {
+
+	}
+
+	// Piece Management
+
+	_createPiece(type, side, squareWidth, darkPieceColor, origin = { x: 0, y: 0}) {
+		let center = {
+			x: origin.x + this._squareWidth / 2,
+			y: origin.y + this._squareWidth / 2
+		}
+		let ret = null;
+		switch(type) {
+			case 'p':
+				ret = new Konva.Circle({
+					x: center.x, y: center.y,
+					radius: Math.floor(squareWidth / 4)
+				});
+				break;
+			case 'r':
+				let halfWidth = squareWidth / 6;
+				let halfHeight = halfWidth * 2
+				ret = new Konva.Rect({
+					x: center.x - halfWidth, y: center.y - halfHeight,
+					width: halfWidth * 2,
+					height: halfHeight * 2
+				})
+				break;
+			case 'n':
+				ret = new Konva.Line({
+					points: [
+						center.x - (squareWidth / 4), center.y - (squareWidth / 3),
+						center.x, center.y - (squareWidth / 6),
+						center.x + (squareWidth / 4), center.y - (squareWidth / 3),
+						center.x + (squareWidth / 4), center.y,
+						center.x + (squareWidth / 8), center.y + (squareWidth / 3),
+						center.x - (squareWidth / 8), center.y + (squareWidth / 3),
+						center.x - (squareWidth / 4), center.y,
+					],
+					closed: true
+				});
+				break;
+			case 'b':
+				ret = new Konva.Line({
+					points: [
+						center.x, center.y - (squareWidth / 3),
+						center.x + (squareWidth / 4), center.y + (squareWidth / 3),
+						center.x - (squareWidth / 4), center.y + (squareWidth / 3)
+					],
+					closed: true
+				});
+				break;
+			case 'q':
+				ret = new Konva.Line({
+					points: [
+						center.x - (squareWidth / 3), center.y - (squareWidth / 8),
+						center.x - (squareWidth / 6), center.y,
+						center.x, center.y - (squareWidth / 3),
+						center.x + (squareWidth / 6), center.y,
+						center.x + (squareWidth / 3), center.y - (squareWidth / 8),
+						center.x + (squareWidth / 4), center.y + (squareWidth / 3),
+						center.x - (squareWidth / 4), center.y + (squareWidth / 3)
+					],
+					closed: true
+				});
+				break;
+			case 'k':
+				ret = new Konva.Group({
+					x: origin.x, y: origin.y
+				});
+				// Note that shapes added to a group are reletive to the group,
+				// global origin/center info isn't really relevant
+				let groupCenter = { x: squareWidth / 2, y: squareWidth / 2};
+				let crown = new Konva.Line({
+					points: [
+						groupCenter.x - (squareWidth / 3), groupCenter.y - (squareWidth / 3),
+						groupCenter.x, groupCenter.y,
+						groupCenter.x + (squareWidth / 3), groupCenter.y - (squareWidth / 3),
+						groupCenter.x + (squareWidth / 3), groupCenter.y + (squareWidth / 3),
+						groupCenter.x - (squareWidth / 3), groupCenter.y + (squareWidth / 3)
+					],
+					closed: true
+				});
+				let jewel = new Konva.Circle({
+					x: groupCenter.x, y: groupCenter.y - (squareWidth / 4),
+					radius: Math.floor(squareWidth / 8)
+				});
+				if (side === 'black') {
+					crown.fill(darkPieceColor);
+					jewel.fill(darkPieceColor);
+				} else {
+					crown.stroke(darkPieceColor);
+					jewel.stroke(darkPieceColor);
+					crown.strokeWidth(2);
+					jewel.strokeWidth(2);
+				}
+				ret.add(crown);
+				ret.add(jewel);
+				break;
+		}
+		if (type !== 'k') { // Handled in switch.
+			if (side === 'black') {
+				ret.fill(darkPieceColor);
+			} else {
+				ret.stroke(darkPieceColor);
+				ret.strokeWidth(2);
+			}
+		}
+		return ret;
+	}
+
+	_setupPieceLayer() {
+		let ret = new Konva.Layer();
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let squareContent = this._model.contentAtSquare(file + rank);
+				if (squareContent != null) {
+					let origin = this._squareToOrigin(file + rank);
+					if (squareContent.type === 'piece') {
+						let piece = {
+							type: squareContent.value,
+							color: squareContent.color 
+						};
+						ret.add(
+							this._createPiece(
+								piece.type,
+								piece.color,
+								this._squareWidth,
+								this._darkPieceColor,
+								origin,
+							)
+						);
+					} else if (
+						squareContent.type === 'vision' &&
+						squareContent.value == '?'
+					) {
+						this._drawFog(origin); // later this will need to be added to the layer.
+					}
+				}
+			}
+		}
+		return ret;
+	}
+
+	_render() {
+		this._stage.draw();
+		console.log('rendering')
+	}
+
+}
+
 // Like the class name implies, this controls the board view. It handles all
 // player actions. This implementation relies on the Canvas API. There are a few
 // non-canvas elements that are also controlled here.
@@ -987,7 +1211,10 @@ class Match {
 	
 	constructor(config, matchData, playerData) {
 		this._mm = new MatchModel(matchData, playerData);
-		this._bvc = new CanvasBoardViewController(this._mm);
+		// this._bvc = new CanvasBoardViewController(this._mm);
+		// testing
+		this._bvc = new KonvaBoardViewController(this._mm);
+
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
 		this._wsh = new WebsocketHandler(config, matchData.connection_token);

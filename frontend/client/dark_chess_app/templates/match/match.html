@@ -13,7 +13,8 @@
 		{{ user_link(match.player_black) }}
 		{% endif %}
 	</div>
-	<canvas id="board-canvas"></canvas>
+	<!-- <canvas id="board-canvas"></canvas> -->
+	<div id="board"></div>
 	<div id="player-white" class="player-container">
 		{% if match.player_white %}
 		<h3 id="player-{{ match.player_white.id }}" class="player-title player-white-title">{{ match.player_white.username }}</h3><i class="far fa-chevron-double-left"></i>
@@ -25,5 +26,6 @@
 <div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>
 <div id="player-data" data-player-data='{{ current_user.as_dict() | tojson }}' hidden></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"></script>
+<script src="{{ url_for('static', filename='javascript/libs/konva.js')}}"></script>
 <script src="{{ url_for('static', filename='javascript/match/match.js', v=1) }}"></script>
 {% endblock %}
