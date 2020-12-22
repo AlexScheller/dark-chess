@@ -384,6 +384,12 @@ class KonvaBoardViewController {
 		this._lightSquareColor = 'white';
 		this._darkPieceColor = 'black';
 
+		this._boardFlipped = false;
+
+		if (this._model.playerSide === 'b') {
+			this._flipBoard();
+		}
+
 		this._stage = new Konva.Stage({
 			container: 'board',
 			width: this._width,
@@ -408,13 +414,24 @@ class KonvaBoardViewController {
 	_squareToOrigin(square) {
 		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-		// if (this._boardFlipped) {
-		// 	ranks.reverse();
-		// 	files.reverse();
-		// }
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
 		let x = files.indexOf(square[0]) * this._squareWidth;
 		let y = ranks.indexOf(square[1]) * this._squareWidth;
 		return {x, y};
+	}
+
+	_flipBoard() {
+		// There are still a few things that are handled with regular old html
+		// elements.
+		let playerWhite = document.getElementById('player-white'); 
+		let playerBlack = document.getElementById('player-black');
+		swapEl(playerWhite, playerBlack);
+		// The rest is handled on the canvas
+		this._boardFlipped = !this._boardFlipped;
+		// this._render();
 	}
 
 	// Board Management
@@ -530,7 +547,7 @@ class KonvaBoardViewController {
 					x: groupCenter.x, y: groupCenter.y - (squareWidth / 4),
 					radius: Math.floor(squareWidth / 8)
 				});
-				if (side === 'black') {
+				if (side === 'b') {
 					crown.fill(darkPieceColor);
 					jewel.fill(darkPieceColor);
 				} else {
@@ -544,7 +561,7 @@ class KonvaBoardViewController {
 				break;
 		}
 		if (type !== 'k') { // Handled in switch.
-			if (side === 'black') {
+			if (side === 'b') {
 				ret.fill(darkPieceColor);
 			} else {
 				ret.stroke(darkPieceColor);
