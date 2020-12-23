@@ -376,6 +376,7 @@ class KonvaBoardViewController {
 		logDebug('Constructing KonvaBoardViewController.');
 
 		this._model = model;
+		this._active = this._model.inProgress;
 
 		this._squareWidth = squareWidth;
 		this._height = this._squareWidth * 8;
@@ -388,6 +389,12 @@ class KonvaBoardViewController {
 
 		if (this._model.playerSide === 'b') {
 			this._flipBoard();
+		}
+
+		this._clickHandlersSetup = false;
+		if (this._active) {
+			this._clickHandlersSetup = true;
+			this._setupClickHandlers();
 		}
 
 		this._stage = new Konva.Stage({
@@ -409,7 +416,44 @@ class KonvaBoardViewController {
 		this._listener = listener;
 	}
 
+	// Handlers
+
+	_setupClickHandlers() {
+		logDebug('Setting up click handlers', 'Setup');
+		// this._canvas.addEventListener('click',
+		// 	this._handleSquareClick.bind(this)
+		// );
+		let flipBoardButton = document.getElementById('flip-board-button');
+		flipBoardButton.addEventListener('click',
+			this._handleFlipBoardClick.bind(this)
+		);
+	}
+
+	// _tearDownClickHandlers() {
+	// 	logDebug('Removing click handlers', 'Teardown')
+	// 	this._canvas.removeEventListener('click', this._handleSquareClick);
+	// 	let flipBoardButton = document.getElementById('flip-board-button');
+	// 	flipBoardButton.addEventListener('click', this._handleFlipBoardClick);
+	// }
+
+	_handleFlipBoardClick() {
+		this._flipBoard();
+		this._render();
+	}
+
 	// Helpers
+
+	_square(rankAndFile) {
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
+		let file = files.indexOf(square[0]);
+		let rank = ranks.indexOf(square[1]);
+		return this._boardLayer.children[(rank * 8) + file];
+	}
 
 	_squareToOrigin(square) {
 		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
@@ -438,6 +482,7 @@ class KonvaBoardViewController {
 
 	_setupBoardLayer() {
 		let ret = new Konva.Layer();
+		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
 		// render grid
 		for (let rank = 0; rank < 8; rank++) {
 			for (let file = 0; file < 8; file++) {
@@ -449,6 +494,27 @@ class KonvaBoardViewController {
 						fill: darkFill ? this._darkSquareColor : this._lightSquareColor
 					})
 				);
+				// The below offsets may not be sustainable at different board sizes.
+				if (file == 0) {
+					ret.add(
+						new Konva.Text({
+							x: this._squareWidth / 32,
+							y: (this._squareWidth * rank) + this._squareWidth / 32,
+							text: this._boardFlipped ? rank + 1 : 8 - rank,
+							fontsize: 5, fill: (file + rank) % 2 == 0 ? 'white': 'black'
+						})
+					);
+				}
+				if (rank == 7) {
+					ret.add(
+						new Konva.Text({
+							x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
+							y: (this._squareWidth * 8) - this._squareWidth / 5,
+							text: fileLetters[file],
+							fontsize: 5, fill: (file + rank) % 2 == 0 ? 'white': 'black'
+						})
+					);
+				}
 			}
 		}
 		// Border (maybe use a dropshadow instead?)
