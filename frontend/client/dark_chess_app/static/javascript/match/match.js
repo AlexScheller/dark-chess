@@ -476,6 +476,10 @@ class KonvaBoardViewController {
 		// flipped or not.
 		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
 		let file = files.indexOf(fileAndRank[0]);
 		let rank = ranks.indexOf(fileAndRank[1]);
 		return this._boardLayer.children[(rank * 8) + file];
@@ -603,7 +607,15 @@ class KonvaBoardViewController {
 	}
 
 	_drawFog(square) {
-		this._square(square).fill('grey');
+		// let sq = this._square(square);
+		let origin = this._squareToOrigin(square)
+		this._pieceLayer.add(
+			new Konva.Rect({
+				x: origin.x, y: origin.y,
+				width: this._squareWidth, height: this._squareWidth,
+				fill: 'black', opacity: 0.1
+			})
+		);
 		// this._square(square).filters([Konva.Filters.Greyscale]);
 	}
 
@@ -702,6 +714,13 @@ class KonvaBoardViewController {
 				ret.add(crown);
 				ret.add(jewel);
 				break;
+			case '?':
+				ret = new Konva.Rect({
+					x: origin.x + 1, y: origin.y + 1,
+					width: this._squareWidth - 2, height: this._squareWidth - 2,
+					fill: 'black', opacity: 0.35
+				})
+				break;
 		}
 		if (type !== 'k') { // Handled in switch.
 			if (side === 'b') {
@@ -721,7 +740,8 @@ class KonvaBoardViewController {
 				let squareContent = this._model.contentAtSquare(file + rank);
 				if (squareContent != null) {
 					let origin = this._squareToOrigin(file + rank);
-					if (squareContent.type === 'piece') {
+					// Does this indicate a refactoring is in order?
+					if (squareContent.type === 'piece' || squareContent.value === '?') {
 						let piece = {
 							type: squareContent.value,
 							color: squareContent.color 
@@ -735,11 +755,6 @@ class KonvaBoardViewController {
 								origin,
 							)
 						);
-					} else if (
-						squareContent.type === 'vision' &&
-						squareContent.value == '?'
-					) {
-						// this._drawFog(file+rank);
 					}
 				}
 			}
