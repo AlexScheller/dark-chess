@@ -1,3 +1,24 @@
+/*
+	THE CANONICAL BOARD IN ALL CAPS BECAUSE YOU KEEP FORGETTING OR CHANGING YOUR
+	MIND ABOUT IT IS THIS:
+
+	8  rnbqkbnr
+	7  pppppppp
+	6  ________
+	5  ________
+	4  ________
+	3  ________
+	2  PPPPPPPP
+	1  RNBQKBNR
+
+	   abcdefgh
+
+	With alternative light and dark squares, anything else is a rotation. 
+
+*/
+
+
+
 // TODO, convert instances of move that are represented by a string, to
 // a standardized object, so that wherever "move" is referenced, it is
 // understood what it is (maybe try typescript or something).
@@ -391,6 +412,8 @@ class KonvaBoardViewController {
 			this._flipBoard();
 		}
 
+		console.log(this._boardFlipped)
+
 		this._clickHandlersSetup = false;
 		if (this._active) {
 			this._clickHandlersSetup = true;
@@ -404,8 +427,10 @@ class KonvaBoardViewController {
 		});
 		this._boardLayer = this._setupBoardLayer();
 		this._pieceLayer = this._setupPieceLayer();
+		this._infoOverlayLayer = this._setupInfoOverlayLayer();
 		this._stage.add(this._boardLayer);
 		this._stage.add(this._pieceLayer);
+		this._stage.add(this._infoOverlayLayer);
 
 		this._render();
 	}
@@ -443,18 +468,21 @@ class KonvaBoardViewController {
 
 	// Helpers
 
-	_square(rankAndFile) {
+	// this assumes ranks and files proceed from left to right, and top to
+	// bottom
+	_square(fileAndRank) {
+		// since our internal representation of squares doesn't change order in
+		// the `_boardLayer.children` array, we don't care if the board is
+		// flipped or not.
 		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-		if (this._boardFlipped) {
-			ranks.reverse();
-			files.reverse();
-		}
-		let file = files.indexOf(square[0]);
-		let rank = ranks.indexOf(square[1]);
+		let file = files.indexOf(fileAndRank[0]);
+		let rank = ranks.indexOf(fileAndRank[1]);
 		return this._boardLayer.children[(rank * 8) + file];
 	}
 
+	// this assumes ranks and files proceed from left to right, and top to
+	// bottom
 	_squareToOrigin(square) {
 		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
 		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
@@ -483,51 +511,100 @@ class KonvaBoardViewController {
 	_setupBoardLayer() {
 		let ret = new Konva.Layer();
 		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
+		let alternationTest = this._boardFlipped ? 0 : 1;
 		// render grid
 		for (let rank = 0; rank < 8; rank++) {
 			for (let file = 0; file < 8; file++) {
-				let darkFill = (rank % 2 == 0) ? (file % 2 == 0) : (file % 2 == 1);
+
+				let darkFill = (rank % 2 == alternationTest) ? (file % 2 == 1) : (file % 2 == 0);
 				ret.add(
 					new Konva.Rect({
-						x: rank * this._squareWidth, y: file * this._squareWidth,
+						x: file * this._squareWidth, y: rank * this._squareWidth,
 						width: this._squareWidth, height: this._squareWidth,
 						fill: darkFill ? this._darkSquareColor : this._lightSquareColor
 					})
+					// Debugging
+					// new Konva.Text({
+					// 	x: file * this._squareWidth, y: rank * this._squareWidth,
+					// 	text: fileLetters[file] + (rank + 1)
+					// })
 				);
 				// The below offsets may not be sustainable at different board sizes.
-				if (file == 0) {
-					ret.add(
-						new Konva.Text({
-							x: this._squareWidth / 32,
-							y: (this._squareWidth * rank) + this._squareWidth / 32,
-							text: this._boardFlipped ? rank + 1 : 8 - rank,
-							fontsize: 5, fill: (file + rank) % 2 == 0 ? 'white': 'black'
-						})
-					);
-				}
-				if (rank == 7) {
-					ret.add(
-						new Konva.Text({
-							x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
-							y: (this._squareWidth * 8) - this._squareWidth / 5,
-							text: fileLetters[file],
-							fontsize: 5, fill: (file + rank) % 2 == 0 ? 'white': 'black'
-						})
-					);
-				}
+				// if (file == 0) {
+				// 	ret.add(
+				// 		new Konva.Text({
+				// 			x: this._squareWidth / 32,
+				// 			y: (this._squareWidth * rank) + this._squareWidth / 32,
+				// 			text: this._boardFlipped ? rank + 1 : 8 - rank,
+				// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
+				// 		})
+				// 	);
+				// }
+				// if (rank == 7) {
+				// 	ret.add(
+				// 		new Konva.Text({
+				// 			x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
+				// 			y: (this._squareWidth * 8) - this._squareWidth / 5,
+				// 			text: fileLetters[file],
+				// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
+				// 		})
+				// 	);
+				// }
 			}
 		}
-		// Border (maybe use a dropshadow instead?)
-		// ret.add(
-		// 	new Konva.Rect({
-		// 		x: 0, y: 0, width: this._width, height: this._height, stroke: 'black'
-		// 	})
-		// );
 		return ret;
 	}
 
-	_drawFog(location) {
+	_setupInfoOverlayLayer() {
+		let ret = new Konva.Layer();
+		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
+		let alternationTest = this._boardFlipped ? 0 : 1;
+		for (let rank = 0; rank < 8; rank++) {
+			ret.add(
+				new Konva.Text({
+					x: this._squareWidth / 32,
+					y: (this._squareWidth * rank) + this._squareWidth / 32,
+					text: this._boardFlipped ? rank + 1 : 8 - rank,
+					fontsize: 5, fill: rank % 2 == alternationTest ? 'black': 'white'
+				})
+			);
+		}
+		for (let file = 0; file < 8; file++) {
+			ret.add(
+				new Konva.Text({
+					x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
+					y: (this._squareWidth * 8) - this._squareWidth / 5,
+					text: fileLetters[file],
+					fontsize: 5, fill: file % 2 == alternationTest ? 'white': 'black'
+				})
+			);
+		}
+		// if (file == 0) {
+		// 	ret.add(
+		// 		new Konva.Text({
+		// 			x: this._squareWidth / 32,
+		// 			y: (this._squareWidth * rank) + this._squareWidth / 32,
+		// 			text: this._boardFlipped ? rank + 1 : 8 - rank,
+		// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
+		// 		})
+		// 	);
+		// }
+		// if (rank == 7) {
+		// 	ret.add(
+		// 		new Konva.Text({
+		// 			x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
+		// 			y: (this._squareWidth * 8) - this._squareWidth / 5,
+		// 			text: fileLetters[file],
+		// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
+		// 		})
+		// 	);
+		// }
+		return ret;
+	}
 
+	_drawFog(square) {
+		this._square(square).fill('grey');
+		// this._square(square).filters([Konva.Filters.Greyscale]);
 	}
 
 	// Piece Management
@@ -662,7 +739,7 @@ class KonvaBoardViewController {
 						squareContent.type === 'vision' &&
 						squareContent.value == '?'
 					) {
-						this._drawFog(origin); // later this will need to be added to the layer.
+						// this._drawFog(file+rank);
 					}
 				}
 			}
