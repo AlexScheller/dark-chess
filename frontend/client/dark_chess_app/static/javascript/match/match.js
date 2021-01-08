@@ -742,36 +742,27 @@ class KonvaBoardViewController {
 			}
 			// players piece
 			if (side === this._model.playerSide) {
-			// 	console.log(type);
 				let self = this;
-				ret.draggable(true);
+				// ret.draggable(true);
 				ret.hitFunc(function(context, shape) {
 					context.beginPath();
-					// let orgX = 0;
-					// let orgY = 0;
-					// if (type !== 'k') {
-					// 	orgX -= self._squareWidth / 2;
-					// 	orgY -= self._squareWidth / 2;
-					// }
-					// console.log(`type: ${type}, hitFunc: Top Left: { x = ${orgX}, y = ${orgY} }, `);
-					// context.rect(orgX, orgY, self._squareWidth, self._squareWidth);
 					context.rect(0, 0, squareWidth, squareWidth);
 					context.fillStrokeShape(shape);
 				});
-				// }
-				// Snap to pointer
+				// Snap to pointer, note we have to manually begin the drag
+				// in this function as opposed to simply setting ret.draggable
+				// to true since that messes  with the snapping.
 				ret.on('mousedown', function(event) {
 					let newPos = self._stage.getPointerPosition()
-					console.log(newPos);
 					newPos.x -= self._squareWidth / 2;
 					newPos.y -= self._squareWidth / 2;
 					ret.absolutePosition(newPos);
 					self._stage.draw();
 					ret.startDrag();
 				})
-			// 	ret.on('dragend', function(event) {
-			// 		self._handlePieceDrop(event, ret);
-			// 	});
+				ret.on('dragend', function(event) {
+					console.log(`Drag ended: ${event}`)
+				});
 			}
 		}
 		return ret;
