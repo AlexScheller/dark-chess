@@ -164,8 +164,8 @@ class MatchModel {
 		console.log(matchData);
 		if (this._matchData.in_progress) {
 			// For testing fog of war.
-			this._board = this.loadFromDarkFen('r_b_k_nr/p__p_p?p/n_???_?_/_p_?P???/__?_????/_?_?_???/__???_?_/q_____b?');
-			// this._board = this.loadFromDarkFen(this._matchData.current_dark_fen);
+			// this._board = this.loadFromDarkFen('r_b_k_nr/p__p_p?p/n_???_?_/_p_?P???/__?_????/_?_?_???/__???_?_/q_____b?');
+			this._board = this.loadFromDarkFen(this._matchData.current_dark_fen);
 		}
 		this._playerData = playerData;
 		this._opponentData = opponentData;
@@ -641,10 +641,6 @@ class KonvaBoardViewController {
 		switch(type) {
 			case 'p':
 				console.log('drawing pawn')
-				// ret = new Konva.Circle({
-				// 	x: center.x, y: center.y,
-				// 	radius: Math.floor(squareWidth / 4)
-				// });
 				ret.sceneFunc(function(context, shape) {
 					context.beginPath();
 					context.arc(
@@ -657,11 +653,6 @@ class KonvaBoardViewController {
 			case 'r':
 				let halfRectWidth = squareWidth / 6;
 				let halfHeight = halfRectWidth * 2
-				// ret = new Konva.Rect({
-				// 	x: center.x - halfWidth, y: center.y - halfHeight,
-				// 	width: halfWidth * 2,
-				// 	height: halfHeight * 2
-				// })
 				ret.sceneFunc(function(context, shape) {
 					context.beginPath();
 					context.rect(
@@ -672,44 +663,50 @@ class KonvaBoardViewController {
 					context.fillStrokeShape(shape)
 				});
 				break;
-			// case 'n':
-			// 	ret = new Konva.Line({
-			// 		points: [
-			// 			center.x - (squareWidth / 4), center.y - (squareWidth / 3),
-			// 			center.x, center.y - (squareWidth / 6),
-			// 			center.x + (squareWidth / 4), center.y - (squareWidth / 3),
-			// 			center.x + (squareWidth / 4), center.y,
-			// 			center.x + (squareWidth / 8), center.y + (squareWidth / 3),
-			// 			center.x - (squareWidth / 8), center.y + (squareWidth / 3),
-			// 			center.x - (squareWidth / 4), center.y,
-			// 		],
-			// 		closed: true
-			// 	});
-			// 	break;
-			// case 'b':
-			// 	ret = new Konva.Line({
-			// 		points: [
-			// 			center.x, center.y - (squareWidth / 3),
-			// 			center.x + (squareWidth / 4), center.y + (squareWidth / 3),
-			// 			center.x - (squareWidth / 4), center.y + (squareWidth / 3)
-			// 		],
-			// 		closed: true
-			// 	});
-			// 	break;
-			// case 'q':
-			// 	ret = new Konva.Line({
-			// 		points: [
-			// 			center.x - (squareWidth / 3), center.y - (squareWidth / 8),
-			// 			center.x - (squareWidth / 6), center.y,
-			// 			center.x, center.y - (squareWidth / 3),
-			// 			center.x + (squareWidth / 6), center.y,
-			// 			center.x + (squareWidth / 3), center.y - (squareWidth / 8),
-			// 			center.x + (squareWidth / 4), center.y + (squareWidth / 3),
-			// 			center.x - (squareWidth / 4), center.y + (squareWidth / 3)
-			// 		],
-			// 		closed: true
-			// 	});
-			// 	break;
+			case 'n':
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter - (squareWidth / 4), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter, squareCenter - (squareWidth / 6));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 8), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 8), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 4), squareCenter);
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case 'b':
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter, squareCenter - (squareWidth / 3));
+					context.lineTo(
+						squareCenter + (squareWidth / 4),
+						squareCenter + (squareWidth / 3)
+					);
+					context.lineTo(
+						squareCenter - (squareWidth / 4),
+						squareCenter + (squareWidth / 3)
+					);
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case 'q':
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 8));
+					context.lineTo(squareCenter - (squareWidth / 6), squareCenter);
+					context.lineTo(squareCenter, squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 6), squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 8));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 4), squareCenter + (squareWidth / 3));
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
 			case 'k':
 				ret.sceneFunc(function(context, shape) {
 					context.beginPath();
@@ -722,96 +719,60 @@ class KonvaBoardViewController {
 					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 3));
 					context.lineTo(squareCenter + (squareWidth / 3), squareCenter + (squareWidth / 3));
 					context.lineTo(squareCenter - (squareWidth / 3), squareCenter + (squareWidth / 3));
+					context.closePath();
 					context.fillStrokeShape(shape);
 				});
-				// ret = new Konva.Group({
-				// 	x: origin.x, y: origin.y
-				// });
-				// // Note that shapes added to a group are reletive to the group,
-				// // global origin/center info isn't really relevant
-				// let groupCenter = { x: squareWidth / 2, y: squareWidth / 2};
-				// let crown = new Konva.Line({
-				// 	points: [
-				// 		groupCenter.x - (squareWidth / 3), groupCenter.y - (squareWidth / 3),
-				// 		groupCenter.x, groupCenter.y,
-				// 		groupCenter.x + (squareWidth / 3), groupCenter.y - (squareWidth / 3),
-				// 		groupCenter.x + (squareWidth / 3), groupCenter.y + (squareWidth / 3),
-				// 		groupCenter.x - (squareWidth / 3), groupCenter.y + (squareWidth / 3)
-				// 	],
-				// 	closed: true
-				// });
-				// let jewel = new Konva.Circle({
-				// 	x: groupCenter.x, y: groupCenter.y - (squareWidth / 4),
-				// 	radius: Math.floor(squareWidth / 8)
-				// });
-				// if (side === 'b') {
-				// 	crown.fill(darkPieceColor);
-				// 	jewel.fill(darkPieceColor);
-				// } else {
-				// 	crown.stroke(darkPieceColor);
-				// 	jewel.stroke(darkPieceColor);
-				// 	crown.strokeWidth(2);
-				// 	jewel.strokeWidth(2);
-				// }
-				// ret.add(crown);
-				// ret.add(jewel);
 				break;
-			// case '?':
-			// 	ret = new Konva.Rect({
-			// 		x: origin.x + 1, y: origin.y + 1,
-			// 		width: this._squareWidth - 2, height: this._squareWidth - 2,
-			// 		fill: 'black', opacity: 0.6
-			// 	})
-			// 	break;
+			case '?':
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.rect(0, 0, squareWidth, squareWidth);
+					context.fillStrokeShape(shape);
+				});
+				ret.fill('black')
+				ret.opacity(0.6)
+				break;
 		}
-		if (side === 'b') {
-			ret.fill(darkPieceColor);
-		} else {
-			ret.stroke(darkPieceColor);
-			ret.strokeWidth(2);
-		}
-		// playing and players piece
-		if (side === this._model.playerSide && type !== '?') {
-		// 	console.log(type);
-		// 	let self = this;
-			ret.draggable(true);
-			// if (type === 'k') {
-			// 	// Groups can't take custom hit regions, so we grant it to one
-			// 	// of it's children.
-			// 	// ret.children[0].hitFunc(function(context, shape) {
-			// 	// 	context.beginPath();
-			// 	// 	context.rect(0, 0, self._squareWidth, self._squareWidth);
-			// 	// 	context.fillStrokeShape(shape);
-			// 	// });
-			// } else {
-			ret.hitFunc(function(context, shape) {
-				context.beginPath();
-				// let orgX = 0;
-				// let orgY = 0;
-				// if (type !== 'k') {
-				// 	orgX -= self._squareWidth / 2;
-				// 	orgY -= self._squareWidth / 2;
+		if (type != '?') {
+			if (side === 'b') {
+				ret.fill(darkPieceColor);
+			} else {
+				ret.stroke(darkPieceColor);
+				ret.strokeWidth(2);
+			}
+			// players piece
+			if (side === this._model.playerSide) {
+			// 	console.log(type);
+				let self = this;
+				ret.draggable(true);
+				ret.hitFunc(function(context, shape) {
+					context.beginPath();
+					// let orgX = 0;
+					// let orgY = 0;
+					// if (type !== 'k') {
+					// 	orgX -= self._squareWidth / 2;
+					// 	orgY -= self._squareWidth / 2;
+					// }
+					// console.log(`type: ${type}, hitFunc: Top Left: { x = ${orgX}, y = ${orgY} }, `);
+					// context.rect(orgX, orgY, self._squareWidth, self._squareWidth);
+					context.rect(0, 0, squareWidth, squareWidth);
+					context.fillStrokeShape(shape);
+				});
 				// }
-				// console.log(`type: ${type}, hitFunc: Top Left: { x = ${orgX}, y = ${orgY} }, `);
-				// context.rect(orgX, orgY, self._squareWidth, self._squareWidth);
-				context.rect(0, 0, squareWidth, squareWidth);
-				context.fillStrokeShape(shape);
-			});
-			// }
-		// 	// Snap to pointer
-		// 	ret.on('mousedown', function(event) {
-		// 		let newPos = self._stage.getPointerPosition()
-		// 		// if (type !== 'k') {
-		// 		// 	newPos.x -= self._squareWidth / 2;
-		// 		// 	newPos.y -= self._squareWidth / 2;
-		// 		// }
-		// 		ret.absolutePosition(newPos);
-		// 		// ret.startDrag();
-		// 		self._stage.draw();
-		// 	})
-		// 	ret.on('dragend', function(event) {
-		// 		self._handlePieceDrop(event, ret);
-		// 	});
+				// Snap to pointer
+				ret.on('mousedown', function(event) {
+					let newPos = self._stage.getPointerPosition()
+					console.log(newPos);
+					newPos.x -= self._squareWidth / 2;
+					newPos.y -= self._squareWidth / 2;
+					ret.absolutePosition(newPos);
+					self._stage.draw();
+					ret.startDrag();
+				})
+			// 	ret.on('dragend', function(event) {
+			// 		self._handlePieceDrop(event, ret);
+			// 	});
+			}
 		}
 		return ret;
 	}
