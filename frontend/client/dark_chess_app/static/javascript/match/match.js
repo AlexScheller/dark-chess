@@ -163,7 +163,9 @@ class MatchModel {
 		this._matchData = matchData;
 		console.log(matchData);
 		if (this._matchData.in_progress) {
-			this._board = this.loadFromDarkFen(this._matchData.current_dark_fen);
+			// For testing fog of war.
+			this._board = this.loadFromDarkFen('r_b_k_nr/p__p_p?p/n_???_?_/_p_?P???/__?_????/_?_?_???/__???_?_/q_____b?');
+			// this._board = this.loadFromDarkFen(this._matchData.current_dark_fen);
 		}
 		this._playerData = playerData;
 		this._opponentData = opponentData;
@@ -466,6 +468,10 @@ class KonvaBoardViewController {
 		this._render();
 	}
 
+	_handlePieceDrop(event, piece) {
+		console.log(`${piece.name} dropped`);
+	}
+
 	// Helpers
 
 	// this assumes ranks and files proceed from left to right, and top to
@@ -623,112 +629,189 @@ class KonvaBoardViewController {
 
 	_createPiece(type, side, squareWidth, darkPieceColor, origin = { x: 0, y: 0}) {
 		let center = {
-			x: origin.x + this._squareWidth / 2,
-			y: origin.y + this._squareWidth / 2
+			x: origin.x + squareWidth / 2,
+			y: origin.y + squareWidth / 2
 		}
-		let ret = null;
+		let squareCenter = squareWidth / 2;
+		let ret = new Konva.Shape({
+			x: origin.x, y: origin.y,
+			width: squareWidth, height: squareWidth
+		});
+		// All pieces are custom shapes, even if they would otherwise not need
 		switch(type) {
 			case 'p':
-				ret = new Konva.Circle({
-					x: center.x, y: center.y,
-					radius: Math.floor(squareWidth / 4)
+				console.log('drawing pawn')
+				// ret = new Konva.Circle({
+				// 	x: center.x, y: center.y,
+				// 	radius: Math.floor(squareWidth / 4)
+				// });
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.arc(
+						squareCenter, squareCenter,
+						Math.floor(squareWidth / 4), 0, 2 * Math.PI
+					);
+					context.fillStrokeShape(shape)
 				});
 				break;
 			case 'r':
-				let halfWidth = squareWidth / 6;
-				let halfHeight = halfWidth * 2
-				ret = new Konva.Rect({
-					x: center.x - halfWidth, y: center.y - halfHeight,
-					width: halfWidth * 2,
-					height: halfHeight * 2
-				})
-				break;
-			case 'n':
-				ret = new Konva.Line({
-					points: [
-						center.x - (squareWidth / 4), center.y - (squareWidth / 3),
-						center.x, center.y - (squareWidth / 6),
-						center.x + (squareWidth / 4), center.y - (squareWidth / 3),
-						center.x + (squareWidth / 4), center.y,
-						center.x + (squareWidth / 8), center.y + (squareWidth / 3),
-						center.x - (squareWidth / 8), center.y + (squareWidth / 3),
-						center.x - (squareWidth / 4), center.y,
-					],
-					closed: true
+				let halfRectWidth = squareWidth / 6;
+				let halfHeight = halfRectWidth * 2
+				// ret = new Konva.Rect({
+				// 	x: center.x - halfWidth, y: center.y - halfHeight,
+				// 	width: halfWidth * 2,
+				// 	height: halfHeight * 2
+				// })
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.rect(
+						squareCenter - halfRectWidth,
+						squareCenter - halfHeight,
+						halfRectWidth * 2, halfHeight * 2
+					);
+					context.fillStrokeShape(shape)
 				});
 				break;
-			case 'b':
-				ret = new Konva.Line({
-					points: [
-						center.x, center.y - (squareWidth / 3),
-						center.x + (squareWidth / 4), center.y + (squareWidth / 3),
-						center.x - (squareWidth / 4), center.y + (squareWidth / 3)
-					],
-					closed: true
-				});
-				break;
-			case 'q':
-				ret = new Konva.Line({
-					points: [
-						center.x - (squareWidth / 3), center.y - (squareWidth / 8),
-						center.x - (squareWidth / 6), center.y,
-						center.x, center.y - (squareWidth / 3),
-						center.x + (squareWidth / 6), center.y,
-						center.x + (squareWidth / 3), center.y - (squareWidth / 8),
-						center.x + (squareWidth / 4), center.y + (squareWidth / 3),
-						center.x - (squareWidth / 4), center.y + (squareWidth / 3)
-					],
-					closed: true
-				});
-				break;
+			// case 'n':
+			// 	ret = new Konva.Line({
+			// 		points: [
+			// 			center.x - (squareWidth / 4), center.y - (squareWidth / 3),
+			// 			center.x, center.y - (squareWidth / 6),
+			// 			center.x + (squareWidth / 4), center.y - (squareWidth / 3),
+			// 			center.x + (squareWidth / 4), center.y,
+			// 			center.x + (squareWidth / 8), center.y + (squareWidth / 3),
+			// 			center.x - (squareWidth / 8), center.y + (squareWidth / 3),
+			// 			center.x - (squareWidth / 4), center.y,
+			// 		],
+			// 		closed: true
+			// 	});
+			// 	break;
+			// case 'b':
+			// 	ret = new Konva.Line({
+			// 		points: [
+			// 			center.x, center.y - (squareWidth / 3),
+			// 			center.x + (squareWidth / 4), center.y + (squareWidth / 3),
+			// 			center.x - (squareWidth / 4), center.y + (squareWidth / 3)
+			// 		],
+			// 		closed: true
+			// 	});
+			// 	break;
+			// case 'q':
+			// 	ret = new Konva.Line({
+			// 		points: [
+			// 			center.x - (squareWidth / 3), center.y - (squareWidth / 8),
+			// 			center.x - (squareWidth / 6), center.y,
+			// 			center.x, center.y - (squareWidth / 3),
+			// 			center.x + (squareWidth / 6), center.y,
+			// 			center.x + (squareWidth / 3), center.y - (squareWidth / 8),
+			// 			center.x + (squareWidth / 4), center.y + (squareWidth / 3),
+			// 			center.x - (squareWidth / 4), center.y + (squareWidth / 3)
+			// 		],
+			// 		closed: true
+			// 	});
+			// 	break;
 			case 'k':
-				ret = new Konva.Group({
-					x: origin.x, y: origin.y
+				ret.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.arc(
+						squareCenter, squareCenter - (squareWidth / 4),
+						Math.floor(squareWidth / 8), 0, 2 * Math.PI
+					);
+					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 3))
+					context.lineTo(squareCenter, squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 3), squareCenter + (squareWidth / 3));
+					context.fillStrokeShape(shape);
 				});
-				// Note that shapes added to a group are reletive to the group,
-				// global origin/center info isn't really relevant
-				let groupCenter = { x: squareWidth / 2, y: squareWidth / 2};
-				let crown = new Konva.Line({
-					points: [
-						groupCenter.x - (squareWidth / 3), groupCenter.y - (squareWidth / 3),
-						groupCenter.x, groupCenter.y,
-						groupCenter.x + (squareWidth / 3), groupCenter.y - (squareWidth / 3),
-						groupCenter.x + (squareWidth / 3), groupCenter.y + (squareWidth / 3),
-						groupCenter.x - (squareWidth / 3), groupCenter.y + (squareWidth / 3)
-					],
-					closed: true
-				});
-				let jewel = new Konva.Circle({
-					x: groupCenter.x, y: groupCenter.y - (squareWidth / 4),
-					radius: Math.floor(squareWidth / 8)
-				});
-				if (side === 'b') {
-					crown.fill(darkPieceColor);
-					jewel.fill(darkPieceColor);
-				} else {
-					crown.stroke(darkPieceColor);
-					jewel.stroke(darkPieceColor);
-					crown.strokeWidth(2);
-					jewel.strokeWidth(2);
-				}
-				ret.add(crown);
-				ret.add(jewel);
+				// ret = new Konva.Group({
+				// 	x: origin.x, y: origin.y
+				// });
+				// // Note that shapes added to a group are reletive to the group,
+				// // global origin/center info isn't really relevant
+				// let groupCenter = { x: squareWidth / 2, y: squareWidth / 2};
+				// let crown = new Konva.Line({
+				// 	points: [
+				// 		groupCenter.x - (squareWidth / 3), groupCenter.y - (squareWidth / 3),
+				// 		groupCenter.x, groupCenter.y,
+				// 		groupCenter.x + (squareWidth / 3), groupCenter.y - (squareWidth / 3),
+				// 		groupCenter.x + (squareWidth / 3), groupCenter.y + (squareWidth / 3),
+				// 		groupCenter.x - (squareWidth / 3), groupCenter.y + (squareWidth / 3)
+				// 	],
+				// 	closed: true
+				// });
+				// let jewel = new Konva.Circle({
+				// 	x: groupCenter.x, y: groupCenter.y - (squareWidth / 4),
+				// 	radius: Math.floor(squareWidth / 8)
+				// });
+				// if (side === 'b') {
+				// 	crown.fill(darkPieceColor);
+				// 	jewel.fill(darkPieceColor);
+				// } else {
+				// 	crown.stroke(darkPieceColor);
+				// 	jewel.stroke(darkPieceColor);
+				// 	crown.strokeWidth(2);
+				// 	jewel.strokeWidth(2);
+				// }
+				// ret.add(crown);
+				// ret.add(jewel);
 				break;
-			case '?':
-				ret = new Konva.Rect({
-					x: origin.x + 1, y: origin.y + 1,
-					width: this._squareWidth - 2, height: this._squareWidth - 2,
-					fill: 'black', opacity: 0.35
-				})
-				break;
+			// case '?':
+			// 	ret = new Konva.Rect({
+			// 		x: origin.x + 1, y: origin.y + 1,
+			// 		width: this._squareWidth - 2, height: this._squareWidth - 2,
+			// 		fill: 'black', opacity: 0.6
+			// 	})
+			// 	break;
 		}
-		if (type !== 'k') { // Handled in switch.
-			if (side === 'b') {
-				ret.fill(darkPieceColor);
-			} else {
-				ret.stroke(darkPieceColor);
-				ret.strokeWidth(2);
-			}
+		if (side === 'b') {
+			ret.fill(darkPieceColor);
+		} else {
+			ret.stroke(darkPieceColor);
+			ret.strokeWidth(2);
+		}
+		// playing and players piece
+		if (side === this._model.playerSide && type !== '?') {
+		// 	console.log(type);
+		// 	let self = this;
+			ret.draggable(true);
+			// if (type === 'k') {
+			// 	// Groups can't take custom hit regions, so we grant it to one
+			// 	// of it's children.
+			// 	// ret.children[0].hitFunc(function(context, shape) {
+			// 	// 	context.beginPath();
+			// 	// 	context.rect(0, 0, self._squareWidth, self._squareWidth);
+			// 	// 	context.fillStrokeShape(shape);
+			// 	// });
+			// } else {
+			ret.hitFunc(function(context, shape) {
+				context.beginPath();
+				// let orgX = 0;
+				// let orgY = 0;
+				// if (type !== 'k') {
+				// 	orgX -= self._squareWidth / 2;
+				// 	orgY -= self._squareWidth / 2;
+				// }
+				// console.log(`type: ${type}, hitFunc: Top Left: { x = ${orgX}, y = ${orgY} }, `);
+				// context.rect(orgX, orgY, self._squareWidth, self._squareWidth);
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
+			});
+			// }
+		// 	// Snap to pointer
+		// 	ret.on('mousedown', function(event) {
+		// 		let newPos = self._stage.getPointerPosition()
+		// 		// if (type !== 'k') {
+		// 		// 	newPos.x -= self._squareWidth / 2;
+		// 		// 	newPos.y -= self._squareWidth / 2;
+		// 		// }
+		// 		ret.absolutePosition(newPos);
+		// 		// ret.startDrag();
+		// 		self._stage.draw();
+		// 	})
+		// 	ret.on('dragend', function(event) {
+		// 		self._handlePieceDrop(event, ret);
+		// 	});
 		}
 		return ret;
 	}
