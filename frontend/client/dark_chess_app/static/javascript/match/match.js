@@ -161,7 +161,7 @@ class MatchModel {
 	constructor(matchData, playerData, opponentData = null) {
 		logDebug('Constructing MatchModel.');
 		this._matchData = matchData;
-		console.log(matchData);
+		console.debug(matchData);
 		if (this._matchData.in_progress) {
 			// For testing fog of war.
 			// this._board = this.loadFromDarkFen('r_b_k_nr/p__p_p?p/n_???_?_/_p_?P???/__?_????/_?_?_???/__???_?_/q_____b?');
@@ -414,7 +414,7 @@ class KonvaBoardViewController {
 			this._flipBoard();
 		}
 
-		console.log(this._boardFlipped)
+		this._selectedPiece = null;
 
 		this._clickHandlersSetup = false;
 		if (this._active) {
@@ -468,8 +468,10 @@ class KonvaBoardViewController {
 		this._render();
 	}
 
-	_handlePieceDrop(event, piece) {
-		console.log(`${piece.name} dropped`);
+	// For legacy/compatability, should be removed as soon as it's determined it
+	// can be.
+	_moveOptions(square) {
+		return this._model.movesFrom(square);
 	}
 
 	// Helpers
@@ -503,6 +505,19 @@ class KonvaBoardViewController {
 		let x = files.indexOf(square[0]) * this._squareWidth;
 		let y = ranks.indexOf(square[1]) * this._squareWidth;
 		return {x, y};
+	}
+
+	_pointToSquare(point) {
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
+		let rank = ranks[Math.floor(point.y / this._squareWidth)];
+		let file = files[Math.floor(point.x / this._squareWidth)];
+		// let origin = this._squareToOrigin(file + rank);
+		return file + rank;
 	}
 
 	_flipBoard() {
@@ -612,22 +627,23 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
-	_drawFog(square) {
-		// let sq = this._square(square);
-		let origin = this._squareToOrigin(square)
-		this._pieceLayer.add(
-			new Konva.Rect({
-				x: origin.x, y: origin.y,
-				width: this._squareWidth, height: this._squareWidth,
-				fill: 'black', opacity: 0.1
-			})
-		);
-		// this._square(square).filters([Konva.Filters.Greyscale]);
-	}
+	// _drawFog(square) {
+	// 	// let sq = this._square(square);
+	// 	let origin = this._squareToOrigin(square)
+	// 	this._pieceLayer.add(
+	// 		new Konva.Rect({
+	// 			x: origin.x, y: origin.y,
+	// 			width: this._squareWidth, height: this._squareWidth,
+	// 			fill: 'black', opacity: 0.1
+	// 		})
+	// 	);
+	// 	// this._square(square).filters([Konva.Filters.Greyscale]);
+	// }
 
 	// Piece Management
 
-	_createPiece(type, side, squareWidth, darkPieceColor, origin = { x: 0, y: 0}) {
+	_createPiece(type, side, squareWidth, darkPieceColor, square = 'a1') {
+		let origin = this._squareToOrigin(square);
 		let center = {
 			x: origin.x + squareWidth / 2,
 			y: origin.y + squareWidth / 2
@@ -635,12 +651,13 @@ class KonvaBoardViewController {
 		let squareCenter = squareWidth / 2;
 		let ret = new Konva.Shape({
 			x: origin.x, y: origin.y,
-			width: squareWidth, height: squareWidth
+			width: squareWidth, height: squareWidth,
 		});
+		ret.pieceType = type;
+		ret.square = square;
 		// All pieces are custom shapes, even if they would otherwise not need
 		switch(type) {
 			case 'p':
-				console.log('drawing pawn')
 				ret.sceneFunc(function(context, shape) {
 					context.beginPath();
 					context.arc(
@@ -753,15 +770,10 @@ class KonvaBoardViewController {
 				// in this function as opposed to simply setting ret.draggable
 				// to true since that messes  with the snapping.
 				ret.on('mousedown', function(event) {
-					let newPos = self._stage.getPointerPosition()
-					newPos.x -= self._squareWidth / 2;
-					newPos.y -= self._squareWidth / 2;
-					ret.absolutePosition(newPos);
-					self._stage.draw();
-					ret.startDrag();
+					self._handlePieceGrab(event, ret,)
 				})
 				ret.on('dragend', function(event) {
-					console.log(`Drag ended: ${event}`)
+					self._handlePieceDrop(event, ret);
 				});
 			}
 		}
@@ -774,7 +786,8 @@ class KonvaBoardViewController {
 			for (let file of 'abcdefgh') {
 				let squareContent = this._model.contentAtSquare(file + rank);
 				if (squareContent != null) {
-					let origin = this._squareToOrigin(file + rank);
+					let square = file + rank;
+					// let origin = this._squareToOrigin(square);
 					// Does this indicate a refactoring is in order?
 					if (squareContent.type === 'piece' || squareContent.value === '?') {
 						let piece = {
@@ -787,7 +800,7 @@ class KonvaBoardViewController {
 								piece.color,
 								this._squareWidth,
 								this._darkPieceColor,
-								origin,
+								square,
 							)
 						);
 					}
@@ -797,9 +810,61 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
+	_movePieceToSquare(piece, square) {
+		let pt = this._squareToOrigin(square);
+		piece.x(pt.x);
+		piece.y(pt.y);
+	}
+
+	_handlePieceGrab(event, piece) {
+		if (this._model.playersTurn()) {
+			if (this._moveOptions(piece.square).length > 0) {
+				this.selectedPiece = piece;
+				let newPos = this._stage.getPointerPosition()
+				newPos.x -= this._squareWidth / 2;
+				newPos.y -= this._squareWidth / 2;
+				piece.absolutePosition(newPos);
+				this._stage.draw();
+				piece.startDrag();
+			}
+		} else {
+			// TODO: Handle pre-moves
+		}
+	}
+
+	// Note this assumes the piece is the player's
+	_handlePieceDrop(event, piece) {
+		if (this._active) {
+			let pt = {
+				x: event.evt.offsetX,
+				y: event.evt.offsetY
+			}
+			// TODO: Handle promotions
+			// TODO, just have one function that takes points or squares and
+			// returns an object with both details?
+			let toSquare = this._pointToSquare(pt);
+			if (this._moveOptions(piece.square).includes(toSquare)) {
+				this._movePieceToSquare(piece, toSquare);
+				let move = piece.square + toSquare;
+				this._listener.handleMoveRequest(move);
+			} else {
+				this._movePieceToSquare(piece, piece.square);
+			}
+			this._render()
+			// if (this._model.playersTurn()) {
+			// 	if (this._moveOptions(piece.square).includes(toSquare)) {
+			// 		this._movePieceToSquare(piece, toSquare);
+			// 		this._render();
+			// 	}
+			// } else {
+			// 	// TODO: Handle pre-moves
+			// }
+		}
+	}
+
 	_render() {
 		this._stage.draw();
-		console.log('rendering')
+		console.debug('rendering')
 	}
 
 }
