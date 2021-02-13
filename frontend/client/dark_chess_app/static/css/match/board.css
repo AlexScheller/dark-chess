@@ -20,6 +20,14 @@
 	height: 480px;
 }
 
+.konvajs-content:hover {
+	cursor: pointer;
+}
+
+.konvajs-content:active {
+	cursor: grabbing;
+}
+
 .chess-board.inactive {
 	pointer-events: none;
 }

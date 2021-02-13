@@ -25,8 +25,8 @@
 {% block js %}
 <div id="match-data" data-match-data='{{ match | tojson }}' hidden></div>
 <div id="player-data" data-player-data='{{ current_user.as_dict() | tojson }}' hidden></div>
-{#<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js"></script>#}
-<script src="{{ url_for('static', filename='javascript/libs/socket.io.js')}}"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.5/socket.io.js"></script>
+{#<script src="{{ url_for('static', filename='javascript/libs/socket.io.js')}}"></script>#}
 <script src="{{ url_for('static', filename='javascript/libs/konva.js')}}"></script>
 <script src="{{ url_for('static', filename='javascript/match/match.js', v=1) }}"></script>
 {% endblock %}

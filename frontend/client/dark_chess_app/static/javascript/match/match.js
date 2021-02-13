@@ -106,6 +106,7 @@ class APIHandler {
 	}
 
 	syncMatchState(model) {
+		logDebug('Requesting Match State', 'API Request')
 		fetch(`${window.location.origin}/match/api/${model.matchId}`, {
 			method: 'GET',
 		}).then(response => {
@@ -400,6 +401,7 @@ class KonvaBoardViewController {
 
 		this._model = model;
 		this._active = this._model.inProgress;
+		this._model.setListener(this);
 
 		this._squareWidth = squareWidth;
 		this._height = this._squareWidth * 8;
@@ -408,12 +410,16 @@ class KonvaBoardViewController {
 		this._lightSquareColor = 'white';
 		this._darkPieceColor = 'black';
 
+		this._pieceMovementSpeed = 1; // seconds
+
 		this._boardFlipped = false;
 
 		if (this._model.playerSide === 'b') {
 			this._flipBoard();
 		}
 
+		this._pieces = new Map();
+		this._fog = [];
 		this._selectedPiece = null;
 
 		this._clickHandlersSetup = false;
@@ -441,6 +447,19 @@ class KonvaBoardViewController {
 
 	setListener(listener) {
 		this._listener = listener;
+	}
+
+	// Model Listener Methods
+
+	handleModelReload() {
+		this._selectedPiece = null;
+		this._active = this._model.inProgress;
+		if (!this._clickHandlersSetup) {
+			this._clickHandlersSetup = true;
+			this._setupClickHandlers();
+		}
+		this._updateBoardState();
+		this._render();
 	}
 
 	// Handlers
@@ -627,6 +646,61 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
+	_clearFog() {
+		for (let piece of this._fog) {
+			piece.destroy();
+		}
+	}
+
+	_updateBoardState(animate = true) {
+		logDebug('Updating board state');
+		// diff the current and new fen and only make necessary changes
+		this._clearFog();
+		let newPieces = [];
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let square = file + rank;
+				let newSquareContent = this._model.contentAtSquare(file + rank);
+				if (newSquareContent.type === 'piece') {
+					let pieceKey = newSquareContent.color + newSquareContent.value;
+					newPieces.push(pieceKey);
+					if (this._pieces.has(pieceKey)) {
+						this._movePieceToSquare(
+							this._pieces.get(pieceKey), square, animate
+						);
+					} else {
+						// Add it
+						let newPiece = this._createPiece(
+							newSquareContent.type,
+							newSquareContent.color,
+							this._squareWidth,
+							this._darkPieceColor,
+							square
+						)
+						this._pieces.set(newSquareContent.color + newSquareContent.type, newPiece);
+						this._pieceLayer.add(newPiece);
+					}
+				} else if (newSquareContent.value === '?') {
+					let newFog = this._createPiece(
+						'?', null,
+						this._squareWidth,
+						this._darkPieceColor,
+						square
+					);
+					this._fog.push(newFog);
+					this._pieceLayer.add(newFog);
+				}
+			}
+		}
+		// Remove pieces that aren't in the new board state.
+		for (const oldPiece in this._pieces.keys()) {
+			if (!newPieces.includes(oldPiece)) {
+				this._pieces.get(oldPiece).destroy();
+				this._pieces.delete(oldPiece);
+			}
+		}
+	}
+
 	// _drawFog(square) {
 	// 	// let sq = this._square(square);
 	// 	let origin = this._squareToOrigin(square)
@@ -794,15 +868,19 @@ class KonvaBoardViewController {
 							type: squareContent.value,
 							color: squareContent.color 
 						};
-						ret.add(
-							this._createPiece(
-								piece.type,
-								piece.color,
-								this._squareWidth,
-								this._darkPieceColor,
-								square,
-							)
-						);
+						let newPiece = this._createPiece(
+							piece.type,
+							piece.color,
+							this._squareWidth,
+							this._darkPieceColor,
+							square,
+						)
+						if (squareContent.type === 'piece') {
+							this._pieces.set(piece.color + piece.type, newPiece);
+						} else {
+							this._fog.push(newPiece);
+						}
+						ret.add(newPiece);
 					}
 				}
 			}
@@ -810,10 +888,22 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
-	_movePieceToSquare(piece, square) {
+	_movePieceToSquare(piece, square, teleport = false) {
 		let pt = this._squareToOrigin(square);
-		piece.x(pt.x);
-		piece.y(pt.y);
+		if (teleport) {
+			piece.x(pt.x);
+			piece.y(pt.y);
+		} else {
+			let movement = new Konva.Tween({
+				node: piece,
+				duration: this._pieceMovementSpeed,
+				x: pt.x,
+				y: pt.y
+			});
+			// This maybe should be kept as a reference and then called in the
+			// render function
+			movement.play();
+		}
 	}
 
 	_handlePieceGrab(event, piece) {
@@ -844,11 +934,12 @@ class KonvaBoardViewController {
 			// returns an object with both details?
 			let toSquare = this._pointToSquare(pt);
 			if (this._moveOptions(piece.square).includes(toSquare)) {
-				this._movePieceToSquare(piece, toSquare);
+				this._movePieceToSquare(piece, toSquare, true);
 				let move = piece.square + toSquare;
 				this._listener.handleMoveRequest(move);
 			} else {
-				this._movePieceToSquare(piece, piece.square);
+				// reset to where it was
+				this._movePieceToSquare(piece, piece.square, true);
 			}
 			this._render()
 			// if (this._model.playersTurn()) {
@@ -1492,6 +1583,7 @@ class Match {
 
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
+		console.log(matchData.connection_token);
 		this._wsh = new WebsocketHandler(config, matchData.connection_token);
 		this._wsh.setListener(this);
 	}
