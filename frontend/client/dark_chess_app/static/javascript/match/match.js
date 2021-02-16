@@ -396,45 +396,58 @@ class MatchModel {
 
 class KonvaBoardViewController {
 
-	constructor(model, squareWidth = 64) {
-		logDebug('Constructing KonvaBoardViewController.');
+	constructor(model, options = {}) {
+
+		logDebug('Creating KonvaBoardViewController', 'ViewController');
+
+		let defaults = {
+			containerId: 'board',
+			squareSize: 64,
+			darkSquareColor: '#6aa1c8',
+			lightSquareColor: 'white',
+			pieceColor: 'black',
+			animationSpeed: 1 // seconds
+		};
+		this._config = Object.assign(defaults, options);
+
+		this._dimensions = {
+			squareSize: this._config.squareSize,
+			boardHeight: this._config.squareSize * 8,
+			boardWidth: this._config.squareSize * 8,
+		}
 
 		this._model = model;
-		this._active = this._model.inProgress;
 		this._model.setListener(this);
 
-		this._squareWidth = squareWidth;
-		this._height = this._squareWidth * 8;
-		this._width = this._height;
-		this._darkSquareColor = '#6aa1c8'
-		this._lightSquareColor = 'white';
-		this._darkPieceColor = 'black';
-
-		this._pieceMovementSpeed = 1; // seconds
+		// Used for remembering where the pieces are in terms of ranks and
+		// files. The Konva piece objects track their actual visual location,
+		// but we also need a reference for the board in order to more easily
+		// diff the current visual state with a new board state for animation
+		// purposes. It's basically the same as the board buffer in the model,
+		// but only due to convergent evolution.
+		this._boardBuffer = new Map();
+		// Unlike the board buffer where we want to search for pieces, we don't
+		// care where the fog is, we just need a reachable reference to it.
+		this._fog = [];
 
 		this._boardFlipped = false;
-
 		if (this._model.playerSide === 'b') {
 			this._flipBoard();
 		}
 
-		this._pieces = new Map();
-		this._fog = [];
-		this._selectedPiece = null;
-
-		this._clickHandlersSetup = false;
-		if (this._active) {
-			this._clickHandlersSetup = true;
-			this._setupClickHandlers();
-		}
+		this._setupClickHandlers();
 
 		this._stage = new Konva.Stage({
-			container: 'board',
-			width: this._width,
-			height: this._height
+			container: this._config.containerId,
+			width: this._dimensions.boardWidth,
+			height: this._dimensions.boardHeight
 		});
+		// For rendering the underlying board.
 		this._boardLayer = this._setupBoardLayer();
+		// For rendering the pieces and fog of war.
 		this._pieceLayer = this._setupPieceLayer();
+		// For rendering things like the rank and file labels, as well as
+		// planning arrows and such.
 		this._infoOverlayLayer = this._setupInfoOverlayLayer();
 		this._stage.add(this._boardLayer);
 		this._stage.add(this._pieceLayer);
@@ -443,29 +456,106 @@ class KonvaBoardViewController {
 		this._render();
 	}
 
-	/* Setup */
+	/*** Derivables ***/
+	
+	// This is currently redundant, but will not be in the future.
+	get _active() {
+		return this._matchActive;
+	}
+
+	get _matchActive() {
+		return this._model.inProgress;
+	}
+
+	/*** Setup ***/
 
 	setListener(listener) {
 		this._listener = listener;
 	}
 
-	// Model Listener Methods
-
-	handleModelReload() {
-		this._selectedPiece = null;
-		this._active = this._model.inProgress;
-		if (!this._clickHandlersSetup) {
-			this._clickHandlersSetup = true;
-			this._setupClickHandlers();
+	_setupBoardLayer() {
+		logDebug('Setting up board layer', 'ViewController');
+		let ret = new Konva.Layer();
+		let alternationTest = this._boardFlipped ? 0 : 1;
+		for (let rank = 0; rank < 8; rank++) {
+			for (let file = 0; file < 8; file++) {
+				// Dark squares of course occur every other square, alternating'
+				// beginnings based on rank.
+				let darkFill = (rank % 2 == alternationTest) ? (file % 2 == 1) : (file % 2 == 0);
+				ret.add(
+					new Konva.Rect({
+						x: file * this._dimensions.squareSize,
+						y: rank * this._dimensions.squareSize,
+						width: this._dimensions.squareSize,
+						height: this._dimensions.squareSize,
+						fill: darkFill ? this._config.darkSquareColor :
+										 this._config.lightSquareColor
+					})
+				);
+			}
 		}
-		this._updateBoardState();
-		this._render();
+		return ret;
 	}
 
-	// Handlers
+	_setupPieceLayer() {
+		logDebug('Setting up piece layer', 'ViewController');
+		let ret = new Konva.Layer();
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let squareContent = this._model.contentAtSquare(file + rank);
+				if (squareContent != null &&
+					squareContent.type === 'piece' || squareContent.value === '?') {
+					let square = file + rank;
+					// Note that for now, fog is also a type of 'piece' that
+					// just doesn't have any handlers associated with it.
+					let newPiece = this._createPiece(
+						squareContent.value, squareContent.color,
+						this._dimensions.squareSize, square
+					)
+					if (newPiece.type === '?') {
+						this._fog.push(newPiece);
+					} else { 
+						this._boardBuffer.set(square, newPiece);
+					}
+					ret.add(newPiece.konvaContent);
+				}
+			}
+		}
+		return ret;
+	}
+
+	_setupInfoOverlayLayer() {
+		logDebug('Setting up info overlay layer', 'ViewController');
+		let ret = new Konva.Layer();
+		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
+		let alternationTest = this._boardFlipped ? 0 : 1;
+		for (let rank = 0; rank < 8; rank++) {
+			ret.add(
+				new Konva.Text({
+					x: this._dimensions.squareSize / 32,
+					y: (this._dimensions.squareSize * rank) + this._dimensions.squareSize / 32,
+					text: this._boardFlipped ? rank + 1 : 8 - rank,
+					fontsize: 5, fill: rank % 2 == alternationTest ? 'black': 'white'
+				})
+			);
+		}
+		for (let file = 0; file < 8; file++) {
+			ret.add(
+				new Konva.Text({
+					x: (this._dimensions.squareSize * file) + (this._dimensions.squareSize - (this._dimensions.squareSize / 7)),
+					y: (this._dimensions.squareSize * 8) - this._dimensions.squareSize / 5,
+					text: fileLetters[file],
+					fontsize: 5, fill: file % 2 == alternationTest ? 'white': 'black'
+				})
+			);
+		}
+		return ret;
+	}
+
+	/*** Input Handlers ***/
 
 	_setupClickHandlers() {
-		logDebug('Setting up click handlers', 'Setup');
+		logDebug('Setting up bvc click handlers', 'ViewController');
 		// this._canvas.addEventListener('click',
 		// 	this._handleSquareClick.bind(this)
 		// );
@@ -475,450 +565,35 @@ class KonvaBoardViewController {
 		);
 	}
 
-	// _tearDownClickHandlers() {
-	// 	logDebug('Removing click handlers', 'Teardown')
-	// 	this._canvas.removeEventListener('click', this._handleSquareClick);
-	// 	let flipBoardButton = document.getElementById('flip-board-button');
-	// 	flipBoardButton.addEventListener('click', this._handleFlipBoardClick);
-	// }
+	_tearDownClickHandlers() {
+		logDebug('Removing bvc click handlers', 'ViewController')
+		// this._canvas.removeEventListener('click', this._handleSquareClick);
+		let flipBoardButton = document.getElementById('flip-board-button');
+		flipBoardButton.removeEventListener('click', this._handleFlipBoardClick);
+	}
 
 	_handleFlipBoardClick() {
-		this._flipBoard();
-		this._render();
-	}
-
-	// For legacy/compatability, should be removed as soon as it's determined it
-	// can be.
-	_moveOptions(square) {
-		return this._model.movesFrom(square);
-	}
-
-	// Helpers
-
-	// this assumes ranks and files proceed from left to right, and top to
-	// bottom
-	_square(fileAndRank) {
-		// since our internal representation of squares doesn't change order in
-		// the `_boardLayer.children` array, we don't care if the board is
-		// flipped or not.
-		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-		if (this._boardFlipped) {
-			ranks.reverse();
-			files.reverse();
-		}
-		let file = files.indexOf(fileAndRank[0]);
-		let rank = ranks.indexOf(fileAndRank[1]);
-		return this._boardLayer.children[(rank * 8) + file];
-	}
-
-	// this assumes ranks and files proceed from left to right, and top to
-	// bottom
-	_squareToOrigin(square) {
-		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-		if (this._boardFlipped) {
-			ranks.reverse();
-			files.reverse();
-		}
-		let x = files.indexOf(square[0]) * this._squareWidth;
-		let y = ranks.indexOf(square[1]) * this._squareWidth;
-		return {x, y};
-	}
-
-	_pointToSquare(point) {
-		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
-		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
-		if (this._boardFlipped) {
-			ranks.reverse();
-			files.reverse();
-		}
-		let rank = ranks[Math.floor(point.y / this._squareWidth)];
-		let file = files[Math.floor(point.x / this._squareWidth)];
-		// let origin = this._squareToOrigin(file + rank);
-		return file + rank;
-	}
-
-	_flipBoard() {
-		// There are still a few things that are handled with regular old html
-		// elements.
-		let playerWhite = document.getElementById('player-white'); 
-		let playerBlack = document.getElementById('player-black');
-		swapEl(playerWhite, playerBlack);
-		// The rest is handled on the canvas
-		this._boardFlipped = !this._boardFlipped;
-		// this._render();
-	}
-
-	// Board Management
-
-	_setupBoardLayer() {
-		let ret = new Konva.Layer();
-		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
-		let alternationTest = this._boardFlipped ? 0 : 1;
-		// render grid
-		for (let rank = 0; rank < 8; rank++) {
-			for (let file = 0; file < 8; file++) {
-
-				let darkFill = (rank % 2 == alternationTest) ? (file % 2 == 1) : (file % 2 == 0);
-				ret.add(
-					new Konva.Rect({
-						x: file * this._squareWidth, y: rank * this._squareWidth,
-						width: this._squareWidth, height: this._squareWidth,
-						fill: darkFill ? this._darkSquareColor : this._lightSquareColor
-					})
-					// Debugging
-					// new Konva.Text({
-					// 	x: file * this._squareWidth, y: rank * this._squareWidth,
-					// 	text: fileLetters[file] + (rank + 1)
-					// })
-				);
-				// The below offsets may not be sustainable at different board sizes.
-				// if (file == 0) {
-				// 	ret.add(
-				// 		new Konva.Text({
-				// 			x: this._squareWidth / 32,
-				// 			y: (this._squareWidth * rank) + this._squareWidth / 32,
-				// 			text: this._boardFlipped ? rank + 1 : 8 - rank,
-				// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
-				// 		})
-				// 	);
-				// }
-				// if (rank == 7) {
-				// 	ret.add(
-				// 		new Konva.Text({
-				// 			x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
-				// 			y: (this._squareWidth * 8) - this._squareWidth / 5,
-				// 			text: fileLetters[file],
-				// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
-				// 		})
-				// 	);
-				// }
-			}
-		}
-		return ret;
-	}
-
-	_setupInfoOverlayLayer() {
-		let ret = new Konva.Layer();
-		let fileLetters = this._boardFlipped ? 'hgfedcba' : 'abcdefgh';
-		let alternationTest = this._boardFlipped ? 0 : 1;
-		for (let rank = 0; rank < 8; rank++) {
-			ret.add(
-				new Konva.Text({
-					x: this._squareWidth / 32,
-					y: (this._squareWidth * rank) + this._squareWidth / 32,
-					text: this._boardFlipped ? rank + 1 : 8 - rank,
-					fontsize: 5, fill: rank % 2 == alternationTest ? 'black': 'white'
-				})
-			);
-		}
-		for (let file = 0; file < 8; file++) {
-			ret.add(
-				new Konva.Text({
-					x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
-					y: (this._squareWidth * 8) - this._squareWidth / 5,
-					text: fileLetters[file],
-					fontsize: 5, fill: file % 2 == alternationTest ? 'white': 'black'
-				})
-			);
-		}
-		// if (file == 0) {
-		// 	ret.add(
-		// 		new Konva.Text({
-		// 			x: this._squareWidth / 32,
-		// 			y: (this._squareWidth * rank) + this._squareWidth / 32,
-		// 			text: this._boardFlipped ? rank + 1 : 8 - rank,
-		// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
-		// 		})
-		// 	);
-		// }
-		// if (rank == 7) {
-		// 	ret.add(
-		// 		new Konva.Text({
-		// 			x: (this._squareWidth * file) + (this._squareWidth - (this._squareWidth / 7)),
-		// 			y: (this._squareWidth * 8) - this._squareWidth / 5,
-		// 			text: fileLetters[file],
-		// 			fontsize: 5, fill: (file + rank) % 2 == 0 ? 'black': 'white'
-		// 		})
-		// 	);
-		// }
-		return ret;
-	}
-
-	_clearFog() {
-		for (let piece of this._fog) {
-			piece.destroy();
-		}
-	}
-
-	_updateBoardState(animate = true) {
-		logDebug('Updating board state');
-		// diff the current and new fen and only make necessary changes
-		this._clearFog();
-		let newPieces = [];
-		for (let rank = 1; rank <= 8; rank++) {
-			for (let file of 'abcdefgh') {
-				let square = file + rank;
-				let newSquareContent = this._model.contentAtSquare(file + rank);
-				if (newSquareContent.type === 'piece') {
-					let pieceKey = newSquareContent.color + newSquareContent.value;
-					newPieces.push(pieceKey);
-					if (this._pieces.has(pieceKey)) {
-						this._movePieceToSquare(
-							this._pieces.get(pieceKey), square, animate
-						);
-					} else {
-						// Add it
-						let newPiece = this._createPiece(
-							newSquareContent.type,
-							newSquareContent.color,
-							this._squareWidth,
-							this._darkPieceColor,
-							square
-						)
-						this._pieces.set(newSquareContent.color + newSquareContent.type, newPiece);
-						this._pieceLayer.add(newPiece);
-					}
-				} else if (newSquareContent.value === '?') {
-					let newFog = this._createPiece(
-						'?', null,
-						this._squareWidth,
-						this._darkPieceColor,
-						square
-					);
-					this._fog.push(newFog);
-					this._pieceLayer.add(newFog);
-				}
-			}
-		}
-		// Remove pieces that aren't in the new board state.
-		for (const oldPiece in this._pieces.keys()) {
-			if (!newPieces.includes(oldPiece)) {
-				this._pieces.get(oldPiece).destroy();
-				this._pieces.delete(oldPiece);
-			}
-		}
-	}
-
-	// _drawFog(square) {
-	// 	// let sq = this._square(square);
-	// 	let origin = this._squareToOrigin(square)
-	// 	this._pieceLayer.add(
-	// 		new Konva.Rect({
-	// 			x: origin.x, y: origin.y,
-	// 			width: this._squareWidth, height: this._squareWidth,
-	// 			fill: 'black', opacity: 0.1
-	// 		})
-	// 	);
-	// 	// this._square(square).filters([Konva.Filters.Greyscale]);
-	// }
-
-	// Piece Management
-
-	_createPiece(type, side, squareWidth, darkPieceColor, square = 'a1') {
-		let origin = this._squareToOrigin(square);
-		let center = {
-			x: origin.x + squareWidth / 2,
-			y: origin.y + squareWidth / 2
-		}
-		let squareCenter = squareWidth / 2;
-		let ret = new Konva.Shape({
-			x: origin.x, y: origin.y,
-			width: squareWidth, height: squareWidth,
-		});
-		ret.pieceType = type;
-		ret.square = square;
-		// All pieces are custom shapes, even if they would otherwise not need
-		switch(type) {
-			case 'p':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.arc(
-						squareCenter, squareCenter,
-						Math.floor(squareWidth / 4), 0, 2 * Math.PI
-					);
-					context.fillStrokeShape(shape)
-				});
-				break;
-			case 'r':
-				let halfRectWidth = squareWidth / 6;
-				let halfHeight = halfRectWidth * 2
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.rect(
-						squareCenter - halfRectWidth,
-						squareCenter - halfHeight,
-						halfRectWidth * 2, halfHeight * 2
-					);
-					context.fillStrokeShape(shape)
-				});
-				break;
-			case 'n':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.moveTo(squareCenter - (squareWidth / 4), squareCenter - (squareWidth / 3));
-					context.lineTo(squareCenter, squareCenter - (squareWidth / 6));
-					context.lineTo(squareCenter + (squareWidth / 4), squareCenter - (squareWidth / 3));
-					context.lineTo(squareCenter + (squareWidth / 4), squareCenter);
-					context.lineTo(squareCenter + (squareWidth / 8), squareCenter + (squareWidth / 3));
-					context.lineTo(squareCenter - (squareWidth / 8), squareCenter + (squareWidth / 3));
-					context.lineTo(squareCenter - (squareWidth / 4), squareCenter);
-					context.closePath();
-					context.fillStrokeShape(shape);
-				});
-				break;
-			case 'b':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.moveTo(squareCenter, squareCenter - (squareWidth / 3));
-					context.lineTo(
-						squareCenter + (squareWidth / 4),
-						squareCenter + (squareWidth / 3)
-					);
-					context.lineTo(
-						squareCenter - (squareWidth / 4),
-						squareCenter + (squareWidth / 3)
-					);
-					context.closePath();
-					context.fillStrokeShape(shape);
-				});
-				break;
-			case 'q':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 8));
-					context.lineTo(squareCenter - (squareWidth / 6), squareCenter);
-					context.lineTo(squareCenter, squareCenter - (squareWidth / 3));
-					context.lineTo(squareCenter + (squareWidth / 6), squareCenter);
-					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 8));
-					context.lineTo(squareCenter + (squareWidth / 4), squareCenter + (squareWidth / 3));
-					context.lineTo(squareCenter - (squareWidth / 4), squareCenter + (squareWidth / 3));
-					context.closePath();
-					context.fillStrokeShape(shape);
-				});
-				break;
-			case 'k':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.arc(
-						squareCenter, squareCenter - (squareWidth / 4),
-						Math.floor(squareWidth / 8), 0, 2 * Math.PI
-					);
-					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 3))
-					context.lineTo(squareCenter, squareCenter);
-					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 3));
-					context.lineTo(squareCenter + (squareWidth / 3), squareCenter + (squareWidth / 3));
-					context.lineTo(squareCenter - (squareWidth / 3), squareCenter + (squareWidth / 3));
-					context.closePath();
-					context.fillStrokeShape(shape);
-				});
-				break;
-			case '?':
-				ret.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.rect(0, 0, squareWidth, squareWidth);
-					context.fillStrokeShape(shape);
-				});
-				ret.fill('black')
-				ret.opacity(0.6)
-				break;
-		}
-		if (type != '?') {
-			if (side === 'b') {
-				ret.fill(darkPieceColor);
-			} else {
-				ret.stroke(darkPieceColor);
-				ret.strokeWidth(2);
-			}
-			// players piece
-			if (side === this._model.playerSide) {
-				let self = this;
-				// ret.draggable(true);
-				ret.hitFunc(function(context, shape) {
-					context.beginPath();
-					context.rect(0, 0, squareWidth, squareWidth);
-					context.fillStrokeShape(shape);
-				});
-				// Snap to pointer, note we have to manually begin the drag
-				// in this function as opposed to simply setting ret.draggable
-				// to true since that messes  with the snapping.
-				ret.on('mousedown', function(event) {
-					self._handlePieceGrab(event, ret,)
-				})
-				ret.on('dragend', function(event) {
-					self._handlePieceDrop(event, ret);
-				});
-			}
-		}
-		return ret;
-	}
-
-	_setupPieceLayer() {
-		let ret = new Konva.Layer();
-		for (let rank = 1; rank <= 8; rank++) {
-			for (let file of 'abcdefgh') {
-				let squareContent = this._model.contentAtSquare(file + rank);
-				if (squareContent != null) {
-					let square = file + rank;
-					// let origin = this._squareToOrigin(square);
-					// Does this indicate a refactoring is in order?
-					if (squareContent.type === 'piece' || squareContent.value === '?') {
-						let piece = {
-							type: squareContent.value,
-							color: squareContent.color 
-						};
-						let newPiece = this._createPiece(
-							piece.type,
-							piece.color,
-							this._squareWidth,
-							this._darkPieceColor,
-							square,
-						)
-						if (squareContent.type === 'piece') {
-							this._pieces.set(piece.color + piece.type, newPiece);
-						} else {
-							this._fog.push(newPiece);
-						}
-						ret.add(newPiece);
-					}
-				}
-			}
-		}
-		return ret;
-	}
-
-	_movePieceToSquare(piece, square, teleport = false) {
-		let pt = this._squareToOrigin(square);
-		if (teleport) {
-			piece.x(pt.x);
-			piece.y(pt.y);
-		} else {
-			let movement = new Konva.Tween({
-				node: piece,
-				duration: this._pieceMovementSpeed,
-				x: pt.x,
-				y: pt.y
-			});
-			// This maybe should be kept as a reference and then called in the
-			// render function
-			movement.play();
+		if (this._active) {
+			this._flipBoard();
+			this._render();
 		}
 	}
 
 	_handlePieceGrab(event, piece) {
-		if (this._model.playersTurn()) {
-			if (this._moveOptions(piece.square).length > 0) {
-				this.selectedPiece = piece;
-				let newPos = this._stage.getPointerPosition()
-				newPos.x -= this._squareWidth / 2;
-				newPos.y -= this._squareWidth / 2;
-				piece.absolutePosition(newPos);
-				this._stage.draw();
-				piece.startDrag();
+		if (this._active) {
+			if (this._model.playersTurn()) {
+				if (this._model.movesFrom(piece.square).length > 0) {
+					// this._selectedPiece = piece;
+					let newPos = this._stage.getPointerPosition()
+					newPos.x -= this._dimensions.squareSize / 2;
+					newPos.y -= this._dimensions.squareSize / 2;
+					piece.konvaContent.absolutePosition(newPos);
+					this._stage.draw();
+					piece.konvaContent.startDrag();
+				}
+			} else {
+				// TODO: Handle pre-moves
 			}
-		} else {
-			// TODO: Handle pre-moves
 		}
 	}
 
@@ -933,9 +608,11 @@ class KonvaBoardViewController {
 			// TODO, just have one function that takes points or squares and
 			// returns an object with both details?
 			let toSquare = this._pointToSquare(pt);
-			if (this._moveOptions(piece.square).includes(toSquare)) {
+			let fromSquare = piece.square;
+			if (this._model.movesFrom(piece.square).includes(toSquare)) {
 				this._movePieceToSquare(piece, toSquare, true);
-				let move = piece.square + toSquare;
+				let move = fromSquare + toSquare;
+				console.log(move);
 				this._listener.handleMoveRequest(move);
 			} else {
 				// reset to where it was
@@ -953,9 +630,286 @@ class KonvaBoardViewController {
 		}
 	}
 
+	/*** ModelListener Methods ***/
+
+	handleModelReload() {
+		// this._selectedPiece = null;
+		this._updateBoardState();
+		this._render();
+	}
+
+	/*** Conversions and Misc Helpers ***/
+
+	_createPiece(type, side, squareWidth, square) {
+		logDebug('Creating Piece', 'ViewController');
+		let ret = {
+			type: type,
+			side: type === '?' ? null : side,
+			square: square
+		}
+		let origin = this._squareToOrigin(square);
+		let center = {
+			x: origin.x + squareWidth / 2,
+			y: origin.y + squareWidth / 2
+		}
+		let squareCenter = squareWidth / 2;
+		let konvaContent = new Konva.Shape({
+			x: origin.x, y: origin.y,
+			width: squareWidth, height: squareWidth,
+		});
+		// All pieces are custom shapes, even if they would otherwise not need
+		switch(type) {
+			case 'p':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.arc(
+						squareCenter, squareCenter,
+						Math.floor(squareWidth / 4), 0, 2 * Math.PI
+					);
+					context.fillStrokeShape(shape)
+				});
+				break;
+			case 'r':
+				let halfRectWidth = squareWidth / 6;
+				let halfHeight = halfRectWidth * 2
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.rect(
+						squareCenter - halfRectWidth,
+						squareCenter - halfHeight,
+						halfRectWidth * 2, halfHeight * 2
+					);
+					context.fillStrokeShape(shape)
+				});
+				break;
+			case 'n':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter - (squareWidth / 4), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter, squareCenter - (squareWidth / 6));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 8), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 8), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 4), squareCenter);
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case 'b':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter, squareCenter - (squareWidth / 3));
+					context.lineTo(
+						squareCenter + (squareWidth / 4),
+						squareCenter + (squareWidth / 3)
+					);
+					context.lineTo(
+						squareCenter - (squareWidth / 4),
+						squareCenter + (squareWidth / 3)
+					);
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case 'q':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 8));
+					context.lineTo(squareCenter - (squareWidth / 6), squareCenter);
+					context.lineTo(squareCenter, squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 6), squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 8));
+					context.lineTo(squareCenter + (squareWidth / 4), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 4), squareCenter + (squareWidth / 3));
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case 'k':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.arc(
+						squareCenter, squareCenter - (squareWidth / 4),
+						Math.floor(squareWidth / 8), 0, 2 * Math.PI
+					);
+					context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 3))
+					context.lineTo(squareCenter, squareCenter);
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 3));
+					context.lineTo(squareCenter + (squareWidth / 3), squareCenter + (squareWidth / 3));
+					context.lineTo(squareCenter - (squareWidth / 3), squareCenter + (squareWidth / 3));
+					context.closePath();
+					context.fillStrokeShape(shape);
+				});
+				break;
+			case '?':
+				konvaContent.sceneFunc(function(context, shape) {
+					context.beginPath();
+					context.rect(0, 0, squareWidth, squareWidth);
+					context.fillStrokeShape(shape);
+				});
+				konvaContent.fill('black')
+				konvaContent.opacity(0.6)
+				break;
+		}
+		if (type != '?') {
+			if (side === 'b') {
+				konvaContent.fill(this._config.pieceColor);
+			} else {
+				konvaContent.stroke(this._config.pieceColor);
+				konvaContent.strokeWidth(2);
+			}
+			// players piece
+			if (side === this._model.playerSide) {
+				let self = this;
+				konvaContent.hitFunc(function(context, shape) {
+					context.beginPath();
+					context.rect(0, 0, squareWidth, squareWidth);
+					context.fillStrokeShape(shape);
+				});
+				// Snap to pointer, note we have to manually begin the drag
+				// in this function as opposed to simply setting ret.draggable
+				// to true since that messes  with the snapping.
+				konvaContent.on('mousedown', function(event) {
+					self._handlePieceGrab(event, ret)
+				})
+				konvaContent.on('dragend', function(event) {
+					self._handlePieceDrop(event, ret);
+				});
+			}
+		}
+		ret.konvaContent = konvaContent;
+		return ret
+	}
+
+	// this assumes ranks and files proceed from left to right, and top to
+	// bottom
+	_squareToOrigin(square) {
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
+		let x = files.indexOf(square[0]) * this._dimensions.squareSize;
+		let y = ranks.indexOf(square[1]) * this._dimensions.squareSize;
+		return {x, y};
+	}
+
+	_pointToSquare(point) {
+		let ranks = ['8', '7', '6', '5', '4', '3', '2', '1'];
+		let files = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'];
+		if (this._boardFlipped) {
+			ranks.reverse();
+			files.reverse();
+		}
+		let rank = ranks[Math.floor(point.y / this._dimensions.squareSize)];
+		let file = files[Math.floor(point.x / this._dimensions.squareSize)];
+		return file + rank;
+	}
+
+	/*** View Update Methods ***/
+
+	_flipBoard() {
+		logDebug('Flipping board', 'ViewController')
+		let playerWhite = document.getElementById('player-white'); 
+		let playerBlack = document.getElementById('player-black');
+		swapEl(playerWhite, playerBlack);
+		this._boardFlipped = !this._boardFlipped;
+		// this._render();
+	}
+
+	_clearFog() {
+		for (let piece of this._fog) {
+			piece.konvaContent.destroy();
+		}
+		this._fog = [];
+	}
+
+	// When updating the boardstate, care should be taken to differentiate
+	// between a dark view and a historical/analysis or spectator view. When in
+	// a dark view for instance, it's obvious that you should draw fog of war on
+	// positions the player can't see, but you also need to remember not to
+	// animate opponent moves, even if the piece is moving into a square the
+	// player has vision on, because the animation may give away the sqaure the
+	// piece was moved from.
+	_updateBoardState(animate = false) {
+		logDebug('Updating board state', 'ViewController');
+		// diff the current and new fen and only make necessary changes
+		this._clearFog();
+		let newPieces = [];
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let square = file + rank;
+				let newSquareContent = this._model.contentAtSquare(square);
+				if (newSquareContent.type === 'piece') {
+					let pieceKey = newSquareContent.color + newSquareContent.value;
+					newPieces.push(pieceKey);
+					if (this._boardBuffer.has(pieceKey)) {
+						let piece = this._pieces.get(pieceKey);
+						// console.log(`Piece: ${piece.pieceColor}:${piece.pieceType}, Current: ${currentSquare}, New: ${square}`)
+						if (piece.square != square) {
+							this._movePieceToSquare(piece, square, animate);
+						}
+					} else {
+						// Add it
+						let newPiece = this._createPiece(
+							newSquareContent.type,
+							newSquareContent.color,
+							this._squareWidth,
+							this._darkPieceColor,
+							square
+						)
+						this._boardBuffer.set(newSquareContent.square, newPiece);
+						this._pieceLayer.add(newPiece.konvaContent);
+					}
+				} else if (newSquareContent.value === '?') {
+					let newFog = this._createPiece(
+						'?', null,
+						this._squareWidth,
+						this._darkPieceColor,
+						square
+					);
+					this._fog.push(newFog);
+					this._pieceLayer.add(newFog.konvaContent);
+				}
+			}
+		}
+		// Remove pieces that aren't in the new board state.
+		for (const oldPiece in this._pieces.keys()) {
+			if (!newPieces.includes(oldPiece)) {
+				this._pieces.get(oldPiece).destroy();
+				this._pieces.delete(oldPiece);
+			}
+		}
+	}
+
+	_movePieceToSquare(piece, square, animate = false) {
+		let pt = this._squareToOrigin(square);
+		this._boardBuffer.delete(piece.square);
+		piece.square = square;
+		this._boardBuffer.set(square, piece);
+		if (animate) {
+			logDebug('Piece movement (Animated)', 'ViewController');
+			let movement = new Konva.Tween({
+				node: piece.konvaContent,
+				duration: this._config.pieceMovementSpeed,
+				x: pt.x,
+				y: pt.y
+			});
+			// This maybe should be kept as a reference and then called in the
+			// render function
+			movement.play();
+		} else {
+			logDebug('Piece Movement (Not Animated)', 'ViewController');
+			piece.konvaContent.x(pt.x);
+			piece.konvaContent.y(pt.y);
+		}
+	}
+
 	_render() {
+		logDebug('Rendering', 'ViewController')
 		this._stage.draw();
-		console.debug('rendering')
 	}
 
 }
