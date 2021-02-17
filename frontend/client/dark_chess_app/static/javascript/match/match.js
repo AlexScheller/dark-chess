@@ -610,13 +610,13 @@ class KonvaBoardViewController {
 			let toSquare = this._pointToSquare(pt);
 			let fromSquare = piece.square;
 			if (this._model.movesFrom(piece.square).includes(toSquare)) {
-				this._movePieceToSquare(piece, toSquare, true);
+				this._movePieceToSquare(piece, toSquare);
 				let move = fromSquare + toSquare;
 				console.log(move);
 				this._listener.handleMoveRequest(move);
 			} else {
 				// reset to where it was
-				this._movePieceToSquare(piece, piece.square, true);
+				this._movePieceToSquare(piece, piece.square);
 			}
 			this._render()
 			// if (this._model.playersTurn()) {
@@ -826,6 +826,13 @@ class KonvaBoardViewController {
 		this._fog = [];
 	}
 
+	_clearPieces() {
+		for (let piece of this._boardBuffer.values()) {
+			piece.konvaContent.destroy();
+		}
+		this._boardBuffer.clear();
+	}
+
 	// When updating the boardstate, care should be taken to differentiate
 	// between a dark view and a historical/analysis or spectator view. When in
 	// a dark view for instance, it's obvious that you should draw fog of war on
@@ -833,62 +840,51 @@ class KonvaBoardViewController {
 	// animate opponent moves, even if the piece is moving into a square the
 	// player has vision on, because the animation may give away the sqaure the
 	// piece was moved from.
+	//
+	// For now, animation has been put on hold until I come up with a pleasant
+	// way of animating between arbitrary fens.
 	_updateBoardState(animate = false) {
 		logDebug('Updating board state', 'ViewController');
-		// diff the current and new fen and only make necessary changes
 		this._clearFog();
-		let newPieces = [];
+		this._clearPieces();
+		// TODO: diff the current and new fen and only make necessary changes
 		for (let rank = 1; rank <= 8; rank++) {
 			for (let file of 'abcdefgh') {
-				let square = file + rank;
-				let newSquareContent = this._model.contentAtSquare(square);
-				if (newSquareContent.type === 'piece') {
-					let pieceKey = newSquareContent.color + newSquareContent.value;
-					newPieces.push(pieceKey);
-					if (this._boardBuffer.has(pieceKey)) {
-						let piece = this._pieces.get(pieceKey);
-						// console.log(`Piece: ${piece.pieceColor}:${piece.pieceType}, Current: ${currentSquare}, New: ${square}`)
-						if (piece.square != square) {
-							this._movePieceToSquare(piece, square, animate);
-						}
-					} else {
-						// Add it
-						let newPiece = this._createPiece(
-							newSquareContent.type,
-							newSquareContent.color,
-							this._squareWidth,
-							this._darkPieceColor,
-							square
-						)
-						this._boardBuffer.set(newSquareContent.square, newPiece);
-						this._pieceLayer.add(newPiece.konvaContent);
+				let squareContent = this._model.contentAtSquare(file + rank);
+				if (squareContent != null &&
+					squareContent.type === 'piece' || squareContent.value === '?') {
+					let square = file + rank;
+					// Note that for now, fog is also a type of 'piece' that
+					// just doesn't have any handlers associated with it.
+					let newPiece = this._createPiece(
+						squareContent.value, squareContent.color,
+						this._dimensions.squareSize, square
+					)
+					if (newPiece.type === '?') {
+						this._fog.push(newPiece);
+					} else { 
+						this._boardBuffer.set(square, newPiece);
 					}
-				} else if (newSquareContent.value === '?') {
-					let newFog = this._createPiece(
-						'?', null,
-						this._squareWidth,
-						this._darkPieceColor,
-						square
-					);
-					this._fog.push(newFog);
-					this._pieceLayer.add(newFog.konvaContent);
+					this._pieceLayer.add(newPiece.konvaContent);
 				}
-			}
-		}
-		// Remove pieces that aren't in the new board state.
-		for (const oldPiece in this._pieces.keys()) {
-			if (!newPieces.includes(oldPiece)) {
-				this._pieces.get(oldPiece).destroy();
-				this._pieces.delete(oldPiece);
 			}
 		}
 	}
 
 	_movePieceToSquare(piece, square, animate = false) {
 		let pt = this._squareToOrigin(square);
-		this._boardBuffer.delete(piece.square);
-		piece.square = square;
-		this._boardBuffer.set(square, piece);
+		// For now, we don't actually update the pieces squares, we only move
+		// them visually as an indication that the client has recognized a move
+		// attempt. The internal movement of the pieces will occur with the
+		// model reloads based on the server response.
+		
+		// this._boardBuffer.delete(piece.square);
+		// piece.square = square;
+		// if (this._boardBuffer.has(square)) {
+		// 	this._boardBuffer.get(square).konvaContent.destroy();
+		// 	this._boardBuffer.delete(square);
+		// }
+		// this._boardBuffer.set(square, piece);
 		if (animate) {
 			logDebug('Piece movement (Animated)', 'ViewController');
 			let movement = new Konva.Tween({
