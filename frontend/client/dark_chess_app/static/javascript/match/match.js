@@ -84,7 +84,7 @@ class WebsocketHandler {
 			if (config.debug) {
 				console.debug(event);
 			}
-			this._listener.handleMoveEvent();
+			this._listener.handleMoveEvent(event);
 		});
 		this._conn.on('match-finish', event => {
 			logDebug('Match Finished', 'Websocket');
@@ -171,6 +171,7 @@ class MatchModel {
 		this._playerData = playerData;
 		this._opponentData = opponentData;
 		this._promoMoveBuffer = null;
+		this._latestMove = null;
 	}
 
 	reload(matchData) {
@@ -353,7 +354,7 @@ class MatchModel {
 		let curr = 0;
 		for (let rank of '87654321') {
 			for (let file of 'abcdefgh') {
-				ret[file + rank] = squares[curr++] 
+				ret[file + rank] = squares[curr++];
 			}
 		}
 		return ret;
@@ -406,7 +407,11 @@ class KonvaBoardViewController {
 			darkSquareColor: '#6aa1c8',
 			lightSquareColor: 'white',
 			pieceColor: 'black',
-			infoObjectColor: '#ff9900',
+			playersTurnColor: 'red', // '#d64933',
+			fogColor: 'black',
+			fogOpacity: 0.6,
+			infoObjectColor: '#ff6b35',
+			infoObjectOpacity: 1,
 			animationSpeed: 1 // seconds
 		};
 		this._config = Object.assign(defaults, options);
@@ -420,6 +425,8 @@ class KonvaBoardViewController {
 		this._model = model;
 		this._model.setListener(this);
 
+		/*** Konva OBject References ***/
+
 		// Used for remembering where the pieces are in terms of ranks and
 		// files. The Konva piece objects track their actual visual location,
 		// but we also need a reference for the board in order to more easily
@@ -432,6 +439,7 @@ class KonvaBoardViewController {
 		this._fog = [];
 		// same with move options
 		this._moveOptions = [];
+		this._highlightedSquares = [];
 
 		this._boardFlipped = false;
 		if (this._model.playerSide === 'b') {
@@ -447,14 +455,17 @@ class KonvaBoardViewController {
 		});
 		// For rendering the underlying board.
 		this._boardLayer = this._setupBoardLayer();
-		// For rendering the pieces and fog of war.
-		this._pieceLayer = this._setupPieceLayer();
+		// For rendering the fog of war.
+		this._fogLayer = this._setupFogLayer();
 		// For rendering things like the rank and file labels, as well as
 		// planning arrows and such.
 		this._infoOverlayLayer = this._setupInfoOverlayLayer();
+		// For rendering the pieces and fog of war.
+		this._pieceLayer = this._setupPieceLayer();
 		this._stage.add(this._boardLayer);
-		this._stage.add(this._pieceLayer);
+		this._stage.add(this._fogLayer);
 		this._stage.add(this._infoOverlayLayer);
+		this._stage.add(this._pieceLayer);
 
 		this._render();
 	}
@@ -500,26 +511,43 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
+	// Note that the fog layer and piece layers technically iterate over the
+	// same content, and could thus be created at the same time (in fact, they
+	// used to be a part of the same layer), but this efficiency isn't worth the
+	// understandability/refactorability of having them be two seperate loops.
+	// Either way it's constant time (unless the chessboard becomes variable in
+	// size).
+	_setupFogLayer() {
+		logDebug('Setting up fog layer', 'ViewController');
+		let ret = new Konva.Layer();
+		for (let rank = 1; rank <= 8; rank++) {
+			for (let file of 'abcdefgh') {
+				let square = file + rank;
+				let squareContent = this._model.contentAtSquare(square);
+				if (squareContent != null && squareContent.value === '?') {
+					let newFog = this._createFog(square)
+					this._fog.push(newFog);
+					ret.add(newFog);
+				}
+			}
+		}
+		return ret;
+	}
+
 	_setupPieceLayer() {
 		logDebug('Setting up piece layer', 'ViewController');
 		let ret = new Konva.Layer();
 		for (let rank = 1; rank <= 8; rank++) {
 			for (let file of 'abcdefgh') {
-				let squareContent = this._model.contentAtSquare(file + rank);
-				if (squareContent != null &&
-					squareContent.type === 'piece' || squareContent.value === '?') {
-					let square = file + rank;
-					// Note that for now, fog is also a type of 'piece' that
-					// just doesn't have any handlers associated with it.
+				let square = file + rank;
+				let squareContent = this._model.contentAtSquare(square);
+				if (squareContent != null && squareContent.type === 'piece') {
 					let newPiece = this._createPiece(
 						squareContent.value, squareContent.color,
-						this._dimensions.squareSize, square
+						this._dimensions.squareSize, square,
+						this._model.playersTurn()
 					)
-					if (newPiece.type === '?') {
-						this._fog.push(newPiece);
-					} else { 
-						this._boardBuffer.set(square, newPiece);
-					}
+					this._boardBuffer.set(square, newPiece);
 					ret.add(newPiece.konvaContent);
 				}
 			}
@@ -586,6 +614,7 @@ class KonvaBoardViewController {
 		if (this._active) {
 			if (this._model.playersTurn()) {
 				if (this._model.movesFrom(piece.square).length > 0) {
+					this._highlightSquare(piece.square);
 					this._renderMoveOptions(this._model.movesFrom(piece.square));
 					// this._selectedPiece = piece;
 					let newPos = this._stage.getPointerPosition()
@@ -614,6 +643,7 @@ class KonvaBoardViewController {
 			let toSquare = this._pointToSquare(pt);
 			let fromSquare = piece.square;
 			if (this._model.movesFrom(piece.square).includes(toSquare)) {
+				this._highlightSquare(toSquare);
 				this._movePieceToSquare(piece, toSquare);
 				let move = fromSquare + toSquare;
 				console.log(move);
@@ -644,11 +674,22 @@ class KonvaBoardViewController {
 
 	/*** Conversions and Misc Helpers ***/
 
-	_createPiece(type, side, squareWidth, square) {
+	_createFog(square) {
+		let origin = this._squareToOrigin(square);
+		return new Konva.Rect({
+			x: origin.x, y: origin.y,
+			width: this._dimensions.squareSize,
+			height: this._dimensions.squareSize,
+			fill: this._config.fogColor,
+			opacity: this._config.fogOpacity
+		});
+	}
+
+	_createPiece(type, side, squareWidth, square, playersTurn = false) {
 		logDebug('Creating Piece', 'ViewController');
 		let ret = {
 			type: type,
-			side: type === '?' ? null : side,
+			side: side,
 			square: square
 		}
 		let origin = this._squareToOrigin(square);
@@ -746,41 +787,33 @@ class KonvaBoardViewController {
 					context.fillStrokeShape(shape);
 				});
 				break;
-			case '?':
-				konvaContent.sceneFunc(function(context, shape) {
-					context.beginPath();
-					context.rect(0, 0, squareWidth, squareWidth);
-					context.fillStrokeShape(shape);
-				});
-				konvaContent.fill('black')
-				konvaContent.opacity(0.6)
-				break;
 		}
-		if (type != '?') {
-			if (side === 'b') {
-				konvaContent.fill(this._config.pieceColor);
-			} else {
-				konvaContent.stroke(this._config.pieceColor);
-				konvaContent.strokeWidth(2);
-			}
-			// players piece
-			if (side === this._model.playerSide) {
-				let self = this;
-				konvaContent.hitFunc(function(context, shape) {
-					context.beginPath();
-					context.rect(0, 0, squareWidth, squareWidth);
-					context.fillStrokeShape(shape);
-				});
-				// Snap to pointer, note we have to manually begin the drag
-				// in this function as opposed to simply setting ret.draggable
-				// to true since that messes  with the snapping.
-				konvaContent.on('mousedown', function(event) {
-					self._handlePieceGrab(event, ret)
-				})
-				konvaContent.on('dragend', function(event) {
-					self._handlePieceDrop(event, ret);
-				});
-			}
+		let fillColor = (playersTurn && type === 'k') ?
+			this._config.playersTurnColor :
+			this._config.pieceColor;
+		if (side === 'b') {
+			konvaContent.fill(fillColor);
+		} else {
+			konvaContent.stroke(fillColor);
+			konvaContent.strokeWidth(2);
+		}
+		// players piece
+		if (side === this._model.playerSide) {
+			let self = this;
+			konvaContent.hitFunc(function(context, shape) {
+				context.beginPath();
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
+			});
+			// Snap to pointer, note we have to manually begin the drag
+			// in this function as opposed to simply setting ret.draggable
+			// to true since that messes  with the snapping.
+			konvaContent.on('mousedown', function(event) {
+				self._handlePieceGrab(event, ret)
+			})
+			konvaContent.on('dragend', function(event) {
+				self._handlePieceDrop(event, ret);
+			});
 		}
 		ret.konvaContent = konvaContent;
 		return ret
@@ -830,6 +863,26 @@ class KonvaBoardViewController {
 		this._moveOptions = [];
 	}
 
+	_clearSquareHighlights() {
+		for (let highlight of this._highlightedSquares) {
+			highlight.destroy();
+		}
+		this._highlightedSquares = [];
+	}
+
+	_highlightSquare(square) {
+		let origin = this._squareToOrigin(square);
+		let newHighlight = new Konva.Rect({
+			x: origin.x, y: origin.y,
+			width: this._dimensions.squareSize,
+			height: this._dimensions.squareSize,
+			fill: this._config.infoObjectColor,
+			opacity: this._config.infoObjectOpacity
+		});
+		this._highlightedSquares.push(newHighlight);
+		this._infoOverlayLayer.add(newHighlight);
+	}
+
 	_renderMoveOptions(moves) {
 		let cirlceRadius = this._dimensions.squareSize / 8;
 		for (let square of moves) {
@@ -841,7 +894,8 @@ class KonvaBoardViewController {
 			let newMoveOption = new Konva.Circle({
 				x: center.x, y: center.y,
 				radius: cirlceRadius,
-				fill: this._config.infoObjectColor
+				fill: this._config.infoObjectColor,
+				opacity: this._config.infoObjectOpacity
 			});
 			this._infoOverlayLayer.add(newMoveOption);
 			this._moveOptions.push(newMoveOption);
@@ -849,8 +903,8 @@ class KonvaBoardViewController {
 	}
 
 	_clearFog() {
-		for (let piece of this._fog) {
-			piece.konvaContent.destroy();
+		for (let fog of this._fog) {
+			fog.destroy();
 		}
 		this._fog = [];
 	}
@@ -880,23 +934,44 @@ class KonvaBoardViewController {
 		// TODO: diff the current and new fen and only make necessary changes
 		for (let rank = 1; rank <= 8; rank++) {
 			for (let file of 'abcdefgh') {
-				let squareContent = this._model.contentAtSquare(file + rank);
+				let square = file + rank;
+				let squareContent = this._model.contentAtSquare(square);
 				if (squareContent != null &&
 					squareContent.type === 'piece' || squareContent.value === '?') {
-					let square = file + rank;
-					// Note that for now, fog is also a type of 'piece' that
-					// just doesn't have any handlers associated with it.
-					let newPiece = this._createPiece(
-						squareContent.value, squareContent.color,
-						this._dimensions.squareSize, square
-					)
-					if (newPiece.type === '?') {
-						this._fog.push(newPiece);
-					} else { 
+					if (squareContent.type === 'piece') {
+						let newPiece = this._createPiece(
+							squareContent.value, squareContent.color,
+							this._dimensions.squareSize, square,
+							this._model.playersTurn()
+						);
 						this._boardBuffer.set(square, newPiece);
+						this._pieceLayer.add(newPiece.konvaContent);
+					} else {
+						let newFog = this._createFog(square);
+						this._fog.push(newFog);
+						this._fogLayer.add(newFog);
 					}
-					this._pieceLayer.add(newPiece.konvaContent);
 				}
+			}
+		}
+		let move = this._model.latestMove;
+		if (move !== null) {
+			let from = move.slice(0, 2);
+			let to = move.slice(2, 4);
+			if (this._model.playersTurn()) {
+				this._clearSquareHighlights();
+				// TODO/NOTE: This is a bit of a hack right now. This only works
+				// because move events currently leak the move even if the
+				// player shouldn't be able to see it. When the websocket events
+				// are reworked not to do this, it should more simple like
+				// checking if the move is null or somthing.
+				if (this._boardBuffer.has(to)) {
+					this._highlightSquare(to);
+				}
+			} else {
+				this._clearSquareHighlights();
+				this._highlightSquare(from);
+				this._highlightSquare(to);
 			}
 		}
 	}
@@ -1598,10 +1673,11 @@ class Match {
 		this.syncModelWithRemote();
 	}
 
-	handleMoveEvent() {
+	handleMoveEvent(event) {
 		if (this._mm.promoting) {
 			this._mm.clearPromotion();
 		}
+		this._mm.latestMove = event.uci_string;
 		this.syncModelWithRemote();
 	}
 
