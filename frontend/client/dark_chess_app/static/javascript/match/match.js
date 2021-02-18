@@ -406,6 +406,7 @@ class KonvaBoardViewController {
 			darkSquareColor: '#6aa1c8',
 			lightSquareColor: 'white',
 			pieceColor: 'black',
+			infoObjectColor: '#ff9900',
 			animationSpeed: 1 // seconds
 		};
 		this._config = Object.assign(defaults, options);
@@ -429,6 +430,8 @@ class KonvaBoardViewController {
 		// Unlike the board buffer where we want to search for pieces, we don't
 		// care where the fog is, we just need a reachable reference to it.
 		this._fog = [];
+		// same with move options
+		this._moveOptions = [];
 
 		this._boardFlipped = false;
 		if (this._model.playerSide === 'b') {
@@ -583,6 +586,7 @@ class KonvaBoardViewController {
 		if (this._active) {
 			if (this._model.playersTurn()) {
 				if (this._model.movesFrom(piece.square).length > 0) {
+					this._renderMoveOptions(this._model.movesFrom(piece.square));
 					// this._selectedPiece = piece;
 					let newPos = this._stage.getPointerPosition()
 					newPos.x -= this._dimensions.squareSize / 2;
@@ -819,6 +823,31 @@ class KonvaBoardViewController {
 		// this._render();
 	}
 
+	_clearMoveOptions() {
+		for (let option of this._moveOptions) {
+			option.destroy();
+		}
+		this._moveOptions = [];
+	}
+
+	_renderMoveOptions(moves) {
+		let cirlceRadius = this._dimensions.squareSize / 8;
+		for (let square of moves) {
+			let origin = this._squareToOrigin(square);
+			let center = {
+				x: origin.x + this._dimensions.squareSize / 2,
+				y: origin.y + this._dimensions.squareSize / 2
+			}
+			let newMoveOption = new Konva.Circle({
+				x: center.x, y: center.y,
+				radius: cirlceRadius,
+				fill: this._config.infoObjectColor
+			});
+			this._infoOverlayLayer.add(newMoveOption);
+			this._moveOptions.push(newMoveOption);
+		}
+	}
+
 	_clearFog() {
 		for (let piece of this._fog) {
 			piece.konvaContent.destroy();
@@ -846,6 +875,7 @@ class KonvaBoardViewController {
 	_updateBoardState(animate = false) {
 		logDebug('Updating board state', 'ViewController');
 		this._clearFog();
+		this._clearMoveOptions();
 		this._clearPieces();
 		// TODO: diff the current and new fen and only make necessary changes
 		for (let rank = 1; rank <= 8; rank++) {
@@ -877,7 +907,7 @@ class KonvaBoardViewController {
 		// them visually as an indication that the client has recognized a move
 		// attempt. The internal movement of the pieces will occur with the
 		// model reloads based on the server response.
-		
+
 		// this._boardBuffer.delete(piece.square);
 		// piece.square = square;
 		// if (this._boardBuffer.has(square)) {
