@@ -46,7 +46,7 @@ function swapEl(el1, el2) {
 class WebsocketHandler {
 
 	constructor(config, connectionToken) {
-		logDebug('Constructing WebsocketHandler.');
+		logDebug('Constructing WebsocketHandler.', 'Websocket');
 		this._connectionToken = connectionToken;
 		this._conn = this._setupServerConn(config.apiRoot);
 		this._registerEventListeners();
@@ -57,7 +57,7 @@ class WebsocketHandler {
 	}
 
 	_setupServerConn(url) {
-		logDebug('Setting up server connection.');
+		logDebug('Setting up server connection.', 'Websocket');
 		return io(url + '/match-moves');
 	}
 
@@ -101,7 +101,7 @@ class WebsocketHandler {
 class APIHandler {
 
 	constructor(config) {
-		logDebug('Constructing APIHandler.');
+		logDebug('Constructing APIHandler.', 'API');
 		this.apiUrl = config.apiRoot;
 	}
 
@@ -592,31 +592,38 @@ class KonvaBoardViewController {
 	_setupPromotionChoiceLayer() {
 		this._promotionLayer = new Konva.Layer();
 		// Squares and pieces
-		let squareGroup = new Konva.Group({
-			zIndex: 1
-		});
+		let squareGroup = new Konva.Group();
 		let squareWidth = this._dimensions.boardWidth / 2;
-		squareGroup.add(new Konva.Rect({
+
+		let queenSquare = new Konva.Rect({
 			x: 0, y: 0, height: squareWidth, width: squareWidth,
 			fill: this._config.darkSquareColor
-		}));
-		squareGroup.add(new Konva.Rect({
+		});
+		squareGroup.add(queenSquare);
+
+		let rookSquare = new Konva.Rect({
 			x: squareWidth, y: 0, height: squareWidth, width: squareWidth,
 			fill: this._config.lightSquareColor
-		}));
-		squareGroup.add(new Konva.Rect({
+		});
+		squareGroup.add(rookSquare);
+
+		let bishopSquare = new Konva.Rect({
 			x: 0, y: squareWidth, height: squareWidth, width: squareWidth,
 			fill: this._config.lightSquareColor
-		}));
-		squareGroup.add(new Konva.Rect({
+		});
+		squareGroup.add(bishopSquare);
+
+		let knightSquare = new Konva.Rect({
 			x: squareWidth, y: squareWidth, height: squareWidth, width: squareWidth,
 			fill: this._config.darkSquareColor
-		}));
-		this._promotionLayer.add(squareGroup);
-		let pieceGroup = new Konva.Group({
-			zIndex: 0
 		});
+		squareGroup.add(knightSquare);
+
+		this._promotionLayer.add(squareGroup);
+
+		let pieceGroup = new Konva.Group();
 		let squareCenter = squareWidth / 2;
+
 		let queen = new Konva.Shape({
 			x: 0, y: 0,
 			width: squareWidth, height: squareWidth,
@@ -631,8 +638,17 @@ class KonvaBoardViewController {
 				context.lineTo(squareCenter - (squareWidth / 4), squareCenter + (squareWidth / 3));
 				context.closePath();
 				context.fillStrokeShape(shape);
+			},
+			hitFunc: function(context, shape) {
+				context.beginPath();
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
 			}
-		})
+		});
+		queen.on('click', event => {
+			this._listener.handlePromotionRequest('q');
+		});
+
 		let halfRectWidth = squareWidth / 6;
 		let halfHeight = halfRectWidth * 2
 		let rook = new Konva.Shape({
@@ -646,8 +662,17 @@ class KonvaBoardViewController {
 					halfRectWidth * 2, halfHeight * 2
 				);
 				context.fillStrokeShape(shape)
+			},
+			hitFunc: function(context, shape) {
+				context.beginPath();
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
 			}
-		})
+		});
+		rook.on('click', event => {
+			this._listener.handlePromotionRequest('r');
+		});
+
 		let bishop = new Konva.Shape({
 			x: 0, y: squareWidth,
 			width: squareWidth, height: squareWidth,
@@ -664,8 +689,17 @@ class KonvaBoardViewController {
 				);
 				context.closePath();
 				context.fillStrokeShape(shape);
+			},
+			hitFunc: function(context, shape) {
+				context.beginPath();
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
 			}
-		})
+		});
+		bishop.on('click', event => {
+			this._listener.handlePromotionRequest('b');
+		});
+
 		let knight = new Konva.Shape({
 			x: squareWidth, y: squareWidth,
 			width: squareWidth, height: squareWidth,
@@ -680,8 +714,17 @@ class KonvaBoardViewController {
 				context.lineTo(squareCenter - (squareWidth / 4), squareCenter);
 				context.closePath();
 				context.fillStrokeShape(shape);
+			},
+			hitFunc: function(context, shape) {
+				context.beginPath();
+				context.rect(0, 0, squareWidth, squareWidth);
+				context.fillStrokeShape(shape);
 			}
-		})
+		});
+		knight.on('click', event => {
+			this._listener.handlePromotionRequest('n');
+		});
+
 		if (this._model.playerSide === 'b') {
 			queen.fill(this._config.pieceColor);
 			rook.fill(this._config.pieceColor);
@@ -701,6 +744,7 @@ class KonvaBoardViewController {
 		pieceGroup.add(rook);
 		pieceGroup.add(bishop);
 		pieceGroup.add(knight);
+
 		this._promotionLayer.add(pieceGroup);
 		this._stage.add(this._promotionLayer);
 	}
@@ -781,7 +825,8 @@ class KonvaBoardViewController {
 				};
 				if (this._model.potentialPromotion(structuredMove)) {
 					// Note that this may no longer be necessary?
-					this._listener.handlePromotionEngagement(structuredMove);
+					this._listener.handlePromotionEngagement(move);
+					this._promoting = true;
 					this._setupPromotionChoiceLayer();
 				} else if (this._model.pawnCaptureKingPromotion(structuredMove)) {
 					this._listener.handleMoveRequest(move + 'q');
@@ -790,6 +835,8 @@ class KonvaBoardViewController {
 				}
 			} else {
 				// reset to where it was
+				this._clearSquareHighlights();
+				this._clearMoveOptions();
 				this._movePieceToSquare(piece, piece.square);
 			}
 			this._render()
@@ -1068,6 +1115,10 @@ class KonvaBoardViewController {
 	// way of animating between arbitrary fens.
 	_updateBoardState(animate = false) {
 		logDebug('Updating board state', 'ViewController');
+		if (this._promoting) {
+			this._promoting = false;
+			this._tearDownPromotionChoiceLayer();
+		}
 		this._clearFog();
 		this._clearMoveOptions();
 		this._clearPieces();
@@ -1150,6 +1201,13 @@ class KonvaBoardViewController {
 
 	_render() {
 		logDebug('Rendering', 'ViewController')
+		// Might not be the most efficient place for this, but will definitely
+		// work.
+		if (this._model.playersTurn()) {
+			utilities.changeFavicon('favicon_player_turn.ico');
+		} else {
+			utilities.changeFavicon('favicon.ico');
+		}
 		this._stage.draw();
 	}
 
@@ -1161,7 +1219,7 @@ class KonvaBoardViewController {
 class CanvasBoardViewController {
 
 	constructor(model, squareWidth = 60) {
-		logDebug('Constructing CanvasBoardViewController.');
+		logDebug('Constructing CanvasBoardViewController.', 'ViewController');
 		this._canvas = document.getElementById('board-canvas');
 		if (this._canvas.getContext) {
 			
@@ -1778,7 +1836,6 @@ class Match {
 
 		this._bvc.setListener(this);
 		this._api = new APIHandler(config);
-		console.log(matchData.connection_token);
 		this._wsh = new WebsocketHandler(config, matchData.connection_token);
 		this._wsh.setListener(this);
 	}
