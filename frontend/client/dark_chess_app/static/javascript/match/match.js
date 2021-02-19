@@ -757,6 +757,9 @@ class KonvaBoardViewController {
 
 	/*** Input Handlers ***/
 
+	// Note that this may not work effectively on mobile yet do to the drag
+	// and drop nature of the events. In the future, clicks should be accepted
+	// as an input method as well.
 	_setupClickHandlers() {
 		logDebug('Setting up bvc click handlers', 'ViewController');
 		// this._canvas.addEventListener('click',
@@ -809,9 +812,6 @@ class KonvaBoardViewController {
 				x: event.evt.offsetX,
 				y: event.evt.offsetY
 			}
-			// TODO: Handle promotions
-			// TODO, just have one function that takes points or squares and
-			// returns an object with both details?
 			let toSquare = this._pointToSquare(pt);
 			let fromSquare = piece.square;
 			if (this._model.movesFrom(piece.square).includes(toSquare)) {
@@ -1087,18 +1087,21 @@ class KonvaBoardViewController {
 	}
 
 	_renderMoveOptions(moves) {
-		let cirlceRadius = this._dimensions.squareSize / 8;
 		for (let square of moves) {
 			let origin = this._squareToOrigin(square);
-			let center = {
-				x: origin.x + this._dimensions.squareSize / 2,
-				y: origin.y + this._dimensions.squareSize / 2
-			}
-			let newMoveOption = new Konva.Circle({
-				x: center.x, y: center.y,
-				radius: cirlceRadius,
+			let aLen = this._dimensions.squareSize / 4;
+			let newMoveOption = new Konva.Shape({
+				x: origin.x, y: origin.y,
 				fill: this._config.infoObjectColor,
-				opacity: this._config.infoObjectOpacity
+				opacity: this._config.infoObjectOpacity,
+				sceneFunc: function (context, shape) {
+					context.beginPath();
+					context.moveTo(0, 0);
+					context.lineTo(0, aLen);
+					context.lineTo(aLen, 0);
+					context.closePath();
+					context.fillStrokeShape(shape);
+				}
 			});
 			this._infoOverlayLayer.add(newMoveOption);
 			this._moveOptions.push(newMoveOption);
