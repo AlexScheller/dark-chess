@@ -440,6 +440,7 @@ class KonvaBoardViewController {
 		// same with move options
 		this._moveOptions = [];
 		this._highlightedSquares = [];
+		this._opponentSquareHighlight = null;
 
 		this._boardFlipped = false;
 		if (this._model.playerSide === 'b') {
@@ -835,7 +836,7 @@ class KonvaBoardViewController {
 				}
 			} else {
 				// reset to where it was
-				this._clearSquareHighlights();
+				this._clearPlayerSquareHighlights();
 				this._clearMoveOptions();
 				this._movePieceToSquare(piece, piece.square);
 			}
@@ -1055,9 +1056,20 @@ class KonvaBoardViewController {
 			highlight.destroy();
 		}
 		this._highlightedSquares = [];
+		if (this._opponentSquareHighlight !== null) {
+			this._opponentSquareHighlight.destroy();
+			this._opponentSquareHighlight = null;
+		}
 	}
 
-	_highlightSquare(square) {
+	_clearPlayerSquareHighlights() {
+		for (let highlight of this._highlightedSquares) {
+			highlight.destroy();
+		}
+		this._highlightedSquares = [];
+	}
+
+	_highlightSquare(square, opponent = false) {
 		let origin = this._squareToOrigin(square);
 		let newHighlight = new Konva.Rect({
 			x: origin.x, y: origin.y,
@@ -1066,7 +1078,11 @@ class KonvaBoardViewController {
 			fill: this._config.infoObjectColor,
 			opacity: this._config.infoObjectOpacity
 		});
-		this._highlightedSquares.push(newHighlight);
+		if (opponent) {
+			this._opponentSquareHighlight = newHighlight;
+		} else {
+			this._highlightedSquares.push(newHighlight);
+		}
 		this._infoOverlayLayer.add(newHighlight);
 	}
 
@@ -1157,7 +1173,7 @@ class KonvaBoardViewController {
 				// are reworked not to do this, it should more simple like
 				// checking if the move is null or somthing.
 				if (this._boardBuffer.has(to)) {
-					this._highlightSquare(to);
+					this._highlightSquare(to, true);
 				}
 			} else {
 				this._clearSquareHighlights();
