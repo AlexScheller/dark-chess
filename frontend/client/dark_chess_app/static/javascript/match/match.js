@@ -462,6 +462,10 @@ class KonvaBoardViewController {
 		this._infoOverlayLayer = this._setupInfoOverlayLayer();
 		// For rendering the pieces and fog of war.
 		this._pieceLayer = this._setupPieceLayer();
+		// For rendering promotions. Only active while accepting a promotion
+		// choice.
+		this._promotionLayer = null;
+
 		this._stage.add(this._boardLayer);
 		this._stage.add(this._fogLayer);
 		this._stage.add(this._infoOverlayLayer);
@@ -583,6 +587,129 @@ class KonvaBoardViewController {
 		return ret;
 	}
 
+	// It's a bit arbitrary that this method doesn't return the layer like its
+	// siblings, but the promotion layer is always temporary.
+	_setupPromotionChoiceLayer() {
+		this._promotionLayer = new Konva.Layer();
+		// Squares and pieces
+		let squareGroup = new Konva.Group({
+			zIndex: 1
+		});
+		let squareWidth = this._dimensions.boardWidth / 2;
+		squareGroup.add(new Konva.Rect({
+			x: 0, y: 0, height: squareWidth, width: squareWidth,
+			fill: this._config.darkSquareColor
+		}));
+		squareGroup.add(new Konva.Rect({
+			x: squareWidth, y: 0, height: squareWidth, width: squareWidth,
+			fill: this._config.lightSquareColor
+		}));
+		squareGroup.add(new Konva.Rect({
+			x: 0, y: squareWidth, height: squareWidth, width: squareWidth,
+			fill: this._config.lightSquareColor
+		}));
+		squareGroup.add(new Konva.Rect({
+			x: squareWidth, y: squareWidth, height: squareWidth, width: squareWidth,
+			fill: this._config.darkSquareColor
+		}));
+		this._promotionLayer.add(squareGroup);
+		let pieceGroup = new Konva.Group({
+			zIndex: 0
+		});
+		let squareCenter = squareWidth / 2;
+		let queen = new Konva.Shape({
+			x: 0, y: 0,
+			width: squareWidth, height: squareWidth,
+			sceneFunc: function(context, shape) {
+				context.beginPath();
+				context.moveTo(squareCenter - (squareWidth / 3), squareCenter - (squareWidth / 8));
+				context.lineTo(squareCenter - (squareWidth / 6), squareCenter);
+				context.lineTo(squareCenter, squareCenter - (squareWidth / 3));
+				context.lineTo(squareCenter + (squareWidth / 6), squareCenter);
+				context.lineTo(squareCenter + (squareWidth / 3), squareCenter - (squareWidth / 8));
+				context.lineTo(squareCenter + (squareWidth / 4), squareCenter + (squareWidth / 3));
+				context.lineTo(squareCenter - (squareWidth / 4), squareCenter + (squareWidth / 3));
+				context.closePath();
+				context.fillStrokeShape(shape);
+			}
+		})
+		let halfRectWidth = squareWidth / 6;
+		let halfHeight = halfRectWidth * 2
+		let rook = new Konva.Shape({
+			x: squareWidth, y: 0,
+			width: squareWidth, height: squareWidth,
+			sceneFunc: function(context, shape) {
+				context.beginPath();
+				context.rect(
+					squareCenter - halfRectWidth,
+					squareCenter - halfHeight,
+					halfRectWidth * 2, halfHeight * 2
+				);
+				context.fillStrokeShape(shape)
+			}
+		})
+		let bishop = new Konva.Shape({
+			x: 0, y: squareWidth,
+			width: squareWidth, height: squareWidth,
+			sceneFunc: function(context, shape) {
+				context.beginPath();
+				context.moveTo(squareCenter, squareCenter - (squareWidth / 3));
+				context.lineTo(
+					squareCenter + (squareWidth / 4),
+					squareCenter + (squareWidth / 3)
+				);
+				context.lineTo(
+					squareCenter - (squareWidth / 4),
+					squareCenter + (squareWidth / 3)
+				);
+				context.closePath();
+				context.fillStrokeShape(shape);
+			}
+		})
+		let knight = new Konva.Shape({
+			x: squareWidth, y: squareWidth,
+			width: squareWidth, height: squareWidth,
+			sceneFunc: function(context, shape) {
+				context.beginPath();
+				context.moveTo(squareCenter - (squareWidth / 4), squareCenter - (squareWidth / 3));
+				context.lineTo(squareCenter, squareCenter - (squareWidth / 6));
+				context.lineTo(squareCenter + (squareWidth / 4), squareCenter - (squareWidth / 3));
+				context.lineTo(squareCenter + (squareWidth / 4), squareCenter);
+				context.lineTo(squareCenter + (squareWidth / 8), squareCenter + (squareWidth / 3));
+				context.lineTo(squareCenter - (squareWidth / 8), squareCenter + (squareWidth / 3));
+				context.lineTo(squareCenter - (squareWidth / 4), squareCenter);
+				context.closePath();
+				context.fillStrokeShape(shape);
+			}
+		})
+		if (this._model.playerSide === 'b') {
+			queen.fill(this._config.pieceColor);
+			rook.fill(this._config.pieceColor);
+			bishop.fill(this._config.pieceColor);
+			knight.fill(this._config.pieceColor);
+		} else {
+			queen.stroke(this._config.pieceColor);
+			queen.strokeWidth(8);
+			rook.stroke(this._config.pieceColor);
+			rook.strokeWidth(8);
+			bishop.stroke(this._config.pieceColor);
+			bishop.strokeWidth(8);
+			knight.stroke(this._config.pieceColor);
+			knight.strokeWidth(8);
+		}
+		pieceGroup.add(queen);
+		pieceGroup.add(rook);
+		pieceGroup.add(bishop);
+		pieceGroup.add(knight);
+		this._promotionLayer.add(pieceGroup);
+		this._stage.add(this._promotionLayer);
+	}
+
+	_tearDownPromotionChoiceLayer() {
+		this._promotionLayer.remove();
+		this._promotionLayer.destroy();
+	}
+
 	/*** Input Handlers ***/
 
 	_setupClickHandlers() {
@@ -645,9 +772,22 @@ class KonvaBoardViewController {
 			if (this._model.movesFrom(piece.square).includes(toSquare)) {
 				this._highlightSquare(toSquare);
 				this._movePieceToSquare(piece, toSquare);
+				// TODO: Cleanup the fact that two different formats are
+				// required...
 				let move = fromSquare + toSquare;
-				console.log(move);
-				this._listener.handleMoveRequest(move);
+				let structuredMove = {
+					from: fromSquare,
+					to: toSquare
+				};
+				if (this._model.potentialPromotion(structuredMove)) {
+					// Note that this may no longer be necessary?
+					this._listener.handlePromotionEngagement(structuredMove);
+					this._setupPromotionChoiceLayer();
+				} else if (this._model.pawnCaptureKingPromotion(structuredMove)) {
+					this._listener.handleMoveRequest(move + 'q');
+				} else {
+					this._listener.handleMoveRequest(move);							
+				}
 			} else {
 				// reset to where it was
 				this._movePieceToSquare(piece, piece.square);
@@ -1135,10 +1275,10 @@ class CanvasBoardViewController {
 						// This is a workaround for the fact that the chess
 						// library on the backend doesn't consider a pawn
 						// capturing the king without promoting to be a
-						// pseudo-legal move. An issue has been raised, and if
-						// a pull-request is accepted this workaround should be
-						// removed. All it does is append a queen promotion to
-						// the move.
+						// pseudo-legal move. An issue was raised on github, but
+						// the conclusion was that the behavior wanted here
+						// would be better implemented with a variant. All the
+						// below does is append a queen promotion to the move.
 						} else if (
 							this._model.pawnCaptureKingPromotion(newFormatMove)
 						) {
